@@ -65,7 +65,7 @@ jobs:
         run: uv run --no-sync python scripts/generate.py --check
       - run: uv run --no-sync ruff check
       - run: uv run --no-sync ruff format --check
-      - name: The README's Python blocks, as a module the type checkers read
+      - name: The README's Python blocks and the code samples, as modules the type checkers read
         run: uv run --no-sync python scripts/readme_blocks.py "$RUNNER_TEMP/readme"
       - name: mypy, strict
         run: uv run --no-sync mypy src examples scripts tests "$RUNNER_TEMP/readme"

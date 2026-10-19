@@ -123,6 +123,41 @@ async def test_request_refuses_another_host_and_sends_nothing(kind: str) -> None
 
 
 @pytest.mark.anyio
+async def test_haau3_base_url_is_where_requests_go_when_no_base_url_is_passed(
+    kind: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HAAU3_BASE_URL", "https://stand-in.example.test/")
+    recorder = Recorder(answer(200, PLAN))
+    client = Client(kind, recorder)
+    assert client.inner.base_url == "https://stand-in.example.test"
+    await client("read_insurance_plan", "H1")
+    assert str(recorder.last.url) == "https://stand-in.example.test/v1/fhir/r4/InsurancePlan/H1"
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+def test_the_base_url_option_beats_haau3_base_url_and_an_empty_one_is_unset(
+    monkeypatch: pytest.MonkeyPatch, cls: type
+) -> None:
+    monkeypatch.setenv("HAAU3_BASE_URL", "https://stand-in.example.test")
+    assert cls(api_key=KEY, base_url="https://other.example.test").base_url == "https://other.example.test"
+    monkeypatch.setenv("HAAU3_BASE_URL", "")
+    assert cls(api_key=KEY).base_url == "https://api.haau3.com"
+    monkeypatch.setenv("HAAU3_BASE_URL", "ftp://stand-in.example.test")
+    with pytest.raises(Haau3Error, match="base_url must be an http or https URL"):
+        cls(api_key=KEY)
+
+
+@pytest.mark.anyio
+async def test_the_key_goes_to_haau3_base_urls_host_only(kind: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HAAU3_BASE_URL", "https://stand-in.example.test")
+    recorder = Recorder(answer(200, {}))
+    error = await Client(kind, recorder).raises("request", "GET", "https://api.haau3.com/v1/scheduling/publishers")
+    assert type(error) is Haau3Error
+    assert error.args[0].startswith("Refusing to send the API key to https://api.haau3.com:")
+    assert recorder.requests == []
+
+
+@pytest.mark.anyio
 async def test_pages_follows_next_links(kind: str) -> None:
     second = "https://api.haau3.com/v1/fhir/r4/InsurancePlan?page=2"
     third = "https://api.haau3.com/v1/fhir/r4/InsurancePlan?page=3"

@@ -1,6 +1,8 @@
 """Turns the README's Python blocks into one module, so a type checker reads them and a test runs them.
 
-    python3 scripts/readme_blocks.py <directory>     writes <directory>/readme_snippets.py
+    python3 scripts/readme_blocks.py <directory>     writes <directory>/readme_snippets.py, and each code
+                                                    sample in openapi/code-samples.json as
+                                                    <directory>/code_sample_<n>.py
 
 Blocks are kept in order, so a later one uses what an earlier one made (`client`). A block that
 awaits goes into `readme_async`, the others into `readme_sync`. A block after the line
@@ -10,6 +12,7 @@ the reader (`plan_id`, `records`, `codes`, `job_id`) are the functions' paramete
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 import textwrap
@@ -76,7 +79,15 @@ def main(argv: list[str]) -> int:
     out = Path(argv[0])
     out.mkdir(parents=True, exist_ok=True)
     (out / "readme_snippets.py").write_text(module_source((ROOT / "README.md").read_text(encoding="utf-8")))
+    for number, source in enumerate(samples(), start=1):
+        (out / f"code_sample_{number:02}.py").write_text(source)
     return 0
+
+
+def samples() -> list[str]:
+    """The code samples in openapi/code-samples.json, one whole program per operation."""
+    overlay = json.loads((ROOT / "openapi" / "code-samples.json").read_text(encoding="utf-8"))
+    return [action["update"]["x-codeSamples"][0]["source"] for action in overlay["actions"]]
 
 
 if __name__ == "__main__":
