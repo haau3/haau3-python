@@ -39,7 +39,9 @@ def _config(api_key: str | None, base_url: str | None, timeout: float | None, ma
         raise Haau3Error("No API key: pass api_key, or set HAAU3_API_KEY.")
     return Config(
         key=Secret(key),
-        base_url=checked_base_url(base_url if base_url is not None else DEFAULT_BASE_URL),
+        base_url=checked_base_url(
+            base_url if base_url is not None else (os.environ.get("HAAU3_BASE_URL") or DEFAULT_BASE_URL)
+        ),
         timeout=float(timeout) if timeout is not None else DEFAULT_TIMEOUT,
         max_retries=max_retries if max_retries is not None else DEFAULT_MAX_RETRIES,
     )
@@ -111,7 +113,8 @@ class Haau3(SyncMethods):
         """Every option has a default.
 
         - `api_key`: your platform API key. Defaults to `os.environ["HAAU3_API_KEY"]`.
-        - `base_url`: where the API is. Defaults to `https://api.haau3.com`.
+        - `base_url`: where the API is. Defaults to `os.environ["HAAU3_BASE_URL"]`, then
+          `https://api.haau3.com`. The API key is sent there only.
         - `timeout`: seconds one attempt may take. Defaults to 65.
         - `max_retries`: retries after a timeout, a network failure, a 429 or a 5xx. Defaults to 1.
         - `http_client`: an `httpx2.Client` of your own, for a proxy, certificates or limits. The SDK
