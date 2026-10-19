@@ -1,0 +1,44 @@
+name: Public text
+
+# Everything this repository publishes says only what this repository shows: its files, the commit
+# messages a pull request brings, and the pull request's title and description, which become the
+# squash commit on main (scripts/check_public_text.py). It runs again when the title or description
+# is edited. Dependabot's title, description and commits quote other projects' release notes, so
+# only the files are checked on its pull requests. The check uses only the standard library, so
+# nothing is installed.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-text-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Public text
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Files, commits, title and description
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            python3 -I scripts/check_public_text.py
+          else
+            python3 -I scripts/check_public_text.py --commits "$BASE..$HEAD" --text-env PR_TITLE --text-env PR_BODY
+          fi
