@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.3",
+    "version": "1.0.0-preview.4",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-01 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -19,7 +19,7 @@
   "tags": [
     {
       "name": "Scheduling",
-      "description": "Provider availability (SMART Scheduling Links) — slots and publishers."
+      "description": "Provider availability (SMART Scheduling Links): slots and publishers."
     },
     {
       "name": "FHIR base",
@@ -76,7 +76,7 @@
             "name": "publisher",
             "in": "query",
             "required": false,
-            "description": "Filter to a single publisher (source) by slug — e.g. `zocdoc`, `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.",
+            "description": "Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.",
             "schema": {
               "type": "string",
               "minLength": 1
@@ -200,7 +200,7 @@
             "name": "limit",
             "in": "query",
             "required": false,
-            "description": "Page size: the number of provider locations (1–100). Defaults to 25.",
+            "description": "Page size: the number of provider locations, from 1 to 100. Defaults to 25.",
             "schema": {
               "default": 25,
               "type": "integer",
@@ -397,7 +397,7 @@
             "name": "publisher",
             "in": "query",
             "required": false,
-            "description": "Filter to a single publisher (source) by slug — e.g. `zocdoc`, `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.",
+            "description": "Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.",
             "schema": {
               "type": "string",
               "minLength": 1
@@ -531,7 +531,7 @@
             "name": "limit",
             "in": "query",
             "required": false,
-            "description": "Page size (1–100). Defaults to 25.",
+            "description": "Page size, from 1 to 100. Defaults to 25.",
             "schema": {
               "default": 25,
               "type": "integer",
@@ -2236,7 +2236,7 @@
           "FHIR base"
         ],
         "summary": "Capability statement",
-        "description": "FHIR `[base]/metadata`. Returns the `CapabilityStatement` for this service, or a `TerminologyCapabilities` when called with `?mode=terminology` — which lists the code systems served, and names those that are recognised but not served. `mode` is the only parameter it takes.",
+        "description": "FHIR `[base]/metadata`. Returns the `CapabilityStatement` for this service, or a `TerminologyCapabilities` when called with `?mode=terminology`, which lists the code systems served and names those that are recognised but not served. `mode` is the only parameter it takes.",
         "operationId": "fhirMetadata",
         "parameters": [
           {
@@ -3514,7 +3514,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -3682,7 +3682,7 @@
             "name": "displayLanguage",
             "in": "query",
             "required": false,
-            "description": "Language for the returned display and designations. Defaults to `en-US`, which also keeps responses small — the upstream otherwise returns ~30 translations per code.",
+            "description": "Language for the returned display and designations. Defaults to `en-US`, which also keeps answers small, since a code can have about 30 translations.",
             "schema": {
               "type": "string",
               "minLength": 1
@@ -3797,7 +3797,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -3970,7 +3970,7 @@
           "Terminology"
         ],
         "summary": "Validate a code in a code system",
-        "description": "FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system — distinct from the ValueSet operation of the same name, which asks about membership of a particular set. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.",
+        "description": "FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system. The ValueSet operation of the same name asks about membership of a particular set instead. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.",
         "responses": {
           "200": {
             "description": "A FHIR `Parameters` resource carrying `result`.",
@@ -4046,7 +4046,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4191,7 +4191,7 @@
             "name": "display",
             "in": "query",
             "required": false,
-            "description": "Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside — which means the code is valid and only the label differs. Do not read that as an invalid code.",
+            "description": "Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code.",
             "schema": {
               "type": "string",
               "minLength": 1
@@ -4227,7 +4227,7 @@
           "Terminology"
         ],
         "summary": "Validate a code in a code system",
-        "description": "FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system — distinct from the ValueSet operation of the same name, which asks about membership of a particular set. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.",
+        "description": "FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system. The ValueSet operation of the same name asks about membership of a particular set instead. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.",
         "responses": {
           "200": {
             "description": "A FHIR `Parameters` resource carrying `result`.",
@@ -4303,7 +4303,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4575,7 +4575,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4868,7 +4868,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5033,7 +5033,7 @@
           "Terminology"
         ],
         "summary": "Validate a code against a value set",
-        "description": "FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set — useful when an element carries a vendor-local coding alongside a standard one.",
+        "description": "FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.",
         "responses": {
           "200": {
             "description": "A FHIR `Parameters` resource carrying `result`.",
@@ -5093,7 +5093,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5240,7 +5240,7 @@
             "name": "display",
             "in": "query",
             "required": false,
-            "description": "Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside — which means the code is valid and only the label differs. Do not read that as an invalid code.",
+            "description": "Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code.",
             "schema": {
               "type": "string",
               "minLength": 1
@@ -5276,7 +5276,7 @@
           "Terminology"
         ],
         "summary": "Validate a code against a value set",
-        "description": "FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set — useful when an element carries a vendor-local coding alongside a standard one.",
+        "description": "FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.",
         "responses": {
           "200": {
             "description": "A FHIR `Parameters` resource carrying `result`.",
@@ -5336,7 +5336,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "404": {
-            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why — an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
+            "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5957,7 +5957,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6853,7 +6853,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7485,7 +7485,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8013,7 +8013,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8469,7 +8469,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9079,7 +9079,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9600,7 +9600,7 @@
             }
           },
           "400": {
-            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name — none is silently ignored — so a search that returns results applied every filter you sent.",
+            "description": "The request named a parameter, identifier system or value this service does not serve. Every unsupported parameter is refused by name, and none is silently ignored, so a search that returns results applied every filter you sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
