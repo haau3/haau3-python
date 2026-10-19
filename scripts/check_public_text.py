@@ -46,10 +46,13 @@ class Finding:
 STANDARD_IDS = {"UTF-8", "UTF-16", "UTF-32", "PHQ-2", "PHQ-9", "GAD-2", "GAD-7", "SHA-1", "SHA-2", "SHA-3", "TLS-1"}
 
 # Email domains a public commit or file may name.
-EMAIL_DOMAINS = re.compile(r"(^|\.)(haau3\.com|users\.noreply\.github\.com|anthropic\.com|example\.(com|org|net))$", re.I | re.A)
+EMAIL_DOMAINS = re.compile(
+    r"(^|\.)(haau3\.com|users\.noreply\.github\.com|anthropic\.com|example\.(com|org|net))$", re.I | re.A
+)
 
 # The SDKs for other languages are public too, and each README names the others.
 SDK_REPOSITORY = re.compile(r"^haau3/haau3-(node|python|go)(?![\w-])", re.A)
+SDK_URL = re.compile(r"^github\.com[:/]haau3/haau3-(node|python|go)(?![\w-])", re.I | re.A)
 SDK_NAME = re.compile(r"^haau3-(node|python|go|bot|sdk)\b", re.I | re.A)
 
 
@@ -64,10 +67,17 @@ def _changelog_link(match: str, text: str, index: int) -> bool:
 
 
 RULES: list[Rule] = [
+    # `haau3/<name>` on its own names a repository; after a `/` it is a path, as this package's
+    # own `src/haau3/...` is. A GitHub URL names one wherever it is.
     Rule(
         "a repository of the haau3 organization other than the SDKs",
-        re.compile(r"(?<![@\w.-])haau3/[\w.-]+", re.A),
+        re.compile(r"(?<![@\w./-])haau3/[\w.-]+", re.A),
         lambda match, _text, _index: bool(SDK_REPOSITORY.match(match)),
+    ),
+    Rule(
+        "a link to a repository of the haau3 organization other than the SDKs",
+        re.compile(r"github\.com[:/]haau3/[\w.-]+", re.I | re.A),
+        lambda match, _text, _index: bool(SDK_URL.match(match)),
     ),
     Rule(
         "a haau3 project, repository or service name other than the SDKs'",
@@ -89,7 +99,9 @@ RULES: list[Rule] = [
     Rule("how the API is run", re.compile(r"\b(deploy\w*|roll(ed|s)? out|production (build|release))\b", re.I | re.A)),
     Rule(
         "where secrets or settings are kept",
-        re.compile(r"\b(org(anization)?|repo(sitory)?|actions|environment)[- ](level )?(secrets?|variables?)\b", re.I | re.A),
+        re.compile(
+            r"\b(org(anization)?|repo(sitory)?|actions|environment)[- ](level )?(secrets?|variables?)\b", re.I | re.A
+        ),
     ),
     Rule(
         "a credential",
@@ -166,7 +178,10 @@ def main(argv: Sequence[str]) -> int:
         return [args[i + 1] for i, arg in enumerate(args) if arg == name and i + 1 < len(args)]
 
     try:
-        terms = [rule for path in option("--terms") for rule in term_rules(open(path, encoding="utf-8").read())]
+        terms: list[Rule] = []
+        for path in option("--terms"):
+            with open(path, encoding="utf-8") as f:
+                terms += term_rules(f.read())
     except (OSError, re.error) as error:
         print(f"cannot check: {error}", file=sys.stderr)
         return 2
@@ -179,15 +194,15 @@ def main(argv: Sequence[str]) -> int:
                 continue
             # The check's own patterns are left to the private terms alone.
             file_rules = terms if any(p.search(path) for p in THE_CHECK) else rules
-            with open(path, "rb") as f:
-                raw = f.read()
+            with open(path, "rb") as source:
+                raw = source.read()
             if b"\0" in raw:
                 continue
             findings += check(path, raw.decode("utf-8", errors="replace"), file_rules)
     for given in option("--commits"):
         log = _git("log", "--format=%H%x1f%an%x1f%B%x1e", commit_range(given))
         for entry in filter(None, (e.strip() for e in log.split("\x1e"))):
-            sha, author, message = (entry.split("\x1f") + ["", ""])[:3]
+            sha, author, message = [*entry.split("\x1f"), "", ""][:3]
             if author == "dependabot[bot]":
                 continue  # Its messages quote other projects' release notes.
             findings += check(f"commit {sha[:7]}", message, rules)

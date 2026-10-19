@@ -1,0 +1,6 @@
+api-operation-id-removed err
+response-optional-property-removed err
+api-schema-removed err
+api-version-decreased none
+api-version-not-bumped none
+api-major-version-not-bumped none

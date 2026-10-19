@@ -1,0 +1,130 @@
+[project]
+name = "haau3"
+dynamic = ["version"]
+description = "Python SDK for the haau3 platform API: appointment slots from SMART Scheduling Links publishers, Medicare Advantage and ACA Marketplace plan benefits, medication list reconciliation, RxNorm and LOINC terminology, the CMS National Provider Directory and FHIR Questionnaires, as typed calls."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "haau3", email = "hello@haau3.com" }]
+keywords = [
+  "haau3",
+  "smart-scheduling-links",
+  "appointment-scheduling",
+  "scheduling",
+  "plan-benefits",
+  "medicare-advantage",
+  "aca-marketplace",
+  "insurance-plan",
+  "medication-reconciliation",
+  "rxnorm",
+  "loinc",
+  "terminology",
+  "provider-directory",
+  "npi",
+  "fhir",
+  "fhir-r4",
+  "healthcare",
+  "healthcare-api",
+  "python",
+  "sdk",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: AsyncIO",
+  "Framework :: Trio",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Healthcare Industry",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = ["httpx2>=2.0.0,<3", "anyio>=4.10,<5", "typing-extensions>=4.12,<5"]
+
+[project.urls]
+Homepage = "https://platform.haau3.com"
+Documentation = "https://docs.haau3.com"
+Repository = "https://github.com/haau3/haau3-python"
+Issues = "https://github.com/haau3/haau3-python/issues"
+Changelog = "https://github.com/haau3/haau3-python/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+test = ["pytest>=9", "trio>=0.31", "fastapi>=0.115", "django>=5.2", "flask>=3.1"]
+typecheck = ["mypy>=2.4", "pyright>=1.1.414", "ty>=0.0.89", "django-stubs>=5.2"]
+lint = ["ruff>=0.17"]
+generate = ["datamodel-code-generator==0.85.0", "ruff>=0.17"]
+dev = [
+  { include-group = "test" },
+  { include-group = "typecheck" },
+  { include-group = "lint" },
+  { include-group = "generate" },
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+# release-please writes the version into src/haau3/_version.py, the one place it lives.
+path = "src/haau3/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/haau3"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/haau3", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml"]
+
+[tool.uv]
+# The same wait the TypeScript SDK's pnpm keeps: a release installs three days after it is published.
+exclude-newer = "3 days"
+default-groups = ["dev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "-p", "no:cacheprovider"]
+filterwarnings = ["error"]
+markers = ["live: calls the production API; runs only with HAAU3_LIVE_TEST=1 and a key in HAAU3_API_KEY"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["src/haau3/_methods.py", "src/haau3/_operations.py", "src/haau3/calls.py", "src/haau3/types.py", "src/haau3/fhir.py", "src/haau3/_components.py"]
+
+[tool.ruff.lint]
+# UP007/UP045: `Union[...]` stays for generic aliases, which `X | Y` cannot subscript on Python 3.10.
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "PIE", "RET"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003", "UP007", "UP045"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "PT011", "PT012", "PT017", "PT018", "PT022"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+warn_unreachable = true
+files = ["src", "examples", "scripts", "tests"]
+# The scripts import one another by file, and the tests import them and the examples the same way.
+mypy_path = ["scripts", "examples"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
+include = ["src", "examples", "scripts", "tests/typecheck"]
+extraPaths = ["scripts", "examples"]
+reportUnnecessaryTypeIgnoreComment = "error"
+enableTypeIgnoreComments = false

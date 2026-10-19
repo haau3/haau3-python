@@ -1,0 +1,34 @@
+# Dependabot keeps the toolchain current: one grouped uv PR every Monday, each major alone, grouped
+# security fixes, one GitHub Actions PR a month, all waiting three days after a release (uv's
+# exclude-newer is the same three days). A maintainer merges every PR.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: America/New_York
+    cooldown:
+      default-days: 3
+    groups:
+      uv-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+        patterns: ["*"]
+      uv-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "05:00"
+      timezone: America/New_York
+    cooldown:
+      default-days: 3
+    groups:
+      github-actions:
+        patterns: ["*"]

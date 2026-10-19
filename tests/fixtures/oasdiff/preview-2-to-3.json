@@ -1,0 +1,57 @@
+[
+  {
+    "id": "api-schema-removed",
+    "text": "removed the schema `SchedulingActorCard`",
+    "level": 3,
+    "section": "components",
+    "fingerprint": "95d7aa1bccce"
+  },
+  {
+    "id": "api-schema-removed",
+    "text": "removed the schema `SearchActorsResponse`",
+    "level": 3,
+    "section": "components",
+    "fingerprint": "99190576336e"
+  },
+  {
+    "id": "api-path-removed-without-deprecation",
+    "text": "api path removed without deprecation",
+    "level": 3,
+    "operation": "GET",
+    "operationId": "searchActors",
+    "path": "/v1/scheduling/actors",
+    "section": "paths",
+    "fingerprint": "8f520960f147"
+  },
+  {
+    "id": "request-parameter-removed",
+    "text": "deleted the `query` request parameter `actorKey`",
+    "comment": "This is a warning because some clients may return an error when receiving an unexpected parameter. It is recommended to deprecate the parameter first.",
+    "level": 2,
+    "operation": "GET",
+    "operationId": "searchSlots",
+    "path": "/v1/scheduling/slots",
+    "section": "paths",
+    "fingerprint": "292b7082f983"
+  },
+  {
+    "id": "endpoint-added",
+    "text": "endpoint added",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchProviderLocations",
+    "path": "/v1/scheduling/provider-locations",
+    "section": "paths",
+    "fingerprint": "339e54c115c3"
+  },
+  {
+    "id": "new-optional-request-parameter",
+    "text": "added the new optional `query` request parameter `providerLocationKey`",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchSlots",
+    "path": "/v1/scheduling/slots",
+    "section": "paths",
+    "fingerprint": "9b5200450698"
+  }
+]

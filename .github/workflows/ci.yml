@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests on Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every Python the SDK supports (requires-python: >=3.10).
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked --no-default-groups --group test
+      - run: uv run --no-sync pytest
+
+  lowest:
+    name: Tests on the lowest dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.10"
+      # The oldest httpx2, anyio and typing-extensions pyproject.toml allows, so its floors are true.
+      - run: uv sync --no-default-groups --group test --resolution lowest-direct
+      - run: uv run --no-sync pytest
+
+  checks:
+    name: Generated code, types, lint and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.14"
+      - run: uv sync --locked
+      - name: The generated code matches the pinned spec
+        run: uv run --no-sync python scripts/generate.py --check
+      - run: uv run --no-sync ruff check
+      - run: uv run --no-sync ruff format --check
+      - name: The README's Python blocks, as a module the type checkers read
+        run: uv run --no-sync python scripts/readme_blocks.py "$RUNNER_TEMP/readme"
+      - name: mypy, strict
+        run: uv run --no-sync mypy src examples scripts tests "$RUNNER_TEMP/readme"
+      - name: pyright, strict
+        run: uv run --no-sync pyright src examples scripts tests/typecheck "$RUNNER_TEMP/readme"
+      - name: Every public name is typed
+        run: uv run --no-sync pyright --verifytypes haau3 --ignoreexternal
+      - run: uv build
+      - run: uv run --no-sync python scripts/check_package.py dist
+      - name: A customer's code type-checks against the built package on Python 3.10
+        run: |
+          uv export --frozen --only-group typecheck --no-hashes --no-emit-project > "$RUNNER_TEMP/typecheck.txt"
+          uv venv --python 3.10 "$RUNNER_TEMP/customer"
+          uv pip install --python "$RUNNER_TEMP/customer" -r "$RUNNER_TEMP/typecheck.txt" dist/*.whl
+          mkdir "$RUNNER_TEMP/customer-code"
+          cp tests/typecheck/consumer.py "$RUNNER_TEMP/customer-code/"
+          cd "$RUNNER_TEMP/customer-code"
+          "$RUNNER_TEMP/customer/bin/mypy" --strict --python-executable "$RUNNER_TEMP/customer/bin/python" consumer.py
+          "$RUNNER_TEMP/customer/bin/pyright" --pythonpath "$RUNNER_TEMP/customer/bin/python" --level error consumer.py
+
+  ty:
+    name: ty (reports only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # ty is in beta, and its diagnostics may change between any two versions, so it informs and never fails.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.14"
+      - run: uv sync --locked
+      # Not tests/typecheck: its deliberate mistakes carry mypy and pyright ignores, which ty does not read.
+      - run: uv run --no-sync ty check src examples

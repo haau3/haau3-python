@@ -1,0 +1,171 @@
+name: Regenerate
+
+# Takes a new spec from api.haau3.com when the API changes. Every morning, and whenever it is run by
+# hand (`gh workflow run regenerate.yml`), it fetches the spec with the pinned ETag. When the spec
+# changed, it regenerates the SDK, asks oasdiff what changed for callers
+# (openapi/oasdiff-levels.txt), and opens or updates one pull request as haau3-bot, labelled
+# `breaking` when a change can break callers. scripts/regeneration.py decides its title, and
+# CONTRIBUTING.md says what each title releases.
+#
+# haau3-bot is a GitHub App, because a pull request opened with this workflow's own token runs no CI
+# until someone approves it, and main needs its checks. Its token is minted only after the
+# dependencies are installed and the generator has run, so no dependency's code runs while it exists.
+
+on:
+  schedule:
+    # 27 past the hour, because GitHub delays scheduled runs at the top of the hour.
+    - cron: "27 6 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      spec-url:
+        description: The spec to take. Another address is for testing this workflow.
+        required: false
+        default: "https://api.haau3.com/openapi.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regenerate
+  cancel-in-progress: false
+
+env:
+  BRANCH: regenerate-spec
+  REVIEWER: ${{ vars.HAAU3_BOT_REVIEWER }}
+  SPEC_URL: ${{ inputs.spec-url || 'https://api.haau3.com/openapi.json' }}
+  # oasdiff's Linux release, checked against the sha256 that release's checksums.txt names.
+  OASDIFF_VERSION: "1.33.0"
+  OASDIFF_SHA256: "43a4e328e2d13ba1552d760aa68d2485c75c5621f309f6ff64ae895188345247"
+
+jobs:
+  regenerate:
+    name: Regenerate from the live spec
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.14"
+      - run: uv sync --locked --no-default-groups --group generate
+
+      # A change is a different document. A new ETag on the same document is not.
+      - name: Fetch the spec
+        id: fetch
+        env:
+          HAAU3_SPEC_URL: ${{ env.SPEC_URL }}
+        run: |
+          cp openapi/openapi.json "$RUNNER_TEMP/pinned.json"
+          uv run --no-sync python scripts/fetch_spec.py
+          if git diff --quiet -- openapi/openapi.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Regenerate
+        if: steps.fetch.outputs.changed == 'true'
+        run: uv run --no-sync python scripts/generate.py
+
+      - name: Ask oasdiff what changed for callers
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/oasdiff.tar.gz" \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz"
+          echo "${OASDIFF_SHA256}  $RUNNER_TEMP/oasdiff.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/oasdiff.tar.gz" -C "$RUNNER_TEMP" oasdiff
+          "$RUNNER_TEMP/oasdiff" changelog "$RUNNER_TEMP/pinned.json" openapi/openapi.json \
+            --format json --allow-external-refs=false --severity-levels openapi/oasdiff-levels.txt \
+            > "$RUNNER_TEMP/changes.json"
+
+      - name: Describe the pull request
+        if: steps.fetch.outputs.changed == 'true'
+        id: describe
+        env:
+          HAAU3_SPEC_URL: ${{ env.SPEC_URL }}
+        run: |
+          outputs="$(uv run --no-sync python scripts/generate.py --list-outputs)"
+          # shellcheck disable=SC2086
+          if git diff --quiet -- $outputs; then generated=false; else generated=true; fi
+          GENERATED_CHANGED="$generated" python3 -I scripts/describe_regeneration.py \
+            "$RUNNER_TEMP/pinned.json" "$RUNNER_TEMP/changes.json" "$RUNNER_TEMP/body.md" >> "$GITHUB_OUTPUT"
+
+      - name: Mint haau3-bot's token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.HAAU3_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.HAAU3_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          # Labels belong to issues.
+          permission-issues: write
+
+      - name: Open, update or close the pull request
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          TOKEN: ${{ steps.token.outputs.token }}
+          SLUG: ${{ steps.token.outputs.app-slug }}
+          CHANGED: ${{ steps.fetch.outputs.changed }}
+          TITLE: ${{ steps.describe.outputs.title }}
+          BREAKING: ${{ steps.describe.outputs.breaking }}
+        run: |
+          set -euo pipefail
+          bot_email="$(gh api "/users/${SLUG}[bot]" --jq .id)+${SLUG}[bot]@users.noreply.github.com"
+          version="$(python3 -I -c 'import json; print(json.load(open("openapi/openapi.json"))["info"]["version"])')"
+          etag="$(cat openapi/etag)"
+          number="$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')"
+
+          # An open PR whose branch holds a commit haau3-bot did not make is someone's work, and is
+          # never overwritten or closed. (Each output is read whole before grep sees it, never
+          # piped: under pipefail, a grep that stops early can fail the command feeding it.)
+          hand_work=false
+          if [ -n "$number" ]; then
+            git fetch --quiet origin "$BRANCH"
+            authors="$(git log --format=%ae origin/main..FETCH_HEAD)"
+            if [ -n "$authors" ] && grep -qvxF "$bot_email" <<< "$authors"; then hand_work=true; fi
+          fi
+
+          if [ "$CHANGED" != true ]; then
+            if [ -n "$number" ] && [ "$hand_work" = false ]; then
+              gh pr close "$number" --delete-branch \
+                --comment "The live spec is the pinned one again (\`$version\`, ETag \`$etag\`), so this has nothing left to add."
+            fi
+            echo "Unchanged: the live spec is $version."
+            exit 0
+          fi
+
+          if [ "$hand_work" = true ]; then
+            comments="$(gh pr view "$number" --json comments --jq '.comments[].body')"
+            if ! grep -qF "$etag" <<< "$comments"; then
+              gh pr comment "$number" --body "A newer spec is live: \`$version\`, ETag \`$etag\`. This branch has commits haau3-bot did not make, so it is left as it is, and the first run after this merges takes the newer spec."
+            fi
+            echo "Left alone: #$number holds hand work."
+            exit 0
+          fi
+
+          git config user.name "${SLUG}[bot]"
+          git config user.email "$bot_email"
+          git switch --quiet --create "$BRANCH"
+          outputs="$(uv run --no-sync python scripts/generate.py --list-outputs)"
+          # shellcheck disable=SC2086
+          git add openapi $outputs api.md
+          git commit --quiet --message "Regenerate from the API's spec at $version"
+          git push --quiet --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$BRANCH"
+
+          if [ -z "$number" ]; then
+            gh pr create --base main --head "$BRANCH" --title "$TITLE" --body-file "$RUNNER_TEMP/body.md" \
+              ${REVIEWER:+--reviewer "$REVIEWER"}
+            number="$(gh pr view "$BRANCH" --json number --jq .number)"
+          else
+            gh pr edit "$number" --title "$TITLE" --body-file "$RUNNER_TEMP/body.md"
+          fi
+          labelled="$(gh pr view "$number" --json labels --jq '[.labels[].name] | index("breaking") != null')"
+          if [ "$BREAKING" = true ] && [ "$labelled" = false ]; then gh pr edit "$number" --add-label breaking; fi
+          if [ "$BREAKING" != true ] && [ "$labelled" = true ]; then gh pr edit "$number" --remove-label breaking; fi
+          echo "#$number: $TITLE"
