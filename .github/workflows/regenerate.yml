@@ -91,7 +91,7 @@ jobs:
         run: |
           outputs="$(uv run --no-sync python scripts/generate.py --list-outputs)"
           # shellcheck disable=SC2086
-          if git diff --quiet -- $outputs; then generated=false; else generated=true; fi
+          if git diff --quiet -- $outputs openapi/code-samples.json; then generated=false; else generated=true; fi
           GENERATED_CHANGED="$generated" python3 -I scripts/describe_regeneration.py \
             "$RUNNER_TEMP/pinned.json" "$RUNNER_TEMP/changes.json" "$RUNNER_TEMP/body.md" >> "$GITHUB_OUTPUT"
 
