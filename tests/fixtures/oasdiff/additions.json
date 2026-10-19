@@ -1,0 +1,242 @@
+[
+  {
+    "id": "new-optional-request-property",
+    "text": "added the new optional request property `entry`",
+    "level": 1,
+    "operation": "POST",
+    "operationId": "fhirBatch",
+    "path": "/v1/fhir/r4",
+    "section": "paths",
+    "fingerprint": "d3696fefb0db"
+  },
+  {
+    "id": "new-optional-request-property",
+    "text": "added the new optional request property `type`",
+    "level": 1,
+    "operation": "POST",
+    "operationId": "fhirBatch",
+    "path": "/v1/fhir/r4",
+    "section": "paths",
+    "fingerprint": "5efa71115c79"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "POST",
+    "operationId": "fhirBatch",
+    "path": "/v1/fhir/r4",
+    "section": "paths",
+    "fingerprint": "d1b3e52169c1"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "POST",
+    "operationId": "fhirBatch",
+    "path": "/v1/fhir/r4",
+    "section": "paths",
+    "fingerprint": "5cb7325d687c"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "POST",
+    "operationId": "reconcileMedications",
+    "path": "/v1/fhir/r4/$reconcile-medications",
+    "section": "paths",
+    "fingerprint": "c6470c185527"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "POST",
+    "operationId": "reconcileMedications",
+    "path": "/v1/fhir/r4/$reconcile-medications",
+    "section": "paths",
+    "fingerprint": "1a2e3bb97679"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchEndpoint",
+    "path": "/v1/fhir/r4/Endpoint",
+    "section": "paths",
+    "fingerprint": "5e4d5fd610a8"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchEndpoint",
+    "path": "/v1/fhir/r4/Endpoint",
+    "section": "paths",
+    "fingerprint": "0abe49a29b22"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchHealthcareService",
+    "path": "/v1/fhir/r4/HealthcareService",
+    "section": "paths",
+    "fingerprint": "6c4b8d2debd6"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchHealthcareService",
+    "path": "/v1/fhir/r4/HealthcareService",
+    "section": "paths",
+    "fingerprint": "88fd364b69fc"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchInsurancePlan",
+    "path": "/v1/fhir/r4/InsurancePlan",
+    "section": "paths",
+    "fingerprint": "6f9daae539d0"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchInsurancePlan",
+    "path": "/v1/fhir/r4/InsurancePlan",
+    "section": "paths",
+    "fingerprint": "9fc05dff1497"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchLocation",
+    "path": "/v1/fhir/r4/Location",
+    "section": "paths",
+    "fingerprint": "8683e666434f"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchLocation",
+    "path": "/v1/fhir/r4/Location",
+    "section": "paths",
+    "fingerprint": "89d6caa7140c"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchOrganization",
+    "path": "/v1/fhir/r4/Organization",
+    "section": "paths",
+    "fingerprint": "dda5602f1ff1"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchOrganization",
+    "path": "/v1/fhir/r4/Organization",
+    "section": "paths",
+    "fingerprint": "b87794be4dbe"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchOrganizationAffiliation",
+    "path": "/v1/fhir/r4/OrganizationAffiliation",
+    "section": "paths",
+    "fingerprint": "ee0afb3b1982"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchOrganizationAffiliation",
+    "path": "/v1/fhir/r4/OrganizationAffiliation",
+    "section": "paths",
+    "fingerprint": "12b257162c6f"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchPractitioner",
+    "path": "/v1/fhir/r4/Practitioner",
+    "section": "paths",
+    "fingerprint": "6cb22691c92f"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchPractitioner",
+    "path": "/v1/fhir/r4/Practitioner",
+    "section": "paths",
+    "fingerprint": "54a8f4c88e68"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchPractitionerRole",
+    "path": "/v1/fhir/r4/PractitionerRole",
+    "section": "paths",
+    "fingerprint": "588a05959bb1"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchPractitionerRole",
+    "path": "/v1/fhir/r4/PractitionerRole",
+    "section": "paths",
+    "fingerprint": "fe194bf3c210"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `entry` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchQuestionnaire",
+    "path": "/v1/fhir/r4/Questionnaire",
+    "section": "paths",
+    "fingerprint": "25bf71003303"
+  },
+  {
+    "id": "response-optional-property-added",
+    "text": "added the optional property `type` to the response with the `200` status",
+    "level": 1,
+    "operation": "GET",
+    "operationId": "searchQuestionnaire",
+    "path": "/v1/fhir/r4/Questionnaire",
+    "section": "paths",
+    "fingerprint": "cfbb226f2963"
+  }
+]

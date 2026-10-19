@@ -1,0 +1,22 @@
+[
+  {
+    "id": "api-operation-id-removed",
+    "text": "api operation id `listPublishers` removed and replaced with `listPublishersRenamed`",
+    "level": 3,
+    "operation": "GET",
+    "operationId": "listPublishers",
+    "path": "/v1/scheduling/publishers",
+    "section": "paths",
+    "fingerprint": "51bcfb132ddb"
+  },
+  {
+    "id": "response-optional-property-removed",
+    "text": "removed the optional property `slots/items/serviceTypeCode` from the response with the `200` status",
+    "level": 3,
+    "operation": "GET",
+    "operationId": "searchSlots",
+    "path": "/v1/scheduling/slots",
+    "section": "paths",
+    "fingerprint": "1a4d4cf1bcf4"
+  }
+]

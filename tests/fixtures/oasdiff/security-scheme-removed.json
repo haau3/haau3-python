@@ -1,0 +1,16 @@
+[
+  {
+    "id": "api-global-security-removed",
+    "text": "the security scheme `apiKeyAuth` was removed from the API",
+    "level": 1,
+    "section": "security",
+    "fingerprint": "2696b193b90a"
+  },
+  {
+    "id": "api-security-component-removed",
+    "text": "the component security scheme `apiKeyAuth` was removed",
+    "level": 1,
+    "section": "components",
+    "fingerprint": "fa626b497e8c"
+  }
+]
