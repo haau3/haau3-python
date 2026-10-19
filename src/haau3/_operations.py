@@ -20,7 +20,7 @@ from ._components import (
 )
 from ._operation import Operation
 
-SPEC_VERSION: Final[str] = "1.0.0-preview.3"
+SPEC_VERSION: Final[str] = "1.0.0-preview.4"
 """The version of the API's spec this SDK was generated from."""
 
 CHECK_INSURANCE_PLAN_NETWORK: Final[Operation[fhir.Parameters]] = Operation(

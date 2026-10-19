@@ -133,7 +133,7 @@ class SyncMethods:
         - `system`: Code system URI to look up against. Defaults to LOINC (`http://loinc.org`).
         - `version`: Optional code system version. Defaults to the server's current version.
         - `property`: Property to return, repeatable up to 100 times. Narrows the response to the named properties of the code system; omit it to receive all of them. An unrecognised property name is silently omitted from the response, so treat an absent property as 'no answer', never as a negative. More than 100 is refused with a `400` coded `too-long`.
-        - `display_language` (`displayLanguage`): Language for the returned display and designations. Defaults to `en-US`, which also keeps responses small — the upstream otherwise returns ~30 translations per code.
+        - `display_language` (`displayLanguage`): Language for the returned display and designations. Defaults to `en-US`, which also keeps answers small, since a code can have about 30 translations.
         - `date`: The date for which the lookup should be valid.
         """
         return self._engine.call(
@@ -189,7 +189,7 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Validate a code in a code system
 
-        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system — distinct from the ValueSet operation of the same name, which asks about membership of a particular set. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
+        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system. The ValueSet operation of the same name asks about membership of a particular set instead. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
 
         `GET /v1/fhir/r4/CodeSystem/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-in-a-code-system
 
@@ -198,7 +198,7 @@ class SyncMethods:
         - `url`: Canonical URL of the **code system**. Defaults to LOINC (`http://loinc.org`).
         - `code`: Required. The code to validate.
         - `version`: Optional code system version.
-        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside — which means the code is valid and only the label differs. Do not read that as an invalid code.
+        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code.
         - `display_language` (`displayLanguage`): Language to use when checking the display.
         - `date`: The date for which the validation should be valid.
         """
@@ -229,7 +229,7 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Validate a code in a code system
 
-        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system — distinct from the ValueSet operation of the same name, which asks about membership of a particular set. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
+        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system. The ValueSet operation of the same name asks about membership of a particular set instead. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
 
         `POST /v1/fhir/r4/CodeSystem/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-in-a-code-system-1
         """
@@ -272,7 +272,7 @@ class SyncMethods:
     ) -> Union[fhir.CapabilityStatement, fhir.TerminologyCapabilities]:
         """Capability statement
 
-        FHIR `[base]/metadata`. Returns the `CapabilityStatement` for this service, or a `TerminologyCapabilities` when called with `?mode=terminology` — which lists the code systems served, and names those that are recognised but not served. `mode` is the only parameter it takes.
+        FHIR `[base]/metadata`. Returns the `CapabilityStatement` for this service, or a `TerminologyCapabilities` when called with `?mode=terminology`, which lists the code systems served and names those that are recognised but not served. `mode` is the only parameter it takes.
 
         `GET /v1/fhir/r4/metadata`, https://docs.haau3.com/api-reference/fhir-base/capability-statement
 
@@ -1132,7 +1132,7 @@ class SyncMethods:
         Query parameters, each with its name in the API:
 
         - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug — e.g. `zocdoc`, `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
+        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
         - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
         - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
         - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
@@ -1144,7 +1144,7 @@ class SyncMethods:
         - `start_after` (`startAfter`): Only slots starting at or after this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused. When absent, slots start from now unless `includePast=true`.
         - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
         - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
-        - `limit`: Page size: the number of provider locations (1–100). Defaults to 25.
+        - `limit`: Page size: the number of provider locations, from 1 to 100. Defaults to 25.
         - `offset`: Number of provider locations to skip for pagination. Defaults to 0.
         """
         return self._engine.call(
@@ -1244,7 +1244,7 @@ class SyncMethods:
         Query parameters, each with its name in the API:
 
         - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug — e.g. `zocdoc`, `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
+        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
         - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
         - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
         - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
@@ -1257,7 +1257,7 @@ class SyncMethods:
         - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
         - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
         - `provider_location_key` (`providerLocationKey`): Opaque key of one provider location from `GET /v1/scheduling/provider-locations`. When set, returns exactly that provider location's slots. Treat the value as opaque; do not parse it.
-        - `limit`: Page size (1–100). Defaults to 25.
+        - `limit`: Page size, from 1 to 100. Defaults to 25.
         - `offset`: Number of slots to skip for pagination. Defaults to 0.
         """
         return self._engine.call(
@@ -1370,7 +1370,7 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set — useful when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
 
         `GET /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set
 
@@ -1379,7 +1379,7 @@ class SyncMethods:
         - `url`: Canonical URL of the value set to validate against. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code.
         - `code`: Required. The code to validate.
         - `system`: Code system URI of the code. Defaults to LOINC (`http://loinc.org`).
-        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside — which means the code is valid and only the label differs. Do not read that as an invalid code.
+        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code.
         - `display_language` (`displayLanguage`): Language to use when checking the display.
         - `date`: The date for which the validation should be valid.
         """
@@ -1410,7 +1410,7 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set — useful when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
 
         `POST /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set-1
         """
@@ -1616,7 +1616,7 @@ class AsyncMethods:
         - `system`: Code system URI to look up against. Defaults to LOINC (`http://loinc.org`).
         - `version`: Optional code system version. Defaults to the server's current version.
         - `property`: Property to return, repeatable up to 100 times. Narrows the response to the named properties of the code system; omit it to receive all of them. An unrecognised property name is silently omitted from the response, so treat an absent property as 'no answer', never as a negative. More than 100 is refused with a `400` coded `too-long`.
-        - `display_language` (`displayLanguage`): Language for the returned display and designations. Defaults to `en-US`, which also keeps responses small — the upstream otherwise returns ~30 translations per code.
+        - `display_language` (`displayLanguage`): Language for the returned display and designations. Defaults to `en-US`, which also keeps answers small, since a code can have about 30 translations.
         - `date`: The date for which the lookup should be valid.
         """
         return (
@@ -1676,7 +1676,7 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Validate a code in a code system
 
-        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system — distinct from the ValueSet operation of the same name, which asks about membership of a particular set. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
+        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system. The ValueSet operation of the same name asks about membership of a particular set instead. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
 
         `GET /v1/fhir/r4/CodeSystem/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-in-a-code-system
 
@@ -1685,7 +1685,7 @@ class AsyncMethods:
         - `url`: Canonical URL of the **code system**. Defaults to LOINC (`http://loinc.org`).
         - `code`: Required. The code to validate.
         - `version`: Optional code system version.
-        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside — which means the code is valid and only the label differs. Do not read that as an invalid code.
+        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code.
         - `display_language` (`displayLanguage`): Language to use when checking the display.
         - `date`: The date for which the validation should be valid.
         """
@@ -1718,7 +1718,7 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Validate a code in a code system
 
-        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system — distinct from the ValueSet operation of the same name, which asks about membership of a particular set. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
+        FHIR `CodeSystem/$validate-code`. Asks whether a code exists in a code system. The ValueSet operation of the same name asks about membership of a particular set instead. On POST, a `coding` or `codeableConcept` parameter may stand in for `url` + `code`; a codeableConcept validates if any of its codings does.
 
         `POST /v1/fhir/r4/CodeSystem/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-in-a-code-system-1
         """
@@ -1769,7 +1769,7 @@ class AsyncMethods:
     ) -> Union[fhir.CapabilityStatement, fhir.TerminologyCapabilities]:
         """Capability statement
 
-        FHIR `[base]/metadata`. Returns the `CapabilityStatement` for this service, or a `TerminologyCapabilities` when called with `?mode=terminology` — which lists the code systems served, and names those that are recognised but not served. `mode` is the only parameter it takes.
+        FHIR `[base]/metadata`. Returns the `CapabilityStatement` for this service, or a `TerminologyCapabilities` when called with `?mode=terminology`, which lists the code systems served and names those that are recognised but not served. `mode` is the only parameter it takes.
 
         `GET /v1/fhir/r4/metadata`, https://docs.haau3.com/api-reference/fhir-base/capability-statement
 
@@ -2679,7 +2679,7 @@ class AsyncMethods:
         Query parameters, each with its name in the API:
 
         - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug — e.g. `zocdoc`, `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
+        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
         - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
         - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
         - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
@@ -2691,7 +2691,7 @@ class AsyncMethods:
         - `start_after` (`startAfter`): Only slots starting at or after this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused. When absent, slots start from now unless `includePast=true`.
         - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
         - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
-        - `limit`: Page size: the number of provider locations (1–100). Defaults to 25.
+        - `limit`: Page size: the number of provider locations, from 1 to 100. Defaults to 25.
         - `offset`: Number of provider locations to skip for pagination. Defaults to 0.
         """
         return (
@@ -2795,7 +2795,7 @@ class AsyncMethods:
         Query parameters, each with its name in the API:
 
         - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug — e.g. `zocdoc`, `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
+        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
         - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
         - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
         - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
@@ -2808,7 +2808,7 @@ class AsyncMethods:
         - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
         - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
         - `provider_location_key` (`providerLocationKey`): Opaque key of one provider location from `GET /v1/scheduling/provider-locations`. When set, returns exactly that provider location's slots. Treat the value as opaque; do not parse it.
-        - `limit`: Page size (1–100). Defaults to 25.
+        - `limit`: Page size, from 1 to 100. Defaults to 25.
         - `offset`: Number of slots to skip for pagination. Defaults to 0.
         """
         return (
@@ -2927,7 +2927,7 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set — useful when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
 
         `GET /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set
 
@@ -2936,7 +2936,7 @@ class AsyncMethods:
         - `url`: Canonical URL of the value set to validate against. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code.
         - `code`: Required. The code to validate.
         - `system`: Code system URI of the code. Defaults to LOINC (`http://loinc.org`).
-        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside — which means the code is valid and only the label differs. Do not read that as an invalid code.
+        - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code.
         - `display_language` (`displayLanguage`): Language to use when checking the display.
         - `date`: The date for which the validation should be valid.
         """
@@ -2969,7 +2969,7 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set — useful when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
 
         `POST /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set-1
         """
