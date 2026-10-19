@@ -100,4 +100,5 @@ jobs:
         with:
           python-version: "3.14"
       - run: uv sync --locked
-      - run: uv run --no-sync ty check src examples tests/typecheck
+      # Not tests/typecheck: its deliberate mistakes carry mypy and pyright ignores, which ty does not read.
+      - run: uv run --no-sync ty check src examples

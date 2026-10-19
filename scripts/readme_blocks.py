@@ -1,6 +1,6 @@
 """Turns the README's Python blocks into one module, so a type checker reads them and a test runs them.
 
-    python3 scripts/readme_blocks.py <directory>     writes <directory>/readme_blocks.py
+    python3 scripts/readme_blocks.py <directory>     writes <directory>/readme_snippets.py
 
 Blocks are kept in order, so a later one uses what an earlier one made (`client`). A block that
 awaits goes into `readme_async`, the others into `readme_sync`. A block after the line
@@ -75,7 +75,7 @@ def main(argv: list[str]) -> int:
         raise SystemExit("usage: readme_blocks.py <directory>")
     out = Path(argv[0])
     out.mkdir(parents=True, exist_ok=True)
-    (out / "readme_blocks.py").write_text(module_source((ROOT / "README.md").read_text(encoding="utf-8")))
+    (out / "readme_snippets.py").write_text(module_source((ROOT / "README.md").read_text(encoding="utf-8")))
     return 0
 
 
