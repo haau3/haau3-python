@@ -125,7 +125,7 @@ NOT_OURS = [
     re.compile(p)
     for p in (
         r"^src/haau3/(_methods|_operations|_components|calls|fhir|types)\.py$",
-        r"^openapi/openapi\.json$",
+        r"^openapi/(openapi|code-samples)\.json$",
         r"^fhir/",
         r"^api\.md$",
         r"^uv\.lock$",

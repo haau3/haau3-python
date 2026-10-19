@@ -99,15 +99,18 @@ in snake_case, and so is each query parameter: `name:contains` is `name_contains
 An agent can read the docs directly:
 
 - [docs.haau3.com/llms.txt](https://docs.haau3.com/llms.txt) lists every docs page as Markdown.
-- `https://docs.haau3.com/mcp` is an MCP server that searches the docs. In Claude Code:
-  `claude mcp add --transport http haau3 https://docs.haau3.com/mcp`.
+- `https://docs.haau3.com/mcp` is an MCP server that searches the docs. To add it:
+  - Claude Code: `claude mcp add --transport http haau3 https://docs.haau3.com/mcp`
+  - Codex: `codex mcp add haau3 --url https://docs.haau3.com/mcp`
+  - Cursor, in `.cursor/mcp.json`: `{ "mcpServers": { "haau3": { "url": "https://docs.haau3.com/mcp" } } }`
+  - VS Code: `code --add-mcp '{"name":"haau3","type":"http","url":"https://docs.haau3.com/mcp"}'`
 
 ## Options
 
 | Option | Default | |
 |---|---|---|
 | `api_key` | `os.environ["HAAU3_API_KEY"]` | Your platform API key. |
-| `base_url` | `https://api.haau3.com` | Where the API is. |
+| `base_url` | `os.environ["HAAU3_BASE_URL"]`, then `https://api.haau3.com` | Where the API is. The API key is sent there only. |
 | `timeout` | `65.0` | Seconds one attempt may take. |
 | `max_retries` | `1` | Retries after a timeout, a network failure, a 429 or a 5xx. |
 | `http_client` | a new `httpx2.Client` (`httpx2.AsyncClient` for `AsyncHaau3`) | Your own, for a proxy, certificates or connection limits. |
@@ -266,7 +269,7 @@ is. A list built in code works the same way:
 
 ```python
 lookups = client.batch(
-    *(calls.code_system_lookup(system="http://loinc.org", code=code, property="CLASSTYPE") for code in codes)
+    *(calls.code_system_lookup(system="http://loinc.org", code=code, property="SHORTNAME") for code in codes)
 )
 ```
 
@@ -321,6 +324,9 @@ def answer(request: httpx2.Request) -> httpx2.Response:
 test_client = Haau3(api_key="test", http_client=httpx2.Client(transport=httpx2.MockTransport(answer)))
 assert test_client.read_insurance_plan("H2406-013-000").get("id") == "H2406-013-000"
 ```
+
+To run code you have not changed against a stand-in API of your own, set `HAAU3_BASE_URL` to its
+address: a client built with no `base_url` sends there, and nowhere else.
 
 ## Versions
 

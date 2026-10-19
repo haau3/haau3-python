@@ -12,6 +12,11 @@
 - src/haau3/types.py: the public type names: the components, and each operation's Query, Body and
   Response.
 - api.md: every method by service, each linking its page on docs.haau3.com.
+- openapi/code-samples.json: a Python sample for every operation, as an OpenAPI Overlay that adds
+  `x-codeSamples` to the spec, for a documentation site to show beside each operation. Each sample is
+  a whole program that sends the operation's example request from the spec and prints one field of
+  the answer. tests/test_samples.py runs every one as it is written against a stand-in API, and CI
+  type-checks them with the README's blocks.
 
     uv run python scripts/generate.py           write them
     uv run python scripts/generate.py --check   fail, listing them, when any differs from what is committed
@@ -573,6 +578,191 @@ both. Every method also takes the per-call options `timeout`, `max_retries`, `co
 """
 
 
+# --- openapi/code-samples.json -----------------------------------------------------------------
+
+# Operations whose example body is too long to show: the sample reads it from a file instead. Only
+# MedList's, a whole patient's records.
+BODY_FROM_FILE = {"reconcileMedications": ("records.json", "one patient's FHIR medication records")}
+
+
+def _py(value: Any) -> str:
+    """A JSON value as a Python literal, on one line; ruff lays it out."""
+    if isinstance(value, bool):
+        return "True" if value else "False"
+    if value is None:
+        return "None"
+    if isinstance(value, list):
+        return "[" + ", ".join(_py(v) for v in value) + "]"
+    if isinstance(value, dict):
+        return "{" + ", ".join(f"{json.dumps(k)}: {_py(v)}" for k, v in value.items()) + "}"
+    return json.dumps(value)
+
+
+def _example(media: Json) -> Any:
+    return media["example"] if "example" in media else next(iter(media["examples"].values()))["value"]
+
+
+def _raw(spec: Spec, op: Op) -> Json:
+    raw: Json = spec.spec["paths"][op.path][op.method.lower()]
+    return raw
+
+
+def _example_args(spec: Spec, op: Op, raw: Json) -> list[str]:
+    """The example request's path values, body and query, as a call's arguments."""
+    params = [p for p in raw.get("parameters", []) if "$ref" not in p]
+    args: list[str] = []
+    for p in params:
+        if p["in"] == "path":
+            if "example" not in p:
+                raise ValueError(f"{op.id}: path parameter {p['name']} has no example")
+            args.append(_py(p["example"]))
+    if op.body:
+        args.append(_py(_example(next(iter(raw["requestBody"]["content"].values())))))
+    for p in params:
+        if p["in"] != "query":
+            continue
+        if "example" in p:
+            args.append(f"{naming.python_name(p['name'])}={_py(p['example'])}")
+        elif p.get("required"):
+            raise ValueError(f"{op.id}: required {p['name']} has no example")
+    return args
+
+
+def _answer_name(op: Op) -> str:
+    """What a sample names its answer: the resource it is, `metadata` for either of two, `found` otherwise."""
+    if len(op.expects) > 1:
+        return "metadata"
+    return naming.method_name(op.expects[0]) if op.expects else "found"
+
+
+def _print_lines(spec: Spec, op: Op, raw: Json, name: str) -> list[str]:
+    """What shows the answer: a resource's id, a Bundle's entry count, each output parameter's name, a
+    search's total, or how many records a list holds."""
+    if len(op.expects) > 1:
+        return [f'print({name}["resourceType"])']
+    if op.expects == ["Bundle"]:
+        return [f'print(len({name}.get("entry", [])))']
+    if op.expects == ["Parameters"]:
+        return [f'for parameter in {name}.get("parameter", []):', '    print(parameter.get("name"))']
+    if op.expects:
+        return [f'print({name}.get("id"))']
+    ref = next(iter(raw["responses"]["200"]["content"].values()))["schema"]["$ref"]
+    properties = spec.schemas[ref.rsplit("/", 1)[-1]].get("properties") or {}
+    if "total" in properties:
+        return [f'print({name}["total"])']
+    lists = [key for key, schema in properties.items() if schema.get("type") == "array"]
+    if len(lists) != 1:
+        raise ValueError(f"{op.id}: no one field to print")
+    return [f'print(len({name}["{lists[0]}"]))']
+
+
+def _batch_call(spec: Spec, request: Json) -> str:
+    """One entry of the example batch Bundle as the `calls` function that makes it."""
+    from urllib.parse import parse_qsl
+
+    path, _, query = str(request["url"]).partition("?")
+    segments = f"/v1/fhir/r4/{path}".split("/")
+    for op in spec.ops:
+        template = op.path.split("/")
+        if (
+            op.batchable
+            and op.method == request["method"]
+            and len(template) == len(segments)
+            and all(part.startswith("{") or part == segments[i] for i, part in enumerate(template))
+        ):
+            break
+    else:
+        raise ValueError(f"the example batch's {request['method']} {request['url']} is no operation a batch takes")
+    args = [_py(segments[i]) for i, part in enumerate(template) if part.startswith("{")]
+    declared = {p["name"]: p["schema"] for p in _raw(spec, op).get("parameters", []) if "$ref" not in p}
+    values: dict[str, list[str]] = {}
+    for key, value in parse_qsl(query, keep_blank_values=True):
+        values.setdefault(key, []).append(value)
+    for key, given in values.items():
+        schema = declared.get(key)
+        if schema is None:
+            raise ValueError(f"the example batch sends {key}, which {op.id} does not declare")
+        typed: list[Any] = [int(v) if schema.get("type") == "integer" else v for v in given]
+        args.append(f"{naming.python_name(key)}={_py(typed if len(typed) > 1 else typed[0])}")
+    return f"calls.{op.name}({', '.join(args)})"
+
+
+def _sample(spec: Spec, op: Op) -> str:
+    raw = _raw(spec, op)
+    client = ["client = Haau3()  # reads HAAU3_API_KEY"]
+    if op.id == "fhirBatch":
+        bundle = _example(next(iter(raw["requestBody"]["content"].values())))
+        entries = [f"    {_batch_call(spec, e['request'])}," for e in bundle["entry"]]
+        lines = [
+            "from haau3 import BatchOk, Haau3, calls",
+            "",
+            *client,
+            "results = client.batch(",
+            *entries,
+            ")",
+            "for result in results:",
+            "    print(result.status if isinstance(result, BatchOk) else result.error)",
+        ]
+        return "\n".join(lines) + "\n"
+    name = _answer_name(op)
+    from_file = BODY_FROM_FILE.get(op.id)
+    if from_file:
+        file, what = from_file
+        type_ = _example(next(iter(raw["requestBody"]["content"].values())))["resourceType"]
+        lines = [
+            "import json",
+            "",
+            "from haau3 import Haau3, fhir",
+            "",
+            *client,
+            f"# {file} holds {what}, as a {type_}.",
+            f'with open("{file}") as file:',
+            f"    records: fhir.{type_} = json.load(file)",
+            f"{name} = client.{op.name}(records)",
+            *_print_lines(spec, op, raw, name),
+        ]
+        return "\n".join(lines) + "\n"
+    call = f"{name} = client.{op.name}({', '.join(_example_args(spec, op, raw))})"
+    return "\n".join(["from haau3 import Haau3", "", *client, call, *_print_lines(spec, op, raw, name)]) + "\n"
+
+
+def code_samples_json(spec: Spec) -> str:
+    for id_ in BODY_FROM_FILE:
+        if not any(op.id == id_ and op.body for op in spec.ops):
+            raise ValueError(f"{id_} no longer takes a body: review BODY_FROM_FILE")
+    in_spec_order = [
+        next(op for op in spec.ops if op.path == path and op.method == method.upper())
+        for path, item in spec.spec["paths"].items()
+        for method in ("get", "post")
+        if method in item
+    ]
+    sources = _format({Path(f"samples/{op.id}.py"): _sample(spec, op) for op in in_spec_order})
+    actions = []
+    for op in in_spec_order:
+        if "'" in op.path:
+            raise ValueError(f"{op.path} cannot be written as a JSONPath name selector")
+        actions.append(
+            {
+                "target": f"$.paths['{op.path}'].{op.method.lower()}",
+                "update": {
+                    "x-codeSamples": [
+                        {"lang": "python", "label": "Python", "source": sources[Path(f"samples/{op.id}.py")]}
+                    ]
+                },
+            }
+        )
+    overlay = {
+        "overlay": "1.2.0",
+        "info": {
+            "title": "Python samples for every operation of the haau3 platform API",
+            "version": spec.spec["info"]["version"],
+        },
+        "extends": "https://api.haau3.com/openapi.json",
+        "actions": actions,
+    }
+    return json.dumps(overlay, indent=2, ensure_ascii=False) + "\n"
+
+
 # --- the FHIR types and the components ----------------------------------------------------------
 
 
@@ -674,6 +864,7 @@ def outputs(spec: Spec) -> dict[Path, Callable[[], str]]:
         PACKAGE / "calls.py": lambda: calls_module(spec),
         PACKAGE / "types.py": lambda: types_module(spec),
         ROOT / "api.md": lambda: api_md(spec),
+        ROOT / "openapi" / "code-samples.json": lambda: code_samples_json(spec),
     }
 
 

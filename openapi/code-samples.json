@@ -1,0 +1,442 @@
+{
+  "overlay": "1.2.0",
+  "info": {
+    "title": "Python samples for every operation of the haau3 platform API",
+    "version": "1.0.0-preview.3"
+  },
+  "extends": "https://api.haau3.com/openapi.json",
+  "actions": [
+    {
+      "target": "$.paths['/v1/scheduling/provider-locations'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.search_provider_locations(publisher=\"haau3\", limit=1)\nprint(found[\"total\"])\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/scheduling/slots'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.search_slots(publisher=\"haau3\", limit=1)\nprint(found[\"total\"])\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/scheduling/publishers'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_publishers()\nprint(len(found[\"publishers\"]))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/scheduling/service-types'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_service_types()\nprint(len(found[\"serviceTypes\"]))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/scheduling/specialties'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_specialties()\nprint(len(found[\"specialties\"]))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/metadata'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nmetadata = client.fhir_metadata()\nprint(metadata[\"resourceType\"])\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import BatchOk, Haau3, calls\n\nclient = Haau3()  # reads HAAU3_API_KEY\nresults = client.batch(\n    calls.code_system_lookup(system=\"http://loinc.org\", code=\"2345-7\", property=\"SHORTNAME\"),\n    calls.code_system_lookup(system=\"http://loinc.org\", code=\"8867-4\", property=\"SHORTNAME\"),\n    calls.list_insurance_plan_counties(state=\"DE\"),\n)\nfor result in results:\n    print(result.status if isinstance(result, BatchOk) else result.error)\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/CodeSystem/$lookup'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.code_system_lookup(code=\"2345-7\", system=\"http://loinc.org\", property=\"SHORTNAME\")\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/CodeSystem/$lookup'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.code_system_lookup_post(\n    {\n        \"resourceType\": \"Parameters\",\n        \"parameter\": [\n            {\"name\": \"system\", \"valueUri\": \"http://loinc.org\"},\n            {\"name\": \"code\", \"valueCode\": \"2345-7\"},\n            {\"name\": \"property\", \"valueCode\": \"SHORTNAME\"},\n        ],\n    }\n)\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/CodeSystem/$validate-code'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.code_system_validate_code(url=\"http://loinc.org\", code=\"2345-7\")\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/CodeSystem/$validate-code'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.code_system_validate_code_post(\n    {\n        \"resourceType\": \"Parameters\",\n        \"parameter\": [{\"name\": \"url\", \"valueUri\": \"http://loinc.org\"}, {\"name\": \"code\", \"valueCode\": \"2345-7\"}],\n    }\n)\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/ValueSet/$expand'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nvalue_set = client.value_set_expand(url=\"http://loinc.org/vs/LL360-9\")\nprint(value_set.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/ValueSet/$expand'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nvalue_set = client.value_set_expand_post(\n    {\"resourceType\": \"Parameters\", \"parameter\": [{\"name\": \"url\", \"valueUri\": \"http://loinc.org/vs/LL360-9\"}]}\n)\nprint(value_set.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/ValueSet/$validate-code'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.value_set_validate_code(\n    url=\"http://hl7.org/fhir/ValueSet/observation-vitalsignresult\", code=\"8867-4\", system=\"http://loinc.org\"\n)\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/ValueSet/$validate-code'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.value_set_validate_code_post(\n    {\n        \"resourceType\": \"Parameters\",\n        \"parameter\": [\n            {\"name\": \"url\", \"valueUri\": \"http://hl7.org/fhir/ValueSet/observation-vitalsignresult\"},\n            {\"name\": \"coding\", \"valueCoding\": {\"system\": \"http://loinc.org\", \"code\": \"8867-4\"}},\n        ],\n    }\n)\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Practitioner'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_practitioner(identifier=\"1093209884\")\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Practitioner/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\npractitioner = client.read_practitioner(\"Practitioner-1093209884\")\nprint(practitioner.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/PractitionerRole'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_practitioner_role(practitioner=\"Practitioner-1093209884\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/PractitionerRole/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\npractitioner_role = client.read_practitioner_role(\"PractitionerRole-179421b5-5919-4f54-84c9-a4473b68f74c\")\nprint(practitioner_role.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Organization'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_organization(type=\"ntwk\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Organization/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\norganization = client.read_organization(\"Organization-ea579d05-454e-4359-8751-900c940a599a\")\nprint(organization.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/OrganizationAffiliation'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_organization_affiliation(network=\"Organization-ea579d05-454e-4359-8751-900c940a599a\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/OrganizationAffiliation/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\norganization_affiliation = client.read_organization_affiliation(\n    \"OrganizationAffiliation-000cc9b9-738c-43cd-b923-03ac9ab4714d\"\n)\nprint(organization_affiliation.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/HealthcareService'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_healthcare_service(location=\"Location-ba334cb2-a0f9-4147-ab31-1c5af4ab9a4d\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/HealthcareService/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nhealthcare_service = client.read_healthcare_service(\"HealthcareService-0009bcae-631e-45c0-9d3c-5691acb4a05d\")\nprint(healthcare_service.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Location'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_location(organization=\"Organization-1093090342\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Location/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nlocation = client.read_location(\"Location-26e6731f-5e6a-48e4-aa2f-9f4c40cf402b\")\nprint(location.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Endpoint'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_endpoint(organization=\"Organization-1326655846\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Endpoint/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nendpoint = client.read_endpoint(\"Endpoint-000508b0-e3f0-4108-8d1d-a610f0675358\")\nprint(endpoint.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Questionnaire'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_questionnaire(url=\"http://loinc.org/q/44249-1\")\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Questionnaire/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nquestionnaire = client.read_questionnaire(\"44249-1\")\nprint(questionnaire.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/InsurancePlan'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_insurance_plan(identifier=\"H2406-013-000\")\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/InsurancePlan/$counties'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.list_insurance_plan_counties(state=\"FL\")\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/InsurancePlan/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\ninsurance_plan = client.read_insurance_plan(\"H2406-013-000\")\nprint(insurance_plan.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/InsurancePlan/{id}/$in-network'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.check_insurance_plan_network(\"H3359-038-000\", npi=[\"1518929058\", \"1992700001\"])\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/$reconcile-medications'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# records.json holds one patient's FHIR medication records, as a Bundle.\nwith open(\"records.json\") as file:\n    records: fhir.Bundle = json.load(file)\nbundle = client.reconcile_medications(records)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -30,7 +30,13 @@ FHIR R4 (4.0.1), pinned by its sha256. Never edit them by hand:
 - `src/haau3/fhir.py`: the FHIR R4 TypedDicts, by `scripts/fhir_emit.py`;
 - `src/haau3/_components.py`: the API's other components, by
   [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator);
-- `api.md`.
+- `api.md`;
+- `openapi/code-samples.json`: an [OpenAPI Overlay](https://spec.openapis.org/overlay/latest.html)
+  that adds a Python sample to every operation as `x-codeSamples`, for a documentation site to show
+  beside it. Each sample is a whole program that sends the operation's example request from the spec
+  and prints one field of the answer. `tests/test_samples.py` runs each one as it is written, with
+  `HAAU3_BASE_URL` pointing at a stand-in that answers only the example request, and CI type-checks
+  them with the README's blocks (`scripts/readme_blocks.py`).
 
 To take a new spec:
 
@@ -70,7 +76,7 @@ so the reasons are here):
 - three rules compare `info.version` as a release number and misread `1.0.0-preview.N`, so they are
   off (`api-version-decreased`, `api-version-not-bumped`, `api-major-version-not-bumped`).
 
-If the generated code did not change, the PR is titled `chore:` and releases nothing. To run oasdiff
+If neither the generated code nor the samples changed, the PR is titled `chore:` and releases nothing. To run oasdiff
 yourself, against the spec on `main`:
 
 ```sh
