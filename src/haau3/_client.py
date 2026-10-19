@@ -21,7 +21,7 @@ from ._transport import AsyncEngine, Config, SyncEngine
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from .fhir import Bundle
+    from .fhir import Bundle, Resource
 
 DEFAULT_BASE_URL = "https://api.haau3.com"
 DEFAULT_TIMEOUT = 65.0
@@ -55,6 +55,20 @@ def _next_link(page: Hidden[object]) -> str | None:
         if link is not None and link.get("relation") == "next" and isinstance(url, str):
             return url
     return None
+
+
+def _matches(page: Hidden[object]) -> list[Hidden[object]]:
+    """The resources a search page found, each held: every entry whose search mode is `match`, or says none."""
+    value = as_dict(page.reveal())
+    found: list[Hidden[object]] = []
+    for item in (as_list(value.get("entry")) if value is not None else None) or []:
+        entry = as_dict(item)
+        resource = entry.get("resource") if entry is not None else None
+        search = as_dict(entry.get("search")) if entry is not None else None
+        mode = search.get("mode") if search is not None else None
+        if resource is not None and (mode is None or mode == "match"):
+            found.append(Hidden(resource))
+    return found
 
 
 def _checked_client(given: object, kind: type[httpx2.Client] | type[httpx2.AsyncClient]) -> None:
@@ -158,11 +172,45 @@ class Haau3(SyncMethods):
         ```
         """
         options = Options(timeout, max_retries, correlation_id, extra_headers)
-        page: Hidden[object] = Hidden(first)
+        held: Hidden[object] = Hidden(first)
         del first
+        for page in self._held_pages(held, options):
+            yield cast("Bundle", page.reveal())
+
+    def resources(
+        self,
+        first: Bundle,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Iterator[Resource]:
+        """Every resource a FHIR search found, across every page, in order.
+
+        Each entry whose search mode is `match`, or says none. A resource an `_include` or
+        `_revinclude` brought, and a search's own OperationOutcome, are not among them; `pages()`
+        gives every entry. Checking `resource["resourceType"]` narrows each one.
+
+        ```python
+        first = client.search_insurance_plan(coverage_area_state="VT")
+        for resource in client.resources(first):
+            if resource["resourceType"] == "InsurancePlan":
+                print(resource.get("name"))
+        ```
+        """
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        held: Hidden[object] = Hidden(first)
+        del first
+        for page in self._held_pages(held, options):
+            for resource in _matches(page):
+                yield cast("Resource", resource.reveal())
+
+    def _held_pages(self, page: Hidden[object], options: Options) -> Iterator[Hidden[object]]:
+        """Each page, held, following `next` links on the client's own host to a page not yet read."""
         followed: set[str] = set()
         while True:
-            yield cast("Bundle", page.reveal())
+            yield page
             link = _next_link(page)
             if link is None:
                 return
@@ -269,11 +317,40 @@ class AsyncHaau3(AsyncMethods):
         ```
         """
         options = Options(timeout, max_retries, correlation_id, extra_headers)
-        page: Hidden[object] = Hidden(first)
+        held: Hidden[object] = Hidden(first)
         del first
+        async for page in self._held_pages(held, options):
+            yield cast("Bundle", page.reveal())
+
+    async def resources(
+        self,
+        first: Bundle,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> AsyncIterator[Resource]:
+        """Every resource a FHIR search found, across every page, as `Haau3.resources` does.
+
+        ```python
+        first = await client.search_insurance_plan(coverage_area_state="VT")
+        async for resource in client.resources(first):
+            ...
+        ```
+        """
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        held: Hidden[object] = Hidden(first)
+        del first
+        async for page in self._held_pages(held, options):
+            for resource in _matches(page):
+                yield cast("Resource", resource.reveal())
+
+    async def _held_pages(self, page: Hidden[object], options: Options) -> AsyncIterator[Hidden[object]]:
+        """Each page, held, as `Haau3._held_pages` gives them."""
         followed: set[str] = set()
         while True:
-            yield cast("Bundle", page.reveal())
+            yield page
             link = _next_link(page)
             if link is None:
                 return
