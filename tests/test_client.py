@@ -143,8 +143,9 @@ def test_the_base_url_option_beats_haau3_base_url_and_an_empty_one_is_unset(
     monkeypatch.setenv("HAAU3_BASE_URL", "")
     assert cls(api_key=KEY).base_url == "https://api.haau3.com"
     monkeypatch.setenv("HAAU3_BASE_URL", "ftp://stand-in.example.test")
-    with pytest.raises(Haau3Error, match="base_url must be an http or https URL"):
+    with pytest.raises(Haau3Error, match=r"^HAAU3_BASE_URL must be an http or https URL with a host"):
         cls(api_key=KEY)
+    assert cls(api_key=KEY, base_url="https://api.haau3.com").base_url == "https://api.haau3.com"
 
 
 @pytest.mark.anyio
