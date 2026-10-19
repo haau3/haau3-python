@@ -83,6 +83,11 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
             resource = entry.get("resource")
             if resource is not None and resource["resourceType"] == "InsurancePlan":
                 assert_type(resource, fhir.InsurancePlan)
+    # resources() yields each found resource, narrowed by its resourceType with no cast.
+    for each in client.resources(first):
+        assert_type(each, fhir.Resource)
+        if each["resourceType"] == "InsurancePlan":
+            assert_type(each, fhir.InsurancePlan)
 
     raw = client.request("GET", "/v1/scheduling/publishers", query={"includePast": True})
     assert_type(raw, RawResponse)
@@ -122,6 +127,8 @@ async def async_tour(client: AsyncHaau3) -> None:
     assert_type(only, BatchResult[fhir.Organization])
     async for page in client.pages(response.data):
         assert_type(page, fhir.Bundle)
+    async for each in client.resources(response.data):
+        assert_type(each, fhir.Resource)
     async with AsyncHaau3() as scoped:
         assert_type(await scoped.list_publishers(), types.ListPublishersResponse)
     _ = client.read_insurance_plan("x").get("name")  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]

@@ -47,6 +47,17 @@ def problem() -> dict[str, Any]:
     }
 
 
+def marked_first_page() -> dict[str, Any]:
+    """A first page holding the marker in a matched resource, whose next page will fail."""
+    return {
+        "resourceType": "Bundle",
+        "link": [{"relation": "next", "url": "https://api.haau3.com/v1/fhir/r4/InsurancePlan?page=2"}],
+        "entry": [
+            {"resource": {"resourceType": "InsurancePlan", "id": "P1", "name": MARKER}, "search": {"mode": "match"}}
+        ],
+    }
+
+
 def records() -> dict[str, Any]:
     patient = {"resourceType": "MedicationStatement", "id": "m1", "note": [{"text": MARKER}]}
     return {"resourceType": "Bundle", "type": "collection", "entry": [{"resource": patient}]}
@@ -130,6 +141,10 @@ def sync_cases() -> dict[str, Any]:
         }
         list(sync_client(Recorder(answer(200, outcome()))).pages(first))  # type: ignore[arg-type]
 
+    def resources_after_a_marked_page() -> None:
+        # The first page's resource was yielded; the next page fails while it is still the last read.
+        list(sync_client(Recorder(answer(503, outcome())), max_retries=0).resources(marked_first_page()))  # type: ignore[arg-type]
+
     return {
         f.__name__: f
         for f in (
@@ -144,6 +159,7 @@ def sync_cases() -> dict[str, Any]:
             request_body_no_answer,
             batch_unreadable,
             pages_unreadable,
+            resources_after_a_marked_page,
         )
     }
 
@@ -190,12 +206,24 @@ async def async_case(case: str) -> None:
         }
         async for _ in client(answer(200, outcome())).pages(first):  # type: ignore[arg-type]
             pass
+    elif case == "resources_after_a_marked_page":
+        # The loop's own variable is a page's resource; this test's frame must not hold the marker.
+        async for _ in client(answer(503, outcome()), max_retries=0).resources(marked_first_page()):  # type: ignore[arg-type]
+            del _
 
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
     "case",
-    ["refused_404", "no_answer_503", "answer_then_network", "wrong_type", "request_body_refused", "pages_unreadable"],
+    [
+        "refused_404",
+        "no_answer_503",
+        "answer_then_network",
+        "wrong_type",
+        "request_body_refused",
+        "pages_unreadable",
+        "resources_after_a_marked_page",
+    ],
 )
 async def test_no_async_error_shows_a_body(case: str, waits: list[float]) -> None:
     try:

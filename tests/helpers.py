@@ -91,6 +91,11 @@ class Client:
             return list(self.inner.pages(first, **kwargs))
         return [page async for page in self.inner.pages(first, **kwargs)]
 
+    async def resources(self, first: Any, **kwargs: Any) -> list[Any]:
+        if isinstance(self.inner, Haau3):
+            return list(self.inner.resources(first, **kwargs))
+        return [resource async for resource in self.inner.resources(first, **kwargs)]
+
     async def raises(self, method: str, *args: Any, **kwargs: Any) -> BaseException:
         try:
             await self(method, *args, **kwargs)

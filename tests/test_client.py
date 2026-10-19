@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import sys
+from typing import Any
 
 import httpx2
 import pytest
 
 import haau3
-from haau3 import AsyncHaau3, Haau3, Haau3Error, NoAnswerError
+from haau3 import AsyncHaau3, Haau3, Haau3Error, NoAnswerError, RefusedError
 
 from .helpers import KEY, Client, Recorder, answer, sync_client
 
@@ -160,6 +161,55 @@ async def test_each_page_is_checked_as_a_bundle(kind: str) -> None:
     recorder = Recorder(answer(200, PLAN))
     with pytest.raises(NoAnswerError, match="answered an InsurancePlan where a Bundle was expected"):
         await Client(kind, recorder).pages(page(1, "https://api.haau3.com/v1/fhir/r4/InsurancePlan?page=2"))
+
+
+def _entry(resource_type: str, id_: str, mode: str | None = None) -> dict[str, Any]:
+    entry: dict[str, Any] = {"resource": {"resourceType": resource_type, "id": id_}}
+    if mode is not None:
+        entry["search"] = {"mode": mode}
+    return entry
+
+
+@pytest.mark.anyio
+async def test_resources_are_the_matches_of_every_page(kind: str) -> None:
+    second_page = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "entry": [
+            _entry("InsurancePlan", "C", "match"),
+            _entry("Organization", "included", "include"),
+            _entry("OperationOutcome", "outcome", "outcome"),
+            _entry("InsurancePlan", "D"),
+            {"search": {"mode": "match"}},
+        ],
+    }
+    first = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "link": [{"relation": "next", "url": "https://api.haau3.com/v1/fhir/r4/InsurancePlan?page=2"}],
+        "entry": [_entry("InsurancePlan", "A", "match"), _entry("InsurancePlan", "B")],
+    }
+    recorder = Recorder(answer(200, second_page))
+    found = await Client(kind, recorder).resources(first)
+    assert [f"{r['resourceType']}/{r['id']}" for r in found] == [
+        "InsurancePlan/A",
+        "InsurancePlan/B",
+        "InsurancePlan/C",
+        "InsurancePlan/D",
+    ]
+    assert len(recorder.requests) == 1
+
+
+@pytest.mark.anyio
+async def test_resources_end_with_the_error_a_page_ended_with(kind: str) -> None:
+    first = {
+        "resourceType": "Bundle",
+        "link": [{"relation": "next", "url": "https://api.haau3.com/v1/fhir/r4/InsurancePlan?page=2"}],
+        "entry": [_entry("InsurancePlan", "A")],
+    }
+    recorder = Recorder(answer(404, {"resourceType": "OperationOutcome", "issue": []}))
+    with pytest.raises(RefusedError):
+        await Client(kind, recorder).resources(first)
 
 
 def test_one_client_serves_many_threads() -> None:

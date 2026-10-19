@@ -13,7 +13,8 @@ directory), and standard FHIR Questionnaires such as the PHQ-9.
 
 The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance.
 
-Also for TypeScript: [`@haau3/sdk`](https://www.npmjs.com/package/@haau3/sdk).
+Also for TypeScript: [`@haau3/sdk`](https://www.npmjs.com/package/@haau3/sdk), and for Go:
+[`github.com/haau3/haau3-go`](https://pkg.go.dev/github.com/haau3/haau3-go).
 
 ## Install
 
@@ -224,8 +225,19 @@ for page in client.pages(first):
             print(resource.get("id"))
 ```
 
-From async code, `async for page in async_client.pages(first)`. Scheduling's searches page with
-`limit` and `offset`, and answer with a `total`.
+`resources()` yields every resource the search found, across every page:
+
+```python
+for resource in client.resources(first):
+    if resource["resourceType"] == "InsurancePlan":
+        print(resource.get("name"))
+```
+
+It yields each entry whose search mode is `match`, or says none. A resource an `_include` or
+`_revinclude` brought, and a search's own `OperationOutcome`, are not among them; `pages()` gives
+every entry. From async code, `async for page in async_client.pages(first)` and `async for resource
+in async_client.resources(first)`. Scheduling's searches page with `limit` and `offset`, and answer
+with a `total`.
 
 ## Several requests in one
 
@@ -262,7 +274,7 @@ Each entry is checked as the call alone is, and fails alone while the others ans
 fails is not retried. The batch itself is retried, and raises, as any call does, and
 `client.with_response.batch(...)` gives its request id. The API takes up to 100 entries in up to 1
 MiB and gives a batch 60 seconds, so send a longer list as several batches. Every operation on the
-FHIR base can go in a batch except `reconcile_medications`.
+FHIR base can go in a batch except `fhir_batch` and `reconcile_medications`.
 
 To send a batch `Bundle` you built yourself, `fhir_batch()` takes it and returns the
 `batch-response` as it is.
