@@ -61,5 +61,7 @@ def test_api_md_lists_every_operation_once_with_its_docs_page() -> None:
 
 
 def test_no_em_dash_in_what_this_repository_writes() -> None:
-    for path in ("README.md", "CONTRIBUTING.md", "CHANGELOG.md", "SECURITY.md"):
-        assert "—" not in (ROOT / path).read_text(), path
+    # api.md is generated from the spec's own words, and published beside the README.
+    for path in ("README.md", "CONTRIBUTING.md", "CHANGELOG.md", "SECURITY.md", "api.md"):
+        text = (ROOT / path).read_text()
+        assert "\u2014" not in text and "\u2013" not in text, path
