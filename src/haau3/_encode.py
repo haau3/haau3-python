@@ -79,8 +79,11 @@ def fill_path(template: str, values: Sequence[object]) -> str:
     return path
 
 
-def checked_base_url(base_url: str) -> str:
-    """The base URL without trailing slashes, refused unless it is an http or https URL with a host."""
+def checked_base_url(base_url: str, source: str = "base_url") -> str:
+    """The base URL without trailing slashes, refused unless it is an http or https URL with a host.
+
+    The error names where the URL came from: the `base_url` option, or `HAAU3_BASE_URL`.
+    """
     stripped = base_url.rstrip("/")
     try:
         parts = urlsplit(stripped)
@@ -91,7 +94,7 @@ def checked_base_url(base_url: str) -> str:
         valid = False
     if not valid:
         raise Haau3Error(
-            f"base_url must be an http or https URL with a host, such as https://api.haau3.com: {base_url!r} is not one."
+            f"{source} must be an http or https URL with a host, such as https://api.haau3.com: {base_url!r} is not one."
         )
     return stripped
 

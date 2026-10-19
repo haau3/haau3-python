@@ -29,6 +29,16 @@ DEFAULT_TIMEOUT = 65.0
 DEFAULT_MAX_RETRIES = 1
 
 
+def _base_url(given: str | None) -> str:
+    """The option's base URL, else HAAU3_BASE_URL's, else the API's, each checked by its own name."""
+    if given is not None:
+        return checked_base_url(given, "base_url")
+    from_env = os.environ.get("HAAU3_BASE_URL") or None
+    if from_env is not None:
+        return checked_base_url(from_env, "HAAU3_BASE_URL")
+    return DEFAULT_BASE_URL
+
+
 def _config(api_key: str | None, base_url: str | None, timeout: float | None, max_retries: int | None) -> Config:
     if sys.platform == "emscripten":
         raise Haau3Error(
@@ -39,9 +49,7 @@ def _config(api_key: str | None, base_url: str | None, timeout: float | None, ma
         raise Haau3Error("No API key: pass api_key, or set HAAU3_API_KEY.")
     return Config(
         key=Secret(key),
-        base_url=checked_base_url(
-            base_url if base_url is not None else (os.environ.get("HAAU3_BASE_URL") or DEFAULT_BASE_URL)
-        ),
+        base_url=_base_url(base_url),
         timeout=float(timeout) if timeout is not None else DEFAULT_TIMEOUT,
         max_retries=max_retries if max_retries is not None else DEFAULT_MAX_RETRIES,
     )
