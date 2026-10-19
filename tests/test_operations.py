@@ -86,7 +86,16 @@ def _public(cls: type) -> set[str]:
 def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -> None:
     methods = {naming.method_name(o[0]) for o in OPERATIONS}
     assert len(methods) == len(OPERATIONS) == 36
-    assert _public(cls) == methods | {"batch", "pages", "request", "close", "base_url", "timeout", "max_retries"}
+    assert _public(cls) == methods | {
+        "batch",
+        "pages",
+        "resources",
+        "request",
+        "close",
+        "base_url",
+        "timeout",
+        "max_retries",
+    }
 
 
 @pytest.mark.parametrize("cls", [haau3.SyncWithResponse, haau3.AsyncWithResponse])

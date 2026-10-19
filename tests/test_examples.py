@@ -132,5 +132,5 @@ def test_plans_to_csv(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> Non
 
 def test_each_framework_example_ran_on_at_least_one_python() -> None:
     # Run last in this module: on a Python a framework has no release for yet, its test is skipped,
-    # and this says which ran here. CI asserts every one ran on at least one Python.
+    # and this says which ran here, in the test log.
     print(f"examples run on Python {sys.version_info[0]}.{sys.version_info[1]}: {sorted(ran)}")
