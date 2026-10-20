@@ -115,6 +115,11 @@ class ListSpecialtiesQuery(TypedDict, total=False):
     include_past: bool
 
 
+ProcessMessageBody: TypeAlias = fhir.Bundle
+"""The request body of `process_message`."""
+ProcessMessageResponse: TypeAlias = fhir.Bundle
+"""What `process_message` answers with."""
+
 ReadEndpointResponse: TypeAlias = fhir.Endpoint
 """What `read_endpoint` answers with."""
 

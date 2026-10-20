@@ -16,7 +16,9 @@ from haau3 import AsyncHaau3, Haau3, calls
 from .helpers import KEY, REQUEST_ID, SPEC, Client, Recorder, answer, example_answer, example_body, operations
 
 OPERATIONS = sorted(operations())
-NOT_IN_A_BATCH = {"fhirBatch", "reconcileMedications"}
+SPEC_OPERATION_IDS = {o["operationId"] for item in SPEC["paths"].values() for o in item.values()}
+# The batch itself, and every operation the spec marks x-haau3-batchable: false.
+NOT_IN_A_BATCH = {"fhirBatch"} | {o[0] for o in OPERATIONS if o[3].get("x-haau3-batchable") is False}
 
 
 def _wire(value: Any) -> str:
@@ -85,7 +87,7 @@ def _public(cls: type) -> set[str]:
 @pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
 def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -> None:
     methods = {naming.method_name(o[0]) for o in OPERATIONS}
-    assert len(methods) == len(OPERATIONS) == 36
+    assert len(methods) == len(OPERATIONS) == len(SPEC_OPERATION_IDS)
     assert _public(cls) == methods | {
         "batch",
         "pages",
@@ -114,7 +116,7 @@ def test_calls_offers_every_batchable_operation_and_nothing_else() -> None:
     batchable = {
         naming.method_name(o[0]) for o in OPERATIONS if o[2].startswith("/v1/fhir/r4/") and o[0] not in NOT_IN_A_BATCH
     }
-    assert len(batchable) == 29
+    assert {"processMessage", "reconcileMedications"} <= NOT_IN_A_BATCH
     assert set(calls.__all__) == batchable
     assert {
         n

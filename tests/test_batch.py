@@ -187,9 +187,7 @@ def test_a_call_names_its_operation_never_a_value() -> None:
 
 
 BATCHABLE = [
-    o
-    for o in sorted(operations())
-    if o[2].startswith("/v1/fhir/r4/") and o[0] not in {"fhirBatch", "reconcileMedications"}
+    o for o in sorted(operations()) if o[2].startswith("/v1/fhir/r4/") and o[3].get("x-haau3-batchable") is not False
 ]
 
 

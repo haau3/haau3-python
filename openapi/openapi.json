@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.4",
+    "version": "1.0.0-preview.6",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-01 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -40,6 +40,10 @@
     {
       "name": "Plan Benefits",
       "description": "FHIR InsurancePlan: what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Every plan names the CMS release it was read from. Read a plan by its id, or search by identifier, name, state or county, and check whether the CMS National Provider Directory lists providers in a plan's network."
+    },
+    {
+      "name": "Pharmacy Benefits",
+      "description": "The CARIN Consumer Real-Time Pharmacy Benefit Check as FHIR messaging: what a medication would cost a member under their coverage, or its price at pharmacies near a ZIP code, in real time, from the sources this service connects to. A member's request receives patient data, so send it only under an executed agreement."
     },
     {
       "name": "MedList",
@@ -3127,7 +3131,7 @@
           "FHIR base"
         ],
         "summary": "Run several operations in one request (batch)",
-        "description": "POST a FHIR `Bundle` with `type: batch` to send several requests in one round trip. Each entry's `request.url` is relative to this base and may be any read, search or operation of any service on it, except `$reconcile-medications`, which a batch refuses by name. Entries are independent: one that fails, such as a lookup of an unknown code, does not fail the others, and each carries its own status in the `batch-response`. For example, a batch of 50 terminology lookups measured about 4.8 ms per code, against 181 ms each when sent one at a time. Transaction bundles are not accepted: nothing on this base writes, so all or nothing would only turn one bad entry into a wholly failed request. A batch carries at most 100 entries in at most 1 MiB, and has 60 seconds: an entry still running then answers `504` inside the `200`. See https://docs.haau3.com/errors#limits.",
+        "description": "POST a FHIR `Bundle` with `type: batch` to send several requests in one round trip. Each entry's `request.url` is relative to this base and may be any read, search or operation of any service on it, except `$reconcile-medications` and `$process-message`, which a batch refuses by name: each is marked `x-haau3-batchable: false`, the one place this document says an operation cannot go in a batch. Entries are independent: one that fails, such as a lookup of an unknown code, does not fail the others, and each carries its own status in the `batch-response`. For example, a batch of 50 terminology lookups measured about 4.8 ms per code, against 181 ms each when sent one at a time. Transaction bundles are not accepted: nothing on this base writes, so all or nothing would only turn one bad entry into a wholly failed request. A batch carries at most 100 entries in at most 1 MiB, and has 60 seconds: an entry still running then answers `504` inside the `200`. See https://docs.haau3.com/errors#limits.",
         "operationId": "fhirBatch",
         "requestBody": {
           "required": true,
@@ -18187,6 +18191,353 @@
         }
       }
     },
+    "/v1/fhir/r4/$process-message": {
+      "post": {
+        "tags": [
+          "Pharmacy Benefits"
+        ],
+        "summary": "Check what a medication costs (pharmacy benefit check)",
+        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy or one or more ZIP codes. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. A check no connected source can answer carries `no-responder-for-coverage` or `no-price-source` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
+        "operationId": "processMessage",
+        "x-haau3-batchable": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Bundle"
+              },
+              "examples": {
+                "A pharmacy benefit check without patient details": {
+                  "summary": "A pharmacy benefit check without patient details",
+                  "value": {
+                    "resourceType": "Bundle",
+                    "id": "pharmacy-benefits-request-non-phi",
+                    "meta": {
+                      "profile": [
+                        "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-request-bundle-non-phi|2.0.0-ballot"
+                      ]
+                    },
+                    "entry": [
+                      {
+                        "fullUrl": "https://app.example.test/fhir/MessageHeader/non-phi-request",
+                        "resource": {
+                          "resourceType": "MessageHeader",
+                          "id": "non-phi-request",
+                          "meta": {
+                            "profile": [
+                              "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-request-messageheader-non-phi|2.0.0-ballot"
+                            ]
+                          },
+                          "source": {
+                            "name": "Example app",
+                            "endpoint": "https://app.example.test"
+                          },
+                          "focus": [
+                            {
+                              "reference": "https://app.example.test/fhir/Claim/non-phi-claim"
+                            }
+                          ],
+                          "eventCoding": {
+                            "code": "rtpbc-request-non-phi",
+                            "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-event-type",
+                            "display": "RTPBC Non-PHI Request"
+                          },
+                          "definition": "http://hl7.org/fhir/us/carin-rtpbc/MessageDefinition/rtpbc-request-non-phi"
+                        }
+                      },
+                      {
+                        "fullUrl": "https://app.example.test/fhir/Claim/non-phi-claim",
+                        "resource": {
+                          "resourceType": "Claim",
+                          "id": "non-phi-claim",
+                          "meta": {
+                            "profile": [
+                              "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-request-claim-non-phi|2.0.0-ballot"
+                            ]
+                          },
+                          "identifier": [
+                            {
+                              "value": "price-check-0001"
+                            }
+                          ],
+                          "patient": {
+                            "extension": [
+                              {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "masked"
+                              }
+                            ]
+                          },
+                          "provider": {
+                            "extension": [
+                              {
+                                "url": "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-preferredPharmacyPostalCode",
+                                "valueString": "33131"
+                              }
+                            ]
+                          },
+                          "insurance": [
+                            {
+                              "coverage": {
+                                "extension": [
+                                  {
+                                    "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                    "valueCode": "masked"
+                                  }
+                                ]
+                              },
+                              "sequence": 1,
+                              "focal": false
+                            }
+                          ],
+                          "item": [
+                            {
+                              "productOrService": {
+                                "coding": [
+                                  {
+                                    "code": "311354",
+                                    "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                    "display": "lisinopril 5 MG Oral Tablet"
+                                  }
+                                ],
+                                "text": "lisinopril 5 mg tablet"
+                              },
+                              "quantity": {
+                                "value": 30,
+                                "unit": "{Each}",
+                                "system": "http://unitsofmeasure.org",
+                                "code": "{Each}"
+                              },
+                              "sequence": 1
+                            }
+                          ],
+                          "status": "active",
+                          "type": {
+                            "coding": [
+                              {
+                                "code": "pharmacy",
+                                "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+                                "display": "Pharmacy"
+                              }
+                            ]
+                          },
+                          "use": "predetermination",
+                          "created": "2026-10-20T14:00:00Z",
+                          "priority": {
+                            "coding": [
+                              {
+                                "code": "normal",
+                                "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+                                "display": "Normal"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ],
+                    "type": "message",
+                    "timestamp": "2026-10-20T14:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The answer: a FHIR `Bundle` of type `message` with a MessageHeader and one ClaimResponse, returned as the response body itself.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bundle"
+                },
+                "examples": {
+                  "No price source returned a price": {
+                    "summary": "No price source returned a price",
+                    "value": {
+                      "resourceType": "Bundle",
+                      "meta": {
+                        "profile": [
+                          "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-response-bundle-non-phi|2.0.0-ballot"
+                        ]
+                      },
+                      "entry": [
+                        {
+                          "fullUrl": "urn:uuid:cfe4fe76-8b70-4edc-af4b-7e2f8c25b3e8",
+                          "resource": {
+                            "resourceType": "MessageHeader",
+                            "id": "cfe4fe76-8b70-4edc-af4b-7e2f8c25b3e8",
+                            "meta": {
+                              "profile": [
+                                "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-response-messageheader-non-phi|2.0.0-ballot"
+                              ]
+                            },
+                            "source": {
+                              "name": "haau3 Pharmacy Benefits",
+                              "endpoint": "https://api.haau3.com/v1/fhir/r4"
+                            },
+                            "response": {
+                              "identifier": "non-phi-request",
+                              "code": "ok"
+                            },
+                            "focus": [
+                              {
+                                "reference": "urn:uuid:a7fb50aa-3ca5-47a1-96f8-67ec1e95546e"
+                              }
+                            ],
+                            "eventCoding": {
+                              "code": "rtpbc-response-non-phi",
+                              "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-event-type",
+                              "display": "RTPBC Non-PHI Response"
+                            },
+                            "definition": "http://hl7.org/fhir/us/carin-rtpbc/MessageDefinition/rtpbc-response-non-phi"
+                          }
+                        },
+                        {
+                          "fullUrl": "urn:uuid:a7fb50aa-3ca5-47a1-96f8-67ec1e95546e",
+                          "resource": {
+                            "resourceType": "ClaimResponse",
+                            "id": "a7fb50aa-3ca5-47a1-96f8-67ec1e95546e",
+                            "meta": {
+                              "profile": [
+                                "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-response-claimresponse-non-phi|2.0.0-ballot"
+                              ]
+                            },
+                            "identifier": [
+                              {
+                                "value": "a7fb50aa-3ca5-47a1-96f8-67ec1e95546e"
+                              }
+                            ],
+                            "patient": {
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                  "valueCode": "masked"
+                                }
+                              ]
+                            },
+                            "insurer": {
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                  "valueCode": "masked"
+                                }
+                              ]
+                            },
+                            "request": {
+                              "identifier": {
+                                "value": "price-check-0001"
+                              }
+                            },
+                            "error": [
+                              {
+                                "code": {
+                                  "coding": [
+                                    {
+                                      "code": "no-price-source",
+                                      "system": "https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code",
+                                      "display": "No price source returned a price"
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "status": "active",
+                            "type": {
+                              "coding": [
+                                {
+                                  "code": "pharmacy",
+                                  "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+                                  "display": "Pharmacy"
+                                }
+                              ]
+                            },
+                            "use": "predetermination",
+                            "created": "2026-10-20T14:00:01Z",
+                            "outcome": "error",
+                            "disposition": "No price source this service connects to returned a price for this request."
+                          }
+                        }
+                      ],
+                      "type": "message",
+                      "timestamp": "2026-10-20T14:00:01Z"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "400": {
+            "description": "The request was refused, before any source was asked: a query parameter (the operation takes none), a body that is not a `message` Bundle (a Parameters resource is refused by name), an event other than the two above (coded `not-supported`), a list over its cap (coded `too-long`: 20 entries, 10 codings on a product, 10 ZIP codes, 10 identifiers on a pharmacy, 20 coverage classes), an element the CARIN profiles require that is missing, a reference that names no entry in the Bundle, a product with no NDC or RxNorm code, a ZIP code that is not five digits or ZIP+4, a request without patient details that names its patient or coverage, or a member's request with no Coverage or no payer identifier. The OperationOutcome names the element by its FHIRPath, never a value sent.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "406": {
+            "$ref": "#/components/responses/FhirNotAcceptable"
+          },
+          "413": {
+            "description": "The request body is over 1 MiB.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "415": {
+            "$ref": "#/components/responses/FhirUnsupportedMediaType"
+          },
+          "429": {
+            "$ref": "#/components/responses/FhirTooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/FhirServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/FhirUnavailable"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestId"
+          }
+        ]
+      }
+    },
     "/v1/fhir/r4/$reconcile-medications": {
       "post": {
         "tags": [
@@ -18195,6 +18546,7 @@
         "summary": "Reconcile one patient's medication records",
         "description": "FHIR system-level operation `$reconcile-medications`. POST one patient's MedicationRequest, MedicationStatement, MedicationDispense and MedicationAdministration records, with the Medications they reference, as a `collection` or `searchset` Bundle; every entry needs a `fullUrl`. The response is one reconciled medication list: a `collection` Bundle holding one reconciled MedicationRequest per clinical drug, a Provenance for each naming the records behind it, and an OperationOutcome when a record was skipped. To evaluate the list as of another date, POST a Parameters resource with `resource` parts, or one `bundle` part, and an `asOf` part. This operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and the operation is not offered inside a batch. The contract is published at https://fhir.haau3.com/OperationDefinition-reconcile-medications.html.",
         "operationId": "reconcileMedications",
+        "x-haau3-batchable": false,
         "requestBody": {
           "required": true,
           "content": {

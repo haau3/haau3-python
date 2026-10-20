@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.4"
+    "version": "1.0.0-preview.6"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -427,13 +427,25 @@
       }
     },
     {
+      "target": "$.paths['/v1/fhir/r4/$process-message'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# request.json holds a pharmacy benefit check without patient details, as a Bundle.\nwith open(\"request.json\") as file:\n    body: fhir.Bundle = json.load(file)\nbundle = client.process_message(body)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
       "target": "$.paths['/v1/fhir/r4/$reconcile-medications'].post",
       "update": {
         "x-codeSamples": [
           {
             "lang": "python",
             "label": "Python",
-            "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# records.json holds one patient's FHIR medication records, as a Bundle.\nwith open(\"records.json\") as file:\n    records: fhir.Bundle = json.load(file)\nbundle = client.reconcile_medications(records)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# request.json holds one patient's medication records, as a Bundle.\nwith open(\"request.json\") as file:\n    body: fhir.Bundle = json.load(file)\nbundle = client.reconcile_medications(body)\nprint(len(bundle.get(\"entry\", [])))\n"
           }
         ]
       }

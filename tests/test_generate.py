@@ -107,9 +107,28 @@ def test_the_components_are_the_specs_own() -> None:
         assert {k for k, required in declared.items() if required} == set(schema.get("required", [])), name
 
 
-def test_both_operations_a_batch_refuses_are_in_the_spec() -> None:
-    ids = {op.id for op in generate.Spec(SPEC).ops}
-    assert set(generate.NOT_IN_A_BATCH) <= ids
+def test_the_operations_a_batch_refuses_come_from_the_spec() -> None:
+    spec = generate.Spec(SPEC)
+    marked = sorted(
+        o["operationId"] for item in SPEC["paths"].values() for o in item.values() if o.get(generate.BATCHABLE) is False
+    )
+    assert "reconcileMedications" in marked
+    assert spec.not_in_a_batch() == ["fhirBatch", *marked]
+    assert not any(op.batchable for op in spec.ops if op.id in marked)
+
+
+def test_a_batchable_mark_other_than_false_stops_the_generator() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    spec["paths"]["/v1/fhir/r4/metadata"]["get"][generate.BATCHABLE] = True
+    with pytest.raises(ValueError, match="defines only false"):
+        generate.Spec(spec)
+
+
+def test_a_batchable_mark_outside_the_fhir_base_stops_the_generator() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    spec["paths"]["/v1/scheduling/publishers"]["get"][generate.BATCHABLE] = False
+    with pytest.raises(ValueError, match="not on the FHIR base"):
+        generate.Spec(spec)
 
 
 def _mini(parameters: list[dict[str, object]]) -> dict[str, Any]:
@@ -135,8 +154,8 @@ def test_the_generator_refuses_a_parameter_it_cannot_name_or_type(parameters: li
         generate.Spec(_mini(parameters))
 
 
-def test_the_generator_refuses_a_spec_without_a_batch_exclusion() -> None:
+def test_the_generator_refuses_a_spec_without_the_batch() -> None:
     spec = json.loads(json.dumps(SPEC))
-    del spec["paths"]["/v1/fhir/r4/$reconcile-medications"]
-    with pytest.raises(ValueError, match="reconcileMedications is no longer in the spec"):
+    del spec["paths"]["/v1/fhir/r4"]
+    with pytest.raises(ValueError, match="no batch at POST /v1/fhir/r4"):
         generate.Spec(spec)

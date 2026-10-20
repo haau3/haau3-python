@@ -84,6 +84,10 @@ phq9 = client.read_questionnaire("44249-1")
 plan = client.read_insurance_plan("H2406-013-000")
 network = client.check_insurance_plan_network("H3359-038-000", npi=["1518929058"])
 
+# Pharmacy Benefits: what a medication would cost, as the CARIN pharmacy benefit check, from a FHIR
+# message Bundle. A member's check carries patient data, so send it only under an executed agreement.
+checked = client.process_message(message)
+
 # MedList: one reconciled medication list from one patient's FHIR medication records. It receives
 # patient data, so send it only under an executed agreement.
 reconciled = client.reconcile_medications(records)
@@ -280,7 +284,8 @@ Each entry is checked as the call alone is, and fails alone while the others ans
 fails is not retried. The batch itself is retried, and raises, as any call does, and
 `client.with_response.batch(...)` gives its request id. The API takes up to 100 entries in up to 1
 MiB and gives a batch 60 seconds, so send a longer list as several batches. Every operation on the
-FHIR base can go in a batch except `fhir_batch` and `reconcile_medications`.
+FHIR base can go in a batch except `fhir_batch`, `process_message` and `reconcile_medications`, which
+the spec marks `x-haau3-batchable: false`.
 
 To send a batch `Bundle` you built yourself, `fhir_batch()` takes it and returns the
 `batch-response` as it is.

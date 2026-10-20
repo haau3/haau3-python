@@ -49,9 +49,14 @@ CI generates again (`scripts/generate.py --check`) and fails if the result diffe
 committed. A Dependabot update of datamodel-code-generator or ruff can change the output, so run the
 generator on its branch too.
 
-`calls.py` offers every operation on the FHIR base but the ones a batch cannot carry, which the
-generator names in `NOT_IN_A_BATCH` with the spec's own words. It stops if one of those leaves the
-spec, or if a query parameter's Python name would clash with another or with a per-call option.
+`calls.py` offers every operation on the FHIR base but the ones a batch cannot carry. The spec marks
+each of those `x-haau3-batchable: false`, and the generator reads that field rather than keeping a
+list. It stops on any other value of the field, or the field outside the FHIR base, or if a query
+parameter's Python name would clash with another or with a per-call option.
+
+A sample whose request body nests resources, a Bundle's entries or a Parameters resource's parts,
+reads that body from `request.json`, and says what the file holds in the words of the spec's
+example label.
 
 The FHIR types come from HL7's own schema rather than a FHIR library, because none is maintained for
 R4 as TypedDicts: `fhir.resources` ships R4B and R5, and validates. datamodel-code-generator renames
