@@ -37,7 +37,15 @@ def _arguments() -> dict[str, Any]:
         "application/fhir+json"
     ]
     records = next(iter(reconcile["examples"].values()))["value"]
-    return {"plan_id": "H2406-013-000", "records": records, "codes": ["2345-7", "2160-0"], "job_id": str(uuid.uuid4())}
+    check = SPEC["paths"]["/v1/fhir/r4/$process-message"]["post"]["requestBody"]["content"]["application/fhir+json"]
+    message = next(iter(check["examples"].values()))["value"]
+    return {
+        "plan_id": "H2406-013-000",
+        "records": records,
+        "message": message,
+        "codes": ["2345-7", "2160-0"],
+        "job_id": str(uuid.uuid4()),
+    }
 
 
 def _module() -> dict[str, Any]:

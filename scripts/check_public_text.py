@@ -23,6 +23,7 @@ import subprocess
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 THIS_REPOSITORY = "haau3/haau3-python"
 
@@ -55,6 +56,19 @@ SDK_REPOSITORY = re.compile(r"^haau3/haau3-(node|python|go)(?![\w-])", re.A)
 SDK_URL = re.compile(r"^github\.com[:/]haau3/haau3-(node|python|go)(?![\w-])", re.I | re.A)
 SDK_NAME = re.compile(r"^haau3-(node|python|go|bot|sdk)\b", re.I | re.A)
 
+# The haau3- names the published spec carries, which are public by being in it: the guide's profile
+# ids, the demo publishers, the spec's own extensions. openapi/openapi.json is the spec as
+# api.haau3.com serves it, pinned when the SDK regenerates, so the set follows the API and nothing
+# here is kept by hand. Any other haau3- name is still refused, and the private terms still apply.
+SPEC_NAMES = frozenset(
+    m.group(0).lower()
+    for m in re.finditer(
+        r"\bhaau3-[a-z0-9][\w-]*",
+        (Path(__file__).resolve().parent.parent / "openapi" / "openapi.json").read_text(encoding="utf-8"),
+        re.I | re.A,
+    )
+)
+
 
 def _changelog_link(match: str, text: str, index: int) -> bool:
     # A link release-please writes into CHANGELOG.md, to this repository's own issue or PR.
@@ -80,9 +94,9 @@ RULES: list[Rule] = [
         lambda match, _text, _index: bool(SDK_URL.match(match)),
     ),
     Rule(
-        "a haau3 project, repository or service name other than the SDKs'",
+        "a haau3 project, repository or service name other than the SDKs' and the spec's",
         re.compile(r"\bhaau3-[a-z0-9][\w-]*", re.I | re.A),
-        lambda match, _text, _index: bool(SDK_NAME.match(match)),
+        lambda match, _text, _index: bool(SDK_NAME.match(match)) or match.lower() in SPEC_NAMES,
     ),
     Rule(
         "an issue or pull request number without the repository it belongs to",

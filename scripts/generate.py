@@ -54,9 +54,11 @@ FHIR_ZIP_SHA256 = "75e5560da3cf503895a44c8ca7af17a83b4cca6c2cb5ba1883d2aec0d1cb5
 FHIR_SCHEMA_SHA256 = "2230406893b4cf002a4ee1e5e2bbeca22ac5d2d4931b3e9ef7b9594bbc376a01"
 PACKAGE = ROOT / "src" / "haau3"
 
-# The operations a batch cannot carry: the batch itself, and `$reconcile-medications`, which the
-# spec says a batch refuses by name. Everything else on the FHIR base can go in one.
-NOT_IN_A_BATCH = ("fhirBatch", "reconcileMedications")
+# Which operations a batch can carry, as the spec says it: every operation under the FHIR base but
+# the ones it marks `x-haau3-batchable: false`, which the API refuses inside a batch by name. The batch
+# itself sits at the base, not under it. The spec defines the field only as false, and only on the
+# FHIR base, so anything else stops the generator rather than being guessed at.
+BATCHABLE = "x-haau3-batchable"
 # The per-call options every method takes; no query parameter may have one of these names.
 OPTION_NAMES = ("timeout", "max_retries", "correlation_id", "extra_headers")
 BATCH_ARITIES = 6
@@ -244,12 +246,22 @@ class Spec:
         for op in ops:
             if op.method not in ("GET", "POST"):
                 raise ValueError(f"{op.id} is {op.method}; the SDK sends GET and POST only")
-        for id_ in NOT_IN_A_BATCH:
-            if not any(op.id == id_ for op in ops):
-                raise ValueError(f"{id_} is no longer in the spec: review NOT_IN_A_BATCH")
         for op in ops:
-            op.batchable = op.path.startswith("/v1/fhir/r4/") and op.id not in NOT_IN_A_BATCH
+            mark = self.spec["paths"][op.path][op.method.lower()].get(BATCHABLE)
+            if mark is not None and mark is not False:
+                raise ValueError(f"{op.id} carries {BATCHABLE}: {mark!r}, where the spec defines only false")
+            if mark is False and not op.path.startswith("/v1/fhir/r4/"):
+                raise ValueError(f"{op.id} is marked {BATCHABLE}: false, but is not on the FHIR base")
+            op.batchable = op.path.startswith("/v1/fhir/r4/") and mark is not False
+        if not any(op.path == "/v1/fhir/r4" and op.method == "POST" for op in ops):
+            raise ValueError("The spec has no batch at POST /v1/fhir/r4")
         return sorted(ops, key=lambda o: o.id)
+
+    def not_in_a_batch(self) -> list[str]:
+        """The batch itself, then every operation the spec marks `x-haau3-batchable: false`."""
+        batch = next(op.id for op in self.ops if op.path == "/v1/fhir/r4" and op.method == "POST")
+        refused = [op.id for op in self.ops if self.spec["paths"][op.path][op.method.lower()].get(BATCHABLE) is False]
+        return [batch, *sorted(refused)]
 
 
 # --- the methods ------------------------------------------------------------------------------
@@ -345,11 +357,13 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
             call = f"(await {call})"
         lines.append(f"        return {call}{'' if with_response else '.data'}")
         lines.append("")
-    lines += _batch_overloads(client, asynchronous=asynchronous, with_response=with_response)
+    # The operations under the base a batch refuses, which the spec marks x-haau3-batchable: false.
+    refused = sorted(o.name for o in ops if o.path.startswith("/v1/fhir/r4/") and not o.batchable)
+    lines += _batch_overloads(client, refused, asynchronous=asynchronous, with_response=with_response)
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _batch_overloads(client: str, *, asynchronous: bool, with_response: bool) -> list[str]:
+def _batch_overloads(client: str, refused: list[str], *, asynchronous: bool, with_response: bool) -> list[str]:
     options = (
         "timeout: float | None = None, max_retries: int | None = None, "
         "correlation_id: str | None = None, extra_headers: Mapping[str, str] | None = None"
@@ -392,7 +406,7 @@ def _batch_overloads(client: str, *, asynchronous: bool, with_response: bool) ->
             "```\n\n"
             "Each entry is checked as the call alone is, and fails alone. An entry that fails is not\n"
             "retried; the batch itself is retried, and raises, as any call does. The API takes up to 100\n"
-            "entries in up to 1 MiB and gives a batch 60 seconds. `reconcile_medications` cannot go in a batch."
+            "entries in up to 1 MiB and gives a batch 60 seconds. " + _named(refused) + " cannot go in a batch."
         )
     lines.append(docstring(doc, "        "))
     call = "self._engine.batch(calls, Options(timeout, max_retries, correlation_id, extra_headers))"
@@ -466,7 +480,7 @@ def calls_module(spec: Spec) -> str:
         "from haau3 import calls\n\n"
         'plan, counties = client.batch(calls.read_insurance_plan("H2406-013-000"), calls.list_insurance_plan_counties(state="NC"))\n'
         "```\n\n"
-        f"Every operation on the FHIR base can go in a batch except {' and '.join('`' + naming.method_name(i) + '`' for i in NOT_IN_A_BATCH)}.\n\n"
+        f"Every operation on the FHIR base can go in a batch except {_named([naming.method_name(i) for i in spec.not_in_a_batch()])}.\n\n"
         'Generated by scripts/generate.py from openapi/openapi.json. Do not edit by hand.\n"""\n',
         "# ruff: noqa\n",
         "from __future__ import annotations\n",
@@ -557,7 +571,7 @@ def api_md(spec: Spec) -> str:
             )
         )
     batchable = [o for o in spec.ops if o.batchable]
-    excluded = " and ".join(f"`{naming.method_name(i)}`" for i in NOT_IN_A_BATCH)
+    excluded = _named([naming.method_name(i) for i in spec.not_in_a_batch()])
     return f"""<!-- Generated by scripts/generate.py from openapi/openapi.json. Do not edit by hand. -->
 
 # API reference
@@ -580,9 +594,40 @@ both. Every method also takes the per-call options `timeout`, `max_retries`, `co
 
 # --- openapi/code-samples.json -----------------------------------------------------------------
 
-# Operations whose example body is too long to show: the sample reads it from a file instead. Only
-# MedList's, a whole patient's records.
-BODY_FROM_FILE = {"reconcileMedications": ("records.json", "one patient's FHIR medication records")}
+# Where a sample reads a body that nests resources: a Bundle's entries or a Parameters resource's
+# parts. Such a body is too long to show in a sample and, written inline, a nested resource is checked
+# against FHIR's bare Resource; read from a file, it is typed by what it is.
+BODY_FILE = "request.json"
+
+
+def _nests_resources(value: Any, depth: int = 0) -> bool:
+    """Whether an example body holds a resource inside it, at any depth below its own."""
+    if isinstance(value, list):
+        return any(_nests_resources(item, depth + 1) for item in value)
+    if not isinstance(value, dict):
+        return False
+    if depth > 0 and isinstance(value.get("resourceType"), str):
+        return True
+    return any(_nests_resources(item, depth + 1) for item in value.values())
+
+
+def _example_label(media: Json) -> str:
+    """The label the spec gives a request's first example, as a phrase: "one patient's ...".
+
+    "A pharmacy ..." and "One patient's ..." read on in lower case; an acronym such as "FHIR" stays.
+    """
+    examples: Json = media.get("examples") or {}
+    first: Json = next(iter(examples.values()), {})
+    label = first.get("summary")
+    if not isinstance(label, str) or not label:
+        raise ValueError("A body read from a file needs its example's summary, to say what the file holds")
+    return label[0].lower() + label[1:] if len(label) > 1 and label[0].isupper() and not label[1].isupper() else label
+
+
+def _named(names: list[str]) -> str:
+    """`a`, `b` and `c`, in code font."""
+    quoted = [f"`{n}`" for n in names]
+    return quoted[0] if len(quoted) == 1 else ", ".join(quoted[:-1]) + " and " + quoted[-1]
 
 
 def _py(value: Any) -> str:
@@ -705,20 +750,19 @@ def _sample(spec: Spec, op: Op) -> str:
         ]
         return "\n".join(lines) + "\n"
     name = _answer_name(op)
-    from_file = BODY_FROM_FILE.get(op.id)
-    if from_file:
-        file, what = from_file
-        type_ = _example(next(iter(raw["requestBody"]["content"].values())))["resourceType"]
+    media = next(iter(raw["requestBody"]["content"].values())) if op.body else None
+    if media is not None and _nests_resources(_example(media)):
+        type_ = _example(media)["resourceType"]
         lines = [
             "import json",
             "",
             "from haau3 import Haau3, fhir",
             "",
             *client,
-            f"# {file} holds {what}, as a {type_}.",
-            f'with open("{file}") as file:',
-            f"    records: fhir.{type_} = json.load(file)",
-            f"{name} = client.{op.name}(records)",
+            f"# {BODY_FILE} holds {_example_label(media)}, as a {type_}.",
+            f'with open("{BODY_FILE}") as file:',
+            f"    body: fhir.{type_} = json.load(file)",
+            f"{name} = client.{op.name}(body)",
             *_print_lines(spec, op, raw, name),
         ]
         return "\n".join(lines) + "\n"
@@ -727,9 +771,6 @@ def _sample(spec: Spec, op: Op) -> str:
 
 
 def code_samples_json(spec: Spec) -> str:
-    for id_ in BODY_FROM_FILE:
-        if not any(op.id == id_ and op.body for op in spec.ops):
-            raise ValueError(f"{id_} no longer takes a body: review BODY_FROM_FILE")
     in_spec_order = [
         next(op for op in spec.ops if op.path == path and op.method == method.upper())
         for path, item in spec.spec["paths"].items()

@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 import pytest
-from check_public_text import check, commit_range, term_rules
+from check_public_text import SPEC_NAMES, check, commit_range, term_rules
 
 from .helpers import ROOT
 
@@ -37,6 +37,14 @@ def found(text: str) -> list[str]:
 )
 def test_it_finds_each_kind(text: str, match: str) -> None:
     assert match in found(text)
+
+
+def test_it_allows_a_haau3_name_the_published_spec_carries_and_no_other() -> None:
+    assert "haau3-insurance-plan" in SPEC_NAMES
+    assert found("the profile haau3-insurance-plan, the field x-haau3-batchable") == []
+    # A name the spec carries only as part of a longer one is not allowed by it (the control).
+    assert "haau3-insurance" not in SPEC_NAMES
+    assert found("it runs in haau3-insurance") == ["haau3-insurance"]
 
 
 def test_it_allows_what_this_repositorys_own_text_uses() -> None:

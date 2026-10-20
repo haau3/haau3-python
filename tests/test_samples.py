@@ -185,8 +185,9 @@ def test_every_sample_reads_the_key_from_the_environment_and_sets_no_address() -
 def test_each_sample_sends_its_example_request_and_prints_what_came_back(
     stand_in: str, op_id: str, method: str, path: str, op: dict[str, Any]
 ) -> None:
-    files = {"records.json": json.dumps(example_body(op))} if op_id == "reconcileMedications" else None
-    result = _run(_sample(method, path), stand_in, files)
+    source = _sample(method, path)
+    files = {"request.json": json.dumps(example_body(op))} if 'open("request.json")' in source else None
+    result = _run(source, stand_in, files)
     assert result.stderr == ""
     assert result.returncode == 0
     assert result.stdout.rstrip("\n") == _expected_output(op_id, op)

@@ -57,7 +57,13 @@ def test_api_md_lists_every_operation_once_with_its_docs_page() -> None:
     assert len({r[1] for r in rows}) == len(rows)
     assert {(r[2], r[3]) for r in rows} == {(o[1], o[2]) for o in OPERATIONS}
     assert f"(`{SPEC['info']['version']}`)" in API
-    assert "except `fhir_batch` and `reconcile_medications`: 29 of the\n36" in API
+    refused = sorted(naming.method_name(o[0]) for o in OPERATIONS if o[3].get("x-haau3-batchable") is False)
+    names = ["fhir_batch", *refused]
+    excluded = ", ".join(f"`{n}`" for n in names[:-1]) + f" and `{names[-1]}`"
+    batchable = [
+        o for o in OPERATIONS if o[2].startswith("/v1/fhir/r4/") and o[3].get("x-haau3-batchable") is not False
+    ]
+    assert f"except {excluded}: {len(batchable)} of the {len(OPERATIONS)}" in " ".join(API.split())
 
 
 def test_no_em_dash_in_what_this_repository_writes() -> None:

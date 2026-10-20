@@ -2,7 +2,7 @@
 
 # API reference
 
-Every operation of the haau3 platform API (`1.0.0-preview.4`) is a method on `Haau3` and on
+Every operation of the haau3 platform API (`1.0.0-preview.6`) is a method on `Haau3` and on
 `AsyncHaau3`, named by its operationId in snake_case. Each links to its page on docs.haau3.com, which
 shows its parameters and an example exchange. Path values come first, then `body` for an operation
 that takes one, and the query parameters are keyword arguments named by the API's own names in
@@ -11,8 +11,8 @@ both. Every method also takes the per-call options `timeout`, `max_retries`, `co
 `extra_headers`, and `client.with_response.<method>(...)` gives the request id and timing too.
 
 `batch()` sends several of these as one request, each with its own answer or error, from the entries
-`haau3.calls` makes. It takes every operation on the FHIR base except `fhir_batch` and `reconcile_medications`: 29 of the
-36. See the README's "Several requests in one".
+`haau3.calls` makes. It takes every operation on the FHIR base except `fhir_batch`, `process_message` and `reconcile_medications`: 29 of the
+37. See the README's "Several requests in one".
 
 ## Scheduling
 
@@ -90,6 +90,14 @@ FHIR InsurancePlan: what a Medicare Advantage or ACA Marketplace plan covers and
 | [`list_insurance_plan_counties(*, state)`](https://docs.haau3.com/api-reference/plan-benefits/list-a-states-counties) | `GET /v1/fhir/r4/InsurancePlan/$counties` | List a state's counties |
 | [`read_insurance_plan(id)`](https://docs.haau3.com/api-reference/plan-benefits/read-a-plan) | `GET /v1/fhir/r4/InsurancePlan/{id}` | Read a plan |
 | [`check_insurance_plan_network(id, *, npi)`](https://docs.haau3.com/api-reference/plan-benefits/check-providers-against-a-plans-network) | `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network` | Check providers against a plan's network |
+
+## Pharmacy Benefits
+
+The CARIN Consumer Real-Time Pharmacy Benefit Check as FHIR messaging: what a medication would cost a member under their coverage, or its price at pharmacies near a ZIP code, in real time, from the sources this service connects to. A member's request receives patient data, so send it only under an executed agreement.
+
+| Method | Request | What it does |
+|---|---|---|
+| [`process_message(body)`](https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check) | `POST /v1/fhir/r4/$process-message` | Check what a medication costs (pharmacy benefit check) |
 
 ## MedList
 
