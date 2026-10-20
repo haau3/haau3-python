@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/haau3/haau3-python/compare/v0.1.3...v0.1.4) (2026-10-20)
+
+
+### Documentation
+
+* the README says how to add the haau3 Agent Skill ([#10](https://github.com/haau3/haau3-python/issues/10)) ([d0349fa](https://github.com/haau3/haau3-python/commit/d0349fa3713a7767391492d4cce79c4001319226))
+
 ## [0.1.3](https://github.com/haau3/haau3-python/compare/v0.1.2...v0.1.3) (2026-10-19)
 
 
