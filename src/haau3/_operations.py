@@ -20,7 +20,7 @@ from ._components import (
 )
 from ._operation import Operation
 
-SPEC_VERSION: Final[str] = "1.0.0-preview.4"
+SPEC_VERSION: Final[str] = "1.0.0-preview.5"
 """The version of the API's spec this SDK was generated from."""
 
 CHECK_INSURANCE_PLAN_NETWORK: Final[Operation[fhir.Parameters]] = Operation(
@@ -53,6 +53,7 @@ LIST_INSURANCE_PLAN_COUNTIES: Final[Operation[fhir.Parameters]] = Operation(
 LIST_PUBLISHERS: Final[Operation[ListPublishersResponse]] = Operation("GET", "/v1/scheduling/publishers", ())
 LIST_SERVICE_TYPES: Final[Operation[ListServiceTypesResponse]] = Operation("GET", "/v1/scheduling/service-types", ())
 LIST_SPECIALTIES: Final[Operation[ListSpecialtiesResponse]] = Operation("GET", "/v1/scheduling/specialties", ())
+PROCESS_MESSAGE: Final[Operation[fhir.Bundle]] = Operation("POST", "/v1/fhir/r4/$process-message", ("Bundle",))
 READ_ENDPOINT: Final[Operation[fhir.Endpoint]] = Operation("GET", "/v1/fhir/r4/Endpoint/{id}", ("Endpoint",))
 READ_HEALTHCARE_SERVICE: Final[Operation[fhir.HealthcareService]] = Operation(
     "GET", "/v1/fhir/r4/HealthcareService/{id}", ("HealthcareService",)

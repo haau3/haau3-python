@@ -27,6 +27,7 @@ from ._operations import (
     CODE_SYSTEM_VALIDATE_CODE_POST,
     FHIR_METADATA,
     LIST_INSURANCE_PLAN_COUNTIES,
+    PROCESS_MESSAGE,
     READ_ENDPOINT,
     READ_HEALTHCARE_SERVICE,
     READ_INSURANCE_PLAN,
@@ -62,6 +63,7 @@ __all__ = [
     "code_system_validate_code_post",
     "fhir_metadata",
     "list_insurance_plan_counties",
+    "process_message",
     "read_endpoint",
     "read_healthcare_service",
     "read_insurance_plan",
@@ -187,6 +189,16 @@ def list_insurance_plan_counties(*, state: str) -> Call[fhir.Parameters]:
     `GET /v1/fhir/r4/InsurancePlan/$counties`
     """
     return make_call(LIST_INSURANCE_PLAN_COUNTIES, (), (("state", state),), None)
+
+
+def process_message(body: fhir.Bundle, /) -> Call[fhir.Bundle]:
+    """Check what a medication costs (pharmacy benefit check), as one entry of a batch. Called as `Haau3.process_message` is.
+
+    `POST /v1/fhir/r4/$process-message`
+    """
+    hidden: Hidden[object] = Hidden(body)
+    del body
+    return make_call(PROCESS_MESSAGE, (), (), hidden)
 
 
 def read_endpoint(id: str, /) -> Call[fhir.Endpoint]:
