@@ -19,6 +19,15 @@ def test_a_breaking_change_is_a_minor_and_a_feature_a_patch_while_0_y_z() -> Non
     assert CONFIG["pull-request-title-pattern"] == "Release ${version}"
 
 
+def test_only_feat_fix_perf_and_revert_release_as_contributing_says() -> None:
+    # release-please's Python strategy shows docs in the changelog, and so releases on a `docs:`
+    # title, unlike its Node strategy; CONTRIBUTING says docs and chores release nothing.
+    shown = sorted(s["type"] for s in CONFIG["changelog-sections"] if not s.get("hidden"))
+    assert shown == ["feat", "fix", "perf", "revert"]
+    hidden = {s["type"] for s in CONFIG["changelog-sections"] if s.get("hidden")}
+    assert {"docs", "chore", "test", "ci", "build", "refactor", "style"} <= hidden
+
+
 def test_the_version_lives_in_one_annotated_file() -> None:
     assert CONFIG["packages"]["."]["extra-files"] == ["src/haau3/_version.py"]
     text = (ROOT / "src" / "haau3" / "_version.py").read_text()
