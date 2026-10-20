@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/haau3/haau3-python/compare/v0.1.3...v0.1.4) (2026-10-20)
+
+
+### Features
+
+* the API's spec at 1.0.0-preview.6, with the batch's exclusions read from it ([#14](https://github.com/haau3/haau3-python/issues/14)) ([3c6734e](https://github.com/haau3/haau3-python/commit/3c6734e48048e947d38990c7ba18d68e8e7bc675))
+
 ## [0.1.3](https://github.com/haau3/haau3-python/compare/v0.1.2...v0.1.3) (2026-10-19)
 
 
