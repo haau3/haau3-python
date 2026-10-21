@@ -98,6 +98,9 @@ def test_a_url_on_another_host_is_refused() -> None:
         ("displayLanguage", "display_language"),
         ("isVirtual", "is_virtual"),
         ("new-patient-from-network", "new_patient_from_network"),
+        # FHIR's chained search parameters, sent under their own names.
+        ("location.address-state", "location_address_state"),
+        ("organization.identifier", "organization_identifier"),
     ],
 )
 def test_wire_names_map_to_python_names(wire: str, python: str) -> None:
@@ -108,7 +111,7 @@ def test_a_name_python_cannot_take_is_refused() -> None:
     with pytest.raises(ValueError, match="no Python name"):
         naming.python_name("class")
     with pytest.raises(ValueError, match="no Python name"):
-        naming.python_name("a.b")
+        naming.python_name("a/b")
 
 
 def test_operation_ids_and_docs_slugs() -> None:
