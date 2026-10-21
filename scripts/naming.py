@@ -26,12 +26,13 @@ def class_name(operation_id: str) -> str:
 def python_name(wire: str) -> str:
     """A query parameter's wire name as a keyword argument.
 
-    A leading `_` is dropped, `-` and `:` become `_`, and camelCase becomes snake_case:
+    A leading `_` is dropped, `-`, `:` and `.` become `_`, and camelCase becomes snake_case:
     `_count` is `count`, `name:contains` is `name_contains`, `address-city` is `address_city`,
-    `serviceTypeCode` is `service_type_code`.
+    `serviceTypeCode` is `service_type_code`, and a FHIR chained search such as
+    `location.address-state` is `location_address_state`.
     """
     name = wire[1:] if wire.startswith("_") else wire
-    name = re.sub(r"[-:]", "_", name)
+    name = re.sub(r"[-:.]", "_", name)
     name = _CAMEL.sub("_", name).lower()
     if not name.isidentifier() or keyword.iskeyword(name):
         raise ValueError(f"the query parameter {wire!r} has no Python name: {name!r}")
