@@ -2,7 +2,7 @@
 
 # API reference
 
-Every operation of the haau3 platform API (`1.0.0-preview.6`) is a method on `Haau3` and on
+Every operation of the haau3 platform API (`1.0.0-preview.12`) is a method on `Haau3` and on
 `AsyncHaau3`, named by its operationId in snake_case. Each links to its page on docs.haau3.com, which
 shows its parameters and an example exchange. Path values come first, then `body` for an operation
 that takes one, and the query parameters are keyword arguments named by the API's own names in
@@ -58,7 +58,7 @@ CMS's National Provider Directory as FHIR R4: practitioners and their roles, org
 |---|---|---|
 | [`search_endpoint(**query)`](https://docs.haau3.com/api-reference/provider-directory/find-endpoints) | `GET /v1/fhir/r4/Endpoint` | Find endpoints |
 | [`read_endpoint(id)`](https://docs.haau3.com/api-reference/provider-directory/read-an-endpoint) | `GET /v1/fhir/r4/Endpoint/{id}` | Read an Endpoint |
-| [`search_healthcare_service(**query)`](https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services) | `GET /v1/fhir/r4/HealthcareService` | Find healthcare services |
+| [`search_healthcare_service(**query)`](https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services-and-pharmacies) | `GET /v1/fhir/r4/HealthcareService` | Find healthcare services and pharmacies |
 | [`read_healthcare_service(id)`](https://docs.haau3.com/api-reference/provider-directory/read-a-healthcareservice) | `GET /v1/fhir/r4/HealthcareService/{id}` | Read a HealthcareService |
 | [`search_location(**query)`](https://docs.haau3.com/api-reference/provider-directory/find-practice-locations) | `GET /v1/fhir/r4/Location` | Find practice locations |
 | [`read_location(id)`](https://docs.haau3.com/api-reference/provider-directory/read-a-location) | `GET /v1/fhir/r4/Location/{id}` | Read a Location |
@@ -80,16 +80,16 @@ FHIR Questionnaire, served as its source publishes it. This service holds copies
 | [`search_questionnaire(**query)`](https://docs.haau3.com/api-reference/questionnaires/list-or-find-a-questionnaire) | `GET /v1/fhir/r4/Questionnaire` | List or find a questionnaire |
 | [`read_questionnaire(id)`](https://docs.haau3.com/api-reference/questionnaires/read-a-questionnaire) | `GET /v1/fhir/r4/Questionnaire/{id}` | Read a questionnaire |
 
-## Plan Benefits
+## Medical Benefits
 
 FHIR InsurancePlan: what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Every plan names the CMS release it was read from. Read a plan by its id, or search by identifier, name, state or county, and check whether the CMS National Provider Directory lists providers in a plan's network.
 
 | Method | Request | What it does |
 |---|---|---|
-| [`search_insurance_plan(**query)`](https://docs.haau3.com/api-reference/plan-benefits/find-a-plan) | `GET /v1/fhir/r4/InsurancePlan` | Find a plan |
-| [`list_insurance_plan_counties(*, state)`](https://docs.haau3.com/api-reference/plan-benefits/list-a-states-counties) | `GET /v1/fhir/r4/InsurancePlan/$counties` | List a state's counties |
-| [`read_insurance_plan(id)`](https://docs.haau3.com/api-reference/plan-benefits/read-a-plan) | `GET /v1/fhir/r4/InsurancePlan/{id}` | Read a plan |
-| [`check_insurance_plan_network(id, *, npi)`](https://docs.haau3.com/api-reference/plan-benefits/check-providers-against-a-plans-network) | `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network` | Check providers against a plan's network |
+| [`search_insurance_plan(**query)`](https://docs.haau3.com/api-reference/medical-benefits/find-a-plan) | `GET /v1/fhir/r4/InsurancePlan` | Find a plan |
+| [`list_insurance_plan_counties(*, state)`](https://docs.haau3.com/api-reference/medical-benefits/list-a-states-counties) | `GET /v1/fhir/r4/InsurancePlan/$counties` | List a state's counties |
+| [`read_insurance_plan(id)`](https://docs.haau3.com/api-reference/medical-benefits/read-a-plan) | `GET /v1/fhir/r4/InsurancePlan/{id}` | Read a plan |
+| [`check_insurance_plan_network(id, *, npi)`](https://docs.haau3.com/api-reference/medical-benefits/check-providers-against-a-plans-network) | `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network` | Check providers against a plan's network |
 
 ## Pharmacy Benefits
 

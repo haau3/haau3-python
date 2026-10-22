@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.6",
+    "version": "1.0.0-preview.12",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-01 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -38,7 +38,7 @@
       "description": "FHIR Questionnaire, served as its source publishes it. This service holds copies of a curated set and reaches any other questionnaire its source publishes by canonical URL, as well as forms published at their own address under places this service is set up to reach. Read one by id, and build the QuestionnaireResponse in your own application."
     },
     {
-      "name": "Plan Benefits",
+      "name": "Medical Benefits",
       "description": "FHIR InsurancePlan: what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Every plan names the CMS release it was read from. Read a plan by its id, or search by identifier, name, state or county, and check whether the CMS National Provider Directory lists providers in a plan's network."
     },
     {
@@ -2281,7 +2281,7 @@
                     "value": {
                       "resourceType": "CapabilityStatement",
                       "status": "active",
-                      "date": "2026-10-13",
+                      "date": "2026-10-20",
                       "kind": "instance",
                       "fhirVersion": "4.0.1",
                       "format": [
@@ -2289,20 +2289,21 @@
                         "json"
                       ],
                       "instantiates": [
-                        "http://hl7.org/fhir/CapabilityStatement/terminology-server"
+                        "http://hl7.org/fhir/CapabilityStatement/terminology-server",
+                        "http://hl7.org/fhir/us/carin-rtpbc/CapabilityStatement/rtpbc-responder|2.0.0-ballot"
                       ],
                       "software": {
                         "name": "haau3 platform FHIR API"
                       },
                       "implementation": {
-                        "description": "haau3 platform FHIR R4 API. Four services and one operation are served from this one base: terminology (CodeSystem, ValueSet), the provider directory (Practitioner, PractitionerRole, Organization, OrganizationAffiliation, HealthcareService, Location, Endpoint), questionnaires (Questionnaire), Plan Benefits (InsurancePlan), and MedList's reconcile-medications. Note that `/v1/` versions the haau3 platform API contract, not FHIR; the FHIR release is `r4`, and is echoed on every response as the `fhirVersion` media-type parameter.",
+                        "description": "haau3 platform FHIR R4 API. Four services and two operations are served from this one base: terminology (CodeSystem, ValueSet), the provider directory (Practitioner, PractitionerRole, Organization, OrganizationAffiliation, HealthcareService, Location, Endpoint), questionnaires (Questionnaire), Medical Benefits (InsurancePlan), MedList's reconcile-medications and Pharmacy Benefits' process-message. Note that `/v1/` versions the haau3 platform API contract, not FHIR; the FHIR release is `r4`, and is echoed on every response as the `fhirVersion` media-type parameter.",
                         "url": "https://api.haau3.com/v1/fhir/r4"
                       },
                       "copyright": "This material contains content from LOINC (http://loinc.org). LOINC is copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes (LOINC) Committee and is available at no cost under the license at http://loinc.org/license. LOINC® is a registered United States trademark of Regenstrief Institute, Inc.\n\nThis product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.\n\nCode systems this service holds locally are served from a dated release, named in the version of every answer and in this statement's TerminologyCapabilities. A held release may not reflect the most current data available from its publisher.\n\nFHIR® is the registered trademark of Health Level Seven International and its use here does not constitute endorsement by HL7.",
                       "rest": [
                         {
                           "mode": "server",
-                          "documentation": "All operations accept GET with query parameters and POST with a Parameters resource. Complex inputs — coding, and codeableConcept on the validate-code operations — are accepted on POST only, as the operations framework requires; on GET pass system and code as separate parameters. A codeableConcept validates if ANY of its codings is a member, which fits data whose elements carry a vendor-local coding alongside a standard one; per-coding membership deliberately ignores each coding's display (a wrong label must not veto a right code — display checking is available on the single-coding form). A coding's version is honoured where the operation defines a version parameter (the CodeSystem operations); ValueSet validation always uses the current code-system version and refuses a versioned coding rather than silently ignoring it. A coding whose system disagrees with an explicitly supplied system or url parameter is refused. Value sets and code systems are addressed by canonical url only; instance-level operation paths ([type]/[id]/$operation) are not offered. An expansion is returned whole: displayLanguage, includeDesignations and activeOnly are refused by name on $expand, and filter, count and offset narrow only a value set this service hosts, being refused for one resolved from its own source. A batch Bundle POSTed to the base runs several operations in one round trip; each entry succeeds or fails independently.\n\nProvider directory resources are proxied from the CMS National Provider Directory and served as published, without modification. Search is GET only. Every search parameter is either declared here or refused by name: a parameter this service does not serve is never silently ignored. Where the directory requires a parameter to be sent beside another (`network` on PractitionerRole and HealthcareService), the rule is applied here, before the directory is asked.\n\nA curated set of questionnaires is served from copies vendored at a recorded release of their source, so those forms render the same way on every request. A search that names a canonical URL this service holds no copy of is answered from the source directly, and depends on that source being reachable. A search with no parameters lists the curated set. Search is GET only, and every search parameter is either declared here or refused by name. No operations are served on Questionnaire, and no QuestionnaireResponse is accepted or stored: a completed response is built by the application that collected it and references the questionnaire as `{url}|{version}`.\n\nPlan Benefits (InsurancePlan): what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Each plan conforms to the haau3 Plan Benefits profile (https://haau3.com/fhir/StructureDefinition/haau3-insurance-plan) and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.\n\nMedList: POST [base]/$reconcile-medications reconciles one patient's medication records into one clean list, returned as a Bundle of reconciled MedicationRequests with a Provenance for each. The operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.",
+                          "documentation": "All operations accept GET with query parameters and POST with a Parameters resource. Complex inputs — coding, and codeableConcept on the validate-code operations — are accepted on POST only, as the operations framework requires; on GET pass system and code as separate parameters. A codeableConcept validates if ANY of its codings is a member, which fits data whose elements carry a vendor-local coding alongside a standard one; per-coding membership deliberately ignores each coding's display (a wrong label must not veto a right code — display checking is available on the single-coding form). A coding's version is honoured where the operation defines a version parameter (the CodeSystem operations); ValueSet validation always uses the current code-system version and refuses a versioned coding rather than silently ignoring it. A coding whose system disagrees with an explicitly supplied system or url parameter is refused. Value sets and code systems are addressed by canonical url only; instance-level operation paths ([type]/[id]/$operation) are not offered. An expansion is returned whole: displayLanguage, includeDesignations and activeOnly are refused by name on $expand, and filter, count and offset narrow only a value set this service hosts, being refused for one resolved from its own source. A batch Bundle POSTed to the base runs several operations in one round trip; each entry succeeds or fails independently.\n\nProvider directory resources are proxied from the CMS National Provider Directory and served as published, without modification. Search is GET only. Every search parameter is either declared here or refused by name: a parameter this service does not serve is never silently ignored. Where the directory requires a parameter to be sent beside another (`network` on PractitionerRole and HealthcareService), the rule is applied here, before the directory is asked.\n\nA curated set of questionnaires is served from copies vendored at a recorded release of their source, so those forms render the same way on every request. A search that names a canonical URL this service holds no copy of is answered from the source directly, and depends on that source being reachable. A search with no parameters lists the curated set. Search is GET only, and every search parameter is either declared here or refused by name. No operations are served on Questionnaire, and no QuestionnaireResponse is accepted or stored: a completed response is built by the application that collected it and references the questionnaire as `{url}|{version}`.\n\nMedical Benefits (InsurancePlan): what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Each plan conforms to the haau3 Medical Benefits profile (https://haau3.com/fhir/StructureDefinition/haau3-insurance-plan) and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.\n\nMedList: POST [base]/$reconcile-medications reconciles one patient's medication records into one clean list, returned as a Bundle of reconciled MedicationRequests with a Provenance for each. The operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nPharmacy Benefits: POST [base]/$process-message answers a pharmacy benefit check of the CARIN Consumer Real-Time Pharmacy Benefit Check: what a medication would cost a member under their coverage (event rtpbc-request), or its price at pharmacies near a ZIP code, without patient details (event rtpbc-request-non-phi). A member's request carries patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.",
                           "interaction": [
                             {
                               "code": "batch"
@@ -2936,6 +2937,11 @@
                               "name": "reconcile-medications",
                               "definition": "https://haau3.com/fhir/OperationDefinition/reconcile-medications",
                               "documentation": "Reconciles one patient's medication records into one medication list. POST a Bundle of the records, or a Parameters resource with resource parts and an optional asOf."
+                            },
+                            {
+                              "name": "process-message",
+                              "definition": "http://hl7.org/fhir/OperationDefinition/MessageHeader-process-message",
+                              "documentation": "The CARIN Consumer Real-Time Pharmacy Benefit Check. POST a message Bundle carrying the event rtpbc-request and rtpbc-request-non-phi; the answer is a message Bundle with one ClaimResponse."
                             }
                           ]
                         }
@@ -3539,7 +3545,7 @@
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -3843,7 +3849,7 @@
             "$ref": "#/components/responses/FhirUnsupportedMediaType"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4071,7 +4077,7 @@
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4349,7 +4355,7 @@
             "$ref": "#/components/responses/FhirUnsupportedMediaType"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4476,7 +4482,7 @@
           "Terminology"
         ],
         "summary": "Expand a value set",
-        "description": "FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with an optional text filter and paging (`count=0` returns the total only).",
+        "description": "FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the RxNorm value sets this service holds, the filter searches by name and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.",
         "responses": {
           "200": {
             "description": "A FHIR `ValueSet` carrying an `expansion`.",
@@ -4600,7 +4606,7 @@
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -4691,7 +4697,7 @@
             "name": "url",
             "in": "query",
             "required": false,
-            "description": "Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC.",
+            "description": "Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs).",
             "schema": {
               "default": "http://loinc.org?fhir_vs",
               "type": "string",
@@ -4703,17 +4709,18 @@
             "name": "filter",
             "in": "query",
             "required": false,
-            "description": "Text filter to narrow the expansion to matching concepts. Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.",
+            "description": "Text to narrow the expansion: each word must be the start of a word in a concept's name, and every word must match, with case and accents ignored. On the RxNorm value sets it is required, with at least 3 letters or digits, and the matches come ranked, best first; without it, or with fewer, the answer is `422` coded `too-costly`. At most 500 characters. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.",
             "schema": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "maxLength": 500
             }
           },
           {
             "name": "count",
             "in": "query",
             "required": false,
-            "description": "Maximum number of concepts to return (`0` returns the total only). Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.",
+            "description": "Maximum number of concepts to return (`0` returns the total only). On the RxNorm value sets the first 20 come back when it is not sent. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.",
             "schema": {
               "type": "integer",
               "minimum": 0,
@@ -4724,7 +4731,7 @@
             "name": "offset",
             "in": "query",
             "required": false,
-            "description": "Number of concepts to skip for pagination. Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.",
+            "description": "Number of concepts to skip, for paging; `expansion.total` is the number of matching concepts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.",
             "schema": {
               "type": "integer",
               "minimum": 0,
@@ -4735,7 +4742,7 @@
             "name": "displayLanguage",
             "in": "query",
             "required": false,
-            "description": "Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole, in their source's own language and order.",
+            "description": "Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.",
             "schema": {
               "type": "string",
               "minLength": 1
@@ -4745,7 +4752,7 @@
             "name": "includeDesignations",
             "in": "query",
             "required": false,
-            "description": "Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole.",
+            "description": "Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.",
             "schema": {
               "type": "boolean"
             }
@@ -4754,7 +4761,7 @@
             "name": "activeOnly",
             "in": "query",
             "required": false,
-            "description": "Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole.",
+            "description": "Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.",
             "schema": {
               "type": "boolean"
             }
@@ -4769,7 +4776,7 @@
           "Terminology"
         ],
         "summary": "Expand a value set",
-        "description": "FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with an optional text filter and paging (`count=0` returns the total only).",
+        "description": "FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the RxNorm value sets this service holds, the filter searches by name and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.",
         "responses": {
           "200": {
             "description": "A FHIR `ValueSet` carrying an `expansion`.",
@@ -4914,7 +4921,7 @@
             "$ref": "#/components/responses/FhirUnsupportedMediaType"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5118,7 +5125,7 @@
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5382,7 +5389,7 @@
             "$ref": "#/components/responses/FhirUnsupportedMediaType"
           },
           "422": {
-            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, or the expansion of a value set defined by a rule too large to list, the whole of LOINC included. The `OperationOutcome` says which, and what to ask instead.",
+            "description": "The request is well formed, but this service does not answer it in that form: an operation it does not offer for a code system it holds, the expansion of a value set defined by a rule too large to list (the whole of LOINC included), or an RxNorm expansion with no `filter` or one too short, coded `too-costly`. The `OperationOutcome` says which, and what to ask instead.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6009,7 +6016,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6027,7 +6034,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6052,7 +6059,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6425,7 +6432,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6443,7 +6450,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6468,7 +6475,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6905,7 +6912,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6923,7 +6930,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6948,7 +6955,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7117,7 +7124,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7135,7 +7142,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7160,7 +7167,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7231,7 +7238,7 @@
               "minLength": 1,
               "maxLength": 256
             },
-            "description": "An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not.",
+            "description": "An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not. A NUCC provider taxonomy code is refused: the directory's organizations carry none, and pharmacies are searched as `HealthcareService` (`service-category=pharm`).",
             "example": "ntwk"
           },
           {
@@ -7537,7 +7544,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7555,7 +7562,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7580,7 +7587,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7729,7 +7736,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7747,7 +7754,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7772,7 +7779,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8065,7 +8072,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8083,7 +8090,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8108,7 +8115,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8248,7 +8255,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8266,7 +8273,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8291,7 +8298,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8316,8 +8323,8 @@
         "tags": [
           "Provider directory"
         ],
-        "summary": "Find healthcare services",
-        "description": "Search `HealthcareService` by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused rather than answered with nothing.",
+        "summary": "Find healthcare services and pharmacies",
+        "description": "Search `HealthcareService` two ways.\n\n**The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.\n\n**Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.\n\nPharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. NPPES returns at most 1,200 records for one search, so a continuation past them is refused with a 422 that asks for a narrower search, rather than repeating a page or ending early. One store can bill under more than one NPI, and each is served as its own pharmacy.",
         "operationId": "searchHealthcareService",
         "parameters": [
           {
@@ -8344,6 +8351,94 @@
             "description": "The services the directory lists in one insurance network. Cannot be used on its own: send it beside `location`. A search that breaks this rule is refused before the directory is asked. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
           },
           {
+            "name": "service-category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "description": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+          },
+          {
+            "name": "specialty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "description": "A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+          },
+          {
+            "name": "location.address-state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "description": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy."
+          },
+          {
+            "name": "location.address-postalcode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 10
+            },
+            "description": "Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`."
+          },
+          {
+            "name": "location.address-city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Narrows a pharmacy search to stores in a city whose name starts with this, so `Miami` also finds Miami Beach. Two or more letters. Send it with `location.address-state`."
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone."
+          },
+          {
+            "name": "organization",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "description": "One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
+          },
+          {
+            "name": "organization.identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "description": "One pharmacy by its NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Organization` accepts. Stands alone on a pharmacy search."
+          },
+          {
             "name": "active",
             "in": "query",
             "required": false,
@@ -8355,6 +8450,26 @@
               ]
             },
             "description": "`true` or `false`. Narrows a search; cannot be used on its own."
+          },
+          {
+            "name": "_include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minItems": 1,
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "HealthcareService:organization",
+                  "HealthcareService:location"
+                ]
+              }
+            },
+            "style": "form",
+            "explode": true,
+            "description": "On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`."
           },
           {
             "name": "_id",
@@ -8407,7 +8522,7 @@
         ],
         "responses": {
           "200": {
-            "description": "A FHIR `Bundle` with `type: searchset`. `total` is present when the directory sends one.",
+            "description": "A FHIR `Bundle` with `type: searchset`. `total` is present when the directory sends one; a pharmacy search never carries one, because NPPES gives no count.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8514,6 +8629,24 @@
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
+          "422": {
+            "description": "A pharmacy search's continuation went past the 1,200 records the NPI Registry returns for one search. Narrow the search with a ZIP code, a city or a name.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
           "429": {
             "$ref": "#/components/responses/FhirTooManyRequests"
           },
@@ -8521,7 +8654,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8539,7 +8672,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8564,7 +8697,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8590,7 +8723,7 @@
           "Provider directory"
         ],
         "summary": "Read a HealthcareService",
-        "description": "Read one healthcare service by id, as returned by a search on this service.",
+        "description": "Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.",
         "operationId": "readHealthcareService",
         "parameters": [
           {
@@ -8706,7 +8839,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8724,7 +8857,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8749,7 +8882,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9131,7 +9264,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9149,7 +9282,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9174,7 +9307,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9200,7 +9333,7 @@
           "Provider directory"
         ],
         "summary": "Read a Location",
-        "description": "Read one location by id, as returned by a search on this service.",
+        "description": "Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.",
         "operationId": "readLocation",
         "parameters": [
           {
@@ -9330,7 +9463,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9348,7 +9481,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9373,7 +9506,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9652,7 +9785,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9670,7 +9803,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9695,7 +9828,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9858,7 +9991,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9876,7 +10009,7 @@
             }
           },
           "503": {
-            "description": "The directory is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9901,7 +10034,7 @@
             }
           },
           "504": {
-            "description": "The directory did not respond in time.",
+            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -11219,7 +11352,7 @@
     "/v1/fhir/r4/InsurancePlan": {
       "get": {
         "tags": [
-          "Plan Benefits"
+          "Medical Benefits"
         ],
         "summary": "Find a plan",
         "description": "Search the Medicare Advantage and ACA Marketplace plans being served, by identifier, name, or the state or county a plan is sold in. A search needs at least one of `identifier`, a form of `name`, `coverage-area-state` or `coverage-area-county`; `type` and `sold-to` narrow a search but are not one. Every result is the whole plan, sorted by name and then id, and every page states the total. Follow the `next` link to continue.\n\nA plan sold in only part of a county matches the whole county. `GET /v1/fhir/r4/InsurancePlan/$counties?state=FL` lists a state's counties and their codes.\n\nEvery other parameter is refused by name rather than ignored, so a search never quietly answers a different question than the one asked. `address-state` and `address-postalcode` are refused with a pointer to the coverage-area parameters, because in FHIR R4 they search a plan's contact address.\n\nDrug-only and dental-only plans are not served. An identifier search that finds one answers no plan and an `OperationOutcome` entry saying why.",
@@ -11410,7 +11543,7 @@
                             ],
                             "extension": [
                               {
-                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-source-release",
+                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-source-release",
                                 "extension": [
                                   {
                                     "url": "release",
@@ -11436,7 +11569,7 @@
                                 ]
                               },
                               {
-                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-plan-facts",
+                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-plan-facts",
                                 "extension": [
                                   {
                                     "url": "specialNeeds",
@@ -11740,7 +11873,7 @@
                               {
                                 "extension": [
                                   {
-                                    "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-additional-benefit",
+                                    "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-additional-benefit",
                                     "extension": [
                                       {
                                         "url": "category",
@@ -11835,7 +11968,7 @@
                                     ]
                                   },
                                   {
-                                    "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-additional-benefit",
+                                    "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-additional-benefit",
                                     "extension": [
                                       {
                                         "url": "category",
@@ -11882,7 +12015,7 @@
                                             "valueCodeableConcept": {
                                               "coding": [
                                                 {
-                                                  "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                  "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                   "code": "per-day",
                                                   "display": "Per day"
                                                 }
@@ -11942,7 +12075,7 @@
                                     ]
                                   },
                                   {
-                                    "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-additional-benefit",
+                                    "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-additional-benefit",
                                     "extension": [
                                       {
                                         "url": "category",
@@ -12057,7 +12190,7 @@
                                     "type": {
                                       "coding": [
                                         {
-                                          "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-general-cost-type",
+                                          "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-general-cost-type",
                                           "code": "monthly-premium",
                                           "display": "Monthly premium"
                                         }
@@ -12073,7 +12206,7 @@
                                     "type": {
                                       "coding": [
                                         {
-                                          "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-general-cost-type",
+                                          "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-general-cost-type",
                                           "code": "part-b-premium-reduction",
                                           "display": "Part B premium reduction"
                                         }
@@ -12085,7 +12218,7 @@
                                   {
                                     "extension": [
                                       {
-                                        "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                        "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                         "extension": [
                                           {
                                             "url": "network",
@@ -12106,7 +12239,7 @@
                                           {
                                             "url": "appliesTo",
                                             "valueCoding": {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                               "code": "medical",
                                               "display": "Medical"
                                             }
@@ -12133,7 +12266,7 @@
                                   {
                                     "extension": [
                                       {
-                                        "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                        "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                         "extension": [
                                           {
                                             "url": "network",
@@ -12154,7 +12287,7 @@
                                           {
                                             "url": "appliesTo",
                                             "valueCoding": {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                               "code": "medical",
                                               "display": "Medical"
                                             }
@@ -12181,7 +12314,7 @@
                                   {
                                     "extension": [
                                       {
-                                        "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                        "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                         "extension": [
                                           {
                                             "url": "network",
@@ -12202,7 +12335,7 @@
                                           {
                                             "url": "appliesTo",
                                             "valueCoding": {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                               "code": "medical",
                                               "display": "Medical"
                                             }
@@ -12225,12 +12358,12 @@
                                   {
                                     "extension": [
                                       {
-                                        "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                        "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                         "extension": [
                                           {
                                             "url": "network",
                                             "valueCoding": {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                               "code": "combined",
                                               "display": "In and out of network combined"
                                             }
@@ -12246,7 +12379,7 @@
                                           {
                                             "url": "appliesTo",
                                             "valueCoding": {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                               "code": "medical",
                                               "display": "Medical"
                                             }
@@ -12397,7 +12530,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -12507,7 +12640,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -12538,7 +12671,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "one-price-both-networks",
                                                     "display": "One price in and out of network"
                                                   }
@@ -12565,7 +12698,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -12596,7 +12729,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "one-price-both-networks",
                                                     "display": "One price in and out of network"
                                                   }
@@ -12682,7 +12815,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "one-price-both-networks",
                                                     "display": "One price in and out of network"
                                                   }
@@ -12720,7 +12853,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "one-price-both-networks",
                                                     "display": "One price in and out of network"
                                                   }
@@ -12793,7 +12926,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 1,
@@ -12824,7 +12957,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-day",
                                                     "display": "Per day"
                                                   }
@@ -12850,7 +12983,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 6,
@@ -12881,7 +13014,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-day",
                                                     "display": "Per day"
                                                   }
@@ -12919,7 +13052,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-stay",
                                                     "display": "Per stay"
                                                   }
@@ -12957,7 +13090,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-stay",
                                                     "display": "Per stay"
                                                   }
@@ -13019,7 +13152,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -13129,7 +13262,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -13239,7 +13372,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -13439,7 +13572,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 0,
@@ -13650,7 +13783,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 1,
@@ -13681,7 +13814,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-day",
                                                     "display": "Per day"
                                                   }
@@ -13707,7 +13840,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 21,
@@ -13738,7 +13871,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-day",
                                                     "display": "Per day"
                                                   }
@@ -13764,7 +13897,7 @@
                                           {
                                             "extension": [
                                               {
-                                                "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                                "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                                 "valueRange": {
                                                   "low": {
                                                     "value": 1,
@@ -13795,7 +13928,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-day",
                                                     "display": "Per day"
                                                   }
@@ -13833,7 +13966,7 @@
                                               {
                                                 "coding": [
                                                   {
-                                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                                     "code": "per-stay",
                                                     "display": "Per stay"
                                                   }
@@ -14016,7 +14149,7 @@
     "/v1/fhir/r4/InsurancePlan/$counties": {
       "get": {
         "tags": [
-          "Plan Benefits"
+          "Medical Benefits"
         ],
         "summary": "List a state's counties",
         "description": "FHIR type-level operation `$counties` on InsurancePlan: the counties and county equivalents of a state, the District of Columbia or a territory, sorted by name, each with the five-digit FIPS code `coverage-area-county` takes. The answer is a `Parameters` resource: one `county` parameter per county, whose `code` part is a Coding in `http://terminology.hl7.org/CodeSystem/FIPS64` with the county's name as its display and whose `state` part is the state's code, then a `source` parameter naming the list: the U.S. Census Bureau's 2020 county codes. It answers whether or not a plan is sold in a county. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-counties`).",
@@ -15266,10 +15399,10 @@
     "/v1/fhir/r4/InsurancePlan/{id}": {
       "get": {
         "tags": [
-          "Plan Benefits"
+          "Medical Benefits"
         ],
         "summary": "Read a plan",
-        "description": "Read one plan by its id. A Medicare Advantage plan's id is CMS's plan id with the segment in three digits (`H2406-013-000`); a Marketplace plan's is its HIOS plan id with the variant (`19898FL0340001-01`). The plan conforms to the haau3 Plan Benefits profile and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.",
+        "description": "Read one plan by its id. A Medicare Advantage plan's id is CMS's plan id with the segment in three digits (`H2406-013-000`); a Marketplace plan's is its HIOS plan id with the variant (`19898FL0340001-01`). The plan conforms to the haau3 Medical Benefits profile and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.",
         "operationId": "readInsurancePlan",
         "parameters": [
           {
@@ -15350,7 +15483,7 @@
                       ],
                       "extension": [
                         {
-                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-source-release",
+                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-source-release",
                           "extension": [
                             {
                               "url": "release",
@@ -15376,7 +15509,7 @@
                           ]
                         },
                         {
-                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-plan-facts",
+                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-plan-facts",
                           "extension": [
                             {
                               "url": "specialNeeds",
@@ -15680,7 +15813,7 @@
                         {
                           "extension": [
                             {
-                              "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-additional-benefit",
+                              "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-additional-benefit",
                               "extension": [
                                 {
                                   "url": "category",
@@ -15775,7 +15908,7 @@
                               ]
                             },
                             {
-                              "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-additional-benefit",
+                              "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-additional-benefit",
                               "extension": [
                                 {
                                   "url": "category",
@@ -15822,7 +15955,7 @@
                                       "valueCodeableConcept": {
                                         "coding": [
                                           {
-                                            "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                            "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                             "code": "per-day",
                                             "display": "Per day"
                                           }
@@ -15882,7 +16015,7 @@
                               ]
                             },
                             {
-                              "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-additional-benefit",
+                              "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-additional-benefit",
                               "extension": [
                                 {
                                   "url": "category",
@@ -15997,7 +16130,7 @@
                               "type": {
                                 "coding": [
                                   {
-                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-general-cost-type",
+                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-general-cost-type",
                                     "code": "monthly-premium",
                                     "display": "Monthly premium"
                                   }
@@ -16013,7 +16146,7 @@
                               "type": {
                                 "coding": [
                                   {
-                                    "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-general-cost-type",
+                                    "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-general-cost-type",
                                     "code": "part-b-premium-reduction",
                                     "display": "Part B premium reduction"
                                   }
@@ -16025,7 +16158,7 @@
                             {
                               "extension": [
                                 {
-                                  "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                  "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                   "extension": [
                                     {
                                       "url": "network",
@@ -16046,7 +16179,7 @@
                                     {
                                       "url": "appliesTo",
                                       "valueCoding": {
-                                        "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                        "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                         "code": "medical",
                                         "display": "Medical"
                                       }
@@ -16073,7 +16206,7 @@
                             {
                               "extension": [
                                 {
-                                  "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                  "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                   "extension": [
                                     {
                                       "url": "network",
@@ -16094,7 +16227,7 @@
                                     {
                                       "url": "appliesTo",
                                       "valueCoding": {
-                                        "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                        "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                         "code": "medical",
                                         "display": "Medical"
                                       }
@@ -16121,7 +16254,7 @@
                             {
                               "extension": [
                                 {
-                                  "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                  "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                   "extension": [
                                     {
                                       "url": "network",
@@ -16142,7 +16275,7 @@
                                     {
                                       "url": "appliesTo",
                                       "valueCoding": {
-                                        "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                        "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                         "code": "medical",
                                         "display": "Medical"
                                       }
@@ -16165,12 +16298,12 @@
                             {
                               "extension": [
                                 {
-                                  "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-scope",
+                                  "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-scope",
                                   "extension": [
                                     {
                                       "url": "network",
                                       "valueCoding": {
-                                        "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                        "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                         "code": "combined",
                                         "display": "In and out of network combined"
                                       }
@@ -16186,7 +16319,7 @@
                                     {
                                       "url": "appliesTo",
                                       "valueCoding": {
-                                        "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-scope",
+                                        "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-scope",
                                         "code": "medical",
                                         "display": "Medical"
                                       }
@@ -16337,7 +16470,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -16447,7 +16580,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -16478,7 +16611,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "one-price-both-networks",
                                               "display": "One price in and out of network"
                                             }
@@ -16505,7 +16638,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -16536,7 +16669,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "one-price-both-networks",
                                               "display": "One price in and out of network"
                                             }
@@ -16622,7 +16755,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "one-price-both-networks",
                                               "display": "One price in and out of network"
                                             }
@@ -16660,7 +16793,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "one-price-both-networks",
                                               "display": "One price in and out of network"
                                             }
@@ -16733,7 +16866,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 1,
@@ -16764,7 +16897,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-day",
                                               "display": "Per day"
                                             }
@@ -16790,7 +16923,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 6,
@@ -16821,7 +16954,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-day",
                                               "display": "Per day"
                                             }
@@ -16859,7 +16992,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-stay",
                                               "display": "Per stay"
                                             }
@@ -16897,7 +17030,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-stay",
                                               "display": "Per stay"
                                             }
@@ -16959,7 +17092,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -17069,7 +17202,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -17179,7 +17312,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -17379,7 +17512,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-cost-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-cost-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 0,
@@ -17590,7 +17723,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 1,
@@ -17621,7 +17754,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-day",
                                               "display": "Per day"
                                             }
@@ -17647,7 +17780,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 21,
@@ -17678,7 +17811,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-day",
                                               "display": "Per day"
                                             }
@@ -17704,7 +17837,7 @@
                                     {
                                       "extension": [
                                         {
-                                          "url": "https://haau3.com/fhir/StructureDefinition/plan-benefits-day-range",
+                                          "url": "https://haau3.com/fhir/StructureDefinition/medical-benefits-day-range",
                                           "valueRange": {
                                             "low": {
                                               "value": 1,
@@ -17735,7 +17868,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-day",
                                               "display": "Per day"
                                             }
@@ -17773,7 +17906,7 @@
                                         {
                                           "coding": [
                                             {
-                                              "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-cost-qualifier",
+                                              "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-cost-qualifier",
                                               "code": "per-stay",
                                               "display": "Per stay"
                                             }
@@ -17932,7 +18065,7 @@
     "/v1/fhir/r4/InsurancePlan/{id}/$in-network": {
       "get": {
         "tags": [
-          "Plan Benefits"
+          "Medical Benefits"
         ],
         "summary": "Check providers against a plan's network",
         "description": "FHIR instance-level operation `$in-network` on InsurancePlan: for each NPI, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then a `source` when the directory was asked. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).",
@@ -18027,7 +18160,7 @@
                             {
                               "name": "status",
                               "valueCoding": {
-                                "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-network-status",
+                                "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-network-status",
                                 "code": "in-network",
                                 "display": "In network"
                               }
@@ -18053,7 +18186,7 @@
                             {
                               "name": "status",
                               "valueCoding": {
-                                "system": "https://haau3.com/fhir/CodeSystem/plan-benefits-network-status",
+                                "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-network-status",
                                 "code": "not-in-directory",
                                 "display": "Not in the directory"
                               }
@@ -18197,9 +18330,25 @@
           "Pharmacy Benefits"
         ],
         "summary": "Check what a medication costs (pharmacy benefit check)",
-        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy or one or more ZIP codes. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. A check no connected source can answer carries `no-responder-for-coverage` or `no-price-source` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
+        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
         "operationId": "processMessage",
         "x-haau3-batchable": false,
+        "parameters": [
+          {
+            "name": "Payer-Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096,
+              "pattern": "^[Bb][Ee][Aa][Rr][Ee][Rr] +[A-Za-z0-9\\-._~+/]+=*$"
+            },
+            "description": "A member's own authorization at their insurer, for a member's request (event `rtpbc-request`) to an insurer that answers only with it: `Bearer` and the access token your app obtained from the member's login with that insurer, as an `Authorization` header carries one. It is forwarded once, to that insurer, for this request, and is never stored, logged or sent anywhere else. Without it, such a request is answered `payer-authorization-required`; a token the insurer refuses is answered `payer-authorization-rejected`. A request without patient details that carries it is refused."
+          },
+          {
+            "$ref": "#/components/parameters/XRequestId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -18346,15 +18495,15 @@
         },
         "responses": {
           "200": {
-            "description": "The answer: a FHIR `Bundle` of type `message` with a MessageHeader and one ClaimResponse, returned as the response body itself.",
+            "description": "The answer: a FHIR `Bundle` of type `message` with a MessageHeader, one ClaimResponse and the pharmacy Organizations its prices name, returned as the response body itself.",
             "content": {
               "application/fhir+json": {
                 "schema": {
                   "$ref": "#/components/schemas/Bundle"
                 },
                 "examples": {
-                  "No price source returned a price": {
-                    "summary": "No price source returned a price",
+                  "Prices near a ZIP code": {
+                    "summary": "Prices near a ZIP code",
                     "value": {
                       "resourceType": "Bundle",
                       "meta": {
@@ -18364,10 +18513,10 @@
                       },
                       "entry": [
                         {
-                          "fullUrl": "urn:uuid:cfe4fe76-8b70-4edc-af4b-7e2f8c25b3e8",
+                          "fullUrl": "urn:uuid:558a39f8-4087-4955-afac-76c9857eb785",
                           "resource": {
                             "resourceType": "MessageHeader",
-                            "id": "cfe4fe76-8b70-4edc-af4b-7e2f8c25b3e8",
+                            "id": "558a39f8-4087-4955-afac-76c9857eb785",
                             "meta": {
                               "profile": [
                                 "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-response-messageheader-non-phi|2.0.0-ballot"
@@ -18383,7 +18532,7 @@
                             },
                             "focus": [
                               {
-                                "reference": "urn:uuid:a7fb50aa-3ca5-47a1-96f8-67ec1e95546e"
+                                "reference": "urn:uuid:ee066a10-e861-4d09-bde5-909163793433"
                               }
                             ],
                             "eventCoding": {
@@ -18395,10 +18544,10 @@
                           }
                         },
                         {
-                          "fullUrl": "urn:uuid:a7fb50aa-3ca5-47a1-96f8-67ec1e95546e",
+                          "fullUrl": "urn:uuid:ee066a10-e861-4d09-bde5-909163793433",
                           "resource": {
                             "resourceType": "ClaimResponse",
-                            "id": "a7fb50aa-3ca5-47a1-96f8-67ec1e95546e",
+                            "id": "ee066a10-e861-4d09-bde5-909163793433",
                             "meta": {
                               "profile": [
                                 "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-response-claimresponse-non-phi|2.0.0-ballot"
@@ -18406,7 +18555,7 @@
                             },
                             "identifier": [
                               {
-                                "value": "a7fb50aa-3ca5-47a1-96f8-67ec1e95546e"
+                                "value": "ee066a10-e861-4d09-bde5-909163793433"
                               }
                             ],
                             "patient": {
@@ -18430,17 +18579,544 @@
                                 "value": "price-check-0001"
                               }
                             },
-                            "error": [
+                            "item": [
                               {
-                                "code": {
+                                "noteNumber": [
+                                  1,
+                                  3
+                                ],
+                                "adjudication": [
+                                  {
+                                    "amount": {
+                                      "value": 0.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "cash-price",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Full product cash price"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Dispensing fee"
+                                    },
+                                    "amount": {
+                                      "value": 12,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Card admin fee"
+                                    },
+                                    "amount": {
+                                      "value": 1,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "amount": {
+                                      "value": 13.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "total",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Total patient responsibility"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "itemSequence": 1
+                              }
+                            ],
+                            "addItem": [
+                              {
+                                "extension": [
+                                  {
+                                    "url": "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-isAlternative",
+                                    "valueBoolean": true
+                                  }
+                                ],
+                                "itemSequence": [
+                                  1
+                                ],
+                                "programCode": [
+                                  {
+                                    "coding": [
+                                      {
+                                        "code": "cost-plus-mail-order",
+                                        "system": "https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source",
+                                        "display": "Cost Plus Drugs mail order"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "quantity": {
+                                  "value": 30,
+                                  "unit": "{Each}",
+                                  "system": "http://unitsofmeasure.org",
+                                  "code": "{Each}"
+                                },
+                                "noteNumber": [
+                                  2
+                                ],
+                                "adjudication": [
+                                  {
+                                    "amount": {
+                                      "value": 0.21,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "cash-price",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Full product cash price"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Dispensing fee"
+                                    },
+                                    "amount": {
+                                      "value": 5,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Shipping"
+                                    },
+                                    "amount": {
+                                      "value": 5.25,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "amount": {
+                                      "value": 10.46,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "total",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Total patient responsibility"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "productOrService": {
                                   "coding": [
                                     {
-                                      "code": "no-price-source",
-                                      "system": "https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code",
-                                      "display": "No price source returned a price"
+                                      "code": "311354",
+                                      "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                      "display": "lisinopril 5 MG Oral Tablet"
                                     }
                                   ]
                                 }
+                              },
+                              {
+                                "extension": [
+                                  {
+                                    "url": "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-isAlternative",
+                                    "valueBoolean": true
+                                  }
+                                ],
+                                "itemSequence": [
+                                  1
+                                ],
+                                "provider": [
+                                  {
+                                    "reference": "urn:uuid:5b9b9e3e-da94-48c5-aa09-0f30c45dfab9"
+                                  }
+                                ],
+                                "programCode": [
+                                  {
+                                    "coding": [
+                                      {
+                                        "code": "cost-plus-team-cuban-card",
+                                        "system": "https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source",
+                                        "display": "The Team Cuban Card from Cost Plus Drugs"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "quantity": {
+                                  "value": 30,
+                                  "unit": "{Each}",
+                                  "system": "http://unitsofmeasure.org",
+                                  "code": "{Each}"
+                                },
+                                "noteNumber": [
+                                  3
+                                ],
+                                "adjudication": [
+                                  {
+                                    "amount": {
+                                      "value": 0.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "cash-price",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Full product cash price"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Dispensing fee"
+                                    },
+                                    "amount": {
+                                      "value": 12,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Card admin fee"
+                                    },
+                                    "amount": {
+                                      "value": 1,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "amount": {
+                                      "value": 13.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "total",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Total patient responsibility"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "productOrService": {
+                                  "coding": [
+                                    {
+                                      "code": "311354",
+                                      "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                      "display": "lisinopril 5 MG Oral Tablet"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "extension": [
+                                  {
+                                    "url": "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-isAlternative",
+                                    "valueBoolean": true
+                                  }
+                                ],
+                                "itemSequence": [
+                                  1
+                                ],
+                                "provider": [
+                                  {
+                                    "reference": "urn:uuid:deb1747a-a225-423c-b45a-d335f86f245f"
+                                  }
+                                ],
+                                "programCode": [
+                                  {
+                                    "coding": [
+                                      {
+                                        "code": "cost-plus-team-cuban-card",
+                                        "system": "https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source",
+                                        "display": "The Team Cuban Card from Cost Plus Drugs"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "quantity": {
+                                  "value": 30,
+                                  "unit": "{Each}",
+                                  "system": "http://unitsofmeasure.org",
+                                  "code": "{Each}"
+                                },
+                                "noteNumber": [
+                                  3
+                                ],
+                                "adjudication": [
+                                  {
+                                    "amount": {
+                                      "value": 0.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "cash-price",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Full product cash price"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Dispensing fee"
+                                    },
+                                    "amount": {
+                                      "value": 12,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Card admin fee"
+                                    },
+                                    "amount": {
+                                      "value": 1,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "amount": {
+                                      "value": 13.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "total",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Total patient responsibility"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "productOrService": {
+                                  "coding": [
+                                    {
+                                      "code": "311354",
+                                      "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                      "display": "lisinopril 5 MG Oral Tablet"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "extension": [
+                                  {
+                                    "url": "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-isAlternative",
+                                    "valueBoolean": true
+                                  }
+                                ],
+                                "itemSequence": [
+                                  1
+                                ],
+                                "provider": [
+                                  {
+                                    "reference": "urn:uuid:0f871261-d9c4-4459-8911-4a309c4da536"
+                                  }
+                                ],
+                                "programCode": [
+                                  {
+                                    "coding": [
+                                      {
+                                        "code": "cost-plus-team-cuban-card",
+                                        "system": "https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source",
+                                        "display": "The Team Cuban Card from Cost Plus Drugs"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "quantity": {
+                                  "value": 30,
+                                  "unit": "{Each}",
+                                  "system": "http://unitsofmeasure.org",
+                                  "code": "{Each}"
+                                },
+                                "noteNumber": [
+                                  3
+                                ],
+                                "adjudication": [
+                                  {
+                                    "amount": {
+                                      "value": 0.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "cash-price",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Full product cash price"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Dispensing fee"
+                                    },
+                                    "amount": {
+                                      "value": 12,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "reason": {
+                                      "text": "Card admin fee"
+                                    },
+                                    "amount": {
+                                      "value": 1,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "other-cost",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Other cost"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "amount": {
+                                      "value": 13.29,
+                                      "currency": "USD"
+                                    },
+                                    "category": {
+                                      "coding": [
+                                        {
+                                          "code": "total",
+                                          "system": "http://hl7.org/fhir/us/carin-rtpbc/CodeSystem/rtpbc-patient-pay-type-temporary",
+                                          "display": "Total patient responsibility"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "productOrService": {
+                                  "coding": [
+                                    {
+                                      "code": "311354",
+                                      "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                      "display": "lisinopril 5 MG Oral Tablet"
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "processNote": [
+                              {
+                                "number": 1,
+                                "text": "The lowest price returned at a pharmacy near the ZIP codes searched, at PUBLIX PHARMACY #0581. Every price returned is also listed as an alternative, this one included."
+                              },
+                              {
+                                "number": 2,
+                                "text": "Cost Plus Drugs mail order, from its price list as read at 2026-10-20T16:00:16Z. The price follows Cost Plus Drugs' published unit price for the quantity asked for, with its dispensing fee and standard shipping. Cost Plus Drugs fills the prescription with an equivalent medication it stocks. Order at costplusdrugs.com, with a prescription sent to Cost Plus Drugs. An estimate; the pharmacy confirms the price."
+                              },
+                              {
+                                "number": 3,
+                                "text": "The Team Cuban Card from Cost Plus Drugs, read at 2026-10-20T16:00:16Z for NDC 63304053201. Each price follows Cost Plus Drugs' published unit price for the quantity asked for, with that pharmacy's dispensing fee and the card's admin fee. Pay with the free Team Cuban Card from costplusdrugs.com. An estimate; the pharmacy confirms the price."
                               }
                             ],
                             "status": "active",
@@ -18454,14 +19130,158 @@
                               ]
                             },
                             "use": "predetermination",
-                            "created": "2026-10-20T14:00:01Z",
-                            "outcome": "error",
-                            "disposition": "No price source this service connects to returned a price for this request."
+                            "created": "2026-10-20T16:00:16Z",
+                            "outcome": "complete",
+                            "disposition": "Cash prices from the price sources this service connects to. Each is an estimate; the pharmacy confirms the price."
+                          }
+                        },
+                        {
+                          "fullUrl": "urn:uuid:5b9b9e3e-da94-48c5-aa09-0f30c45dfab9",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "5b9b9e3e-da94-48c5-aa09-0f30c45dfab9",
+                            "meta": {
+                              "profile": [
+                                "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-pharmacy-organization|2.0.0-ballot"
+                              ]
+                            },
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1043636558"
+                              }
+                            ],
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "code": "R",
+                                    "system": "http://terminology.hl7.org/CodeSystem/NCPDPPharmacyType",
+                                    "display": "Retail"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "(305) 860-7770"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "line": [
+                                  "120 S.W. 13th Street"
+                                ],
+                                "city": "Miami",
+                                "state": "FL",
+                                "postalCode": "33130",
+                                "country": "US"
+                              }
+                            ],
+                            "active": true,
+                            "name": "PUBLIX PHARMACY #0581"
+                          }
+                        },
+                        {
+                          "fullUrl": "urn:uuid:deb1747a-a225-423c-b45a-d335f86f245f",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "deb1747a-a225-423c-b45a-d335f86f245f",
+                            "meta": {
+                              "profile": [
+                                "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-pharmacy-organization|2.0.0-ballot"
+                              ]
+                            },
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1275944951"
+                              }
+                            ],
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "code": "R",
+                                    "system": "http://terminology.hl7.org/CodeSystem/NCPDPPharmacyType",
+                                    "display": "Retail"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "(305) 856-9990"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "line": [
+                                  "311 SW 7th St"
+                                ],
+                                "city": "Miami",
+                                "state": "FL",
+                                "postalCode": "33130",
+                                "country": "US"
+                              }
+                            ],
+                            "active": true,
+                            "name": "PUBLIX PHARMACY #0054"
+                          }
+                        },
+                        {
+                          "fullUrl": "urn:uuid:0f871261-d9c4-4459-8911-4a309c4da536",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "0f871261-d9c4-4459-8911-4a309c4da536",
+                            "meta": {
+                              "profile": [
+                                "http://hl7.org/fhir/us/carin-rtpbc/StructureDefinition/rtpbc-pharmacy-organization|2.0.0-ballot"
+                              ]
+                            },
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1649814211"
+                              }
+                            ],
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "code": "R",
+                                    "system": "http://terminology.hl7.org/CodeSystem/NCPDPPharmacyType",
+                                    "display": "Retail"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "(305) 341-9629"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "line": [
+                                  "601 NW 2nd Avenue"
+                                ],
+                                "city": "Miami",
+                                "state": "FL",
+                                "postalCode": "33136",
+                                "country": "US"
+                              }
+                            ],
+                            "active": true,
+                            "name": "PUBLIX PHARMACY #1614"
                           }
                         }
                       ],
                       "type": "message",
-                      "timestamp": "2026-10-20T14:00:01Z"
+                      "timestamp": "2026-10-20T16:00:16Z"
                     }
                   }
                 }
@@ -18477,7 +19297,7 @@
             }
           },
           "400": {
-            "description": "The request was refused, before any source was asked: a query parameter (the operation takes none), a body that is not a `message` Bundle (a Parameters resource is refused by name), an event other than the two above (coded `not-supported`), a list over its cap (coded `too-long`: 20 entries, 10 codings on a product, 10 ZIP codes, 10 identifiers on a pharmacy, 20 coverage classes), an element the CARIN profiles require that is missing, a reference that names no entry in the Bundle, a product with no NDC or RxNorm code, a ZIP code that is not five digits or ZIP+4, a request without patient details that names its patient or coverage, or a member's request with no Coverage or no payer identifier. The OperationOutcome names the element by its FHIRPath, never a value sent.",
+            "description": "The request was refused, before any source was asked: a query parameter (the operation takes none), a body that is not a `message` Bundle (a Parameters resource is refused by name), an event other than the two above (coded `not-supported`), a list over its cap (coded `too-long`: 20 entries, 10 codings on a product, 3 ZIP codes, 10 identifiers on a pharmacy, 20 coverage classes), an element the CARIN profiles require that is missing, a reference that names no entry in the Bundle, a product with no NDC or RxNorm code, a ZIP code that is not five digits or ZIP+4, a request without patient details that names its patient or coverage, a member's request with no Coverage or no payer identifier, a `Payer-Authorization` that is not `Bearer` and a token or is over 4,096 characters (coded `invalid` or `too-long`), or a `Payer-Authorization` sent with a request without patient details (coded `business-rule`), which no price source ever receives. The OperationOutcome names the element by its FHIRPath, or the header by its name, never a value sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -18496,6 +19316,41 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "description": "Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read. Coded `forbidden`.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                },
+                "examples": {
+                  "Not yet open to customers": {
+                    "summary": "Not yet open to customers",
+                    "value": {
+                      "resourceType": "OperationOutcome",
+                      "issue": [
+                        {
+                          "severity": "error",
+                          "code": "forbidden",
+                          "details": {
+                            "text": "Pharmacy Benefits is not yet open to customers."
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
           },
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
@@ -18528,14 +19383,31 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "503": {
-            "$ref": "#/components/responses/FhirUnavailable"
+            "description": "No price was returned, and a price source asked did not answer in time or answered with an error, or the member's insurer did not, so a later request may be answered. Coded `source-unavailable` in `issue.details.coding`, with `Retry-After`. A source's own words are never repeated. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Sent when waiting will help: the API key could not be checked just now, or the source behind this service is rate limiting requests. How many seconds to wait before sending the request again.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
           }
-        },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/XRequestId"
-          }
-        ]
+        }
       }
     },
     "/v1/fhir/r4/$reconcile-medications": {
