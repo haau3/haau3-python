@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/haau3/haau3-python/compare/v0.1.4...v0.2.0) (2026-10-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* the API's spec at 1.0.0-preview.12 ([#16](https://github.com/haau3/haau3-python/issues/16))
+
+### Features
+
+* a header an operation declares is a keyword of its own ([#20](https://github.com/haau3/haau3-python/issues/20)) ([94e5ed2](https://github.com/haau3/haau3-python/commit/94e5ed2c7a4210bb80c927ef3d78b5bae24ba565))
+* the API's spec at 1.0.0-preview.12 ([#16](https://github.com/haau3/haau3-python/issues/16)) ([303f24c](https://github.com/haau3/haau3-python/commit/303f24c5ba4118dccf99bf017a11fff2ced11c5b))
+
 ## [0.1.4](https://github.com/haau3/haau3-python/compare/v0.1.3...v0.1.4) (2026-10-20)
 
 
