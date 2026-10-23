@@ -32,6 +32,7 @@ import difflib
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -90,6 +91,17 @@ class Param:
 
 
 @dataclass
+class Header:
+    """An optional header parameter, sent from a keyword of the call's own named from it."""
+
+    wire: str
+    python: str
+    description: str
+    max_length: int | None
+    pattern: str | None
+
+
+@dataclass
 class Op:
     id: str
     method: str
@@ -103,6 +115,7 @@ class Op:
     body: str | None
     response: str
     expects: list[str]
+    headers: list[Header] = field(default_factory=list)
     batchable: bool = False
     name: str = field(init=False)
     const: str = field(init=False)
@@ -202,6 +215,36 @@ class Spec:
             f"{op_id}: the query parameter {param.get('name')} has a schema the generator does not read: {schema}"
         )
 
+    @staticmethod
+    def _headers(op_id: str, params: list[Json]) -> list[Header]:
+        """The optional header parameters. A required one, or a parameter in a cookie, stops the generator."""
+        headers: list[Header] = []
+        for p in params:
+            if p["in"] not in ("path", "query", "header"):
+                raise ValueError(f"{op_id}: a parameter in {p['in']}, which the generator does not send")
+            if p["in"] != "header":
+                continue
+            if p.get("required"):
+                raise ValueError(
+                    f"{op_id}: the required header {p['name']}, which a generated method cannot complete without"
+                )
+            schema = p.get("schema") or {}
+            if schema.get("type") != "string":
+                raise ValueError(f"{op_id}: the header {p['name']} is not a string, the only kind the generator sends")
+            pattern = schema.get("pattern")
+            if pattern is not None:
+                re.compile(pattern)  # The spec's ECMAScript pattern, which this one must read as Python does.
+            headers.append(
+                Header(
+                    wire=p["name"],
+                    python=naming.python_name(p["name"]),
+                    description=" ".join((p.get("description") or "").split()),
+                    max_length=schema.get("maxLength"),
+                    pattern=pattern,
+                )
+            )
+        return headers
+
     def _operations(self) -> list[Op]:
         docs = naming.DocsUrls()
         ops: list[Op] = []
@@ -222,10 +265,11 @@ class Spec:
                     for p in params
                     if p["in"] == "query"
                 ]
-                names = [p.python for p in query]
+                headers = self._headers(op["operationId"], params)
+                names = [p.python for p in query] + [h.python for h in headers]
                 clashes = {n for n in names if names.count(n) > 1} | (set(names) & {*OPTION_NAMES, "self", "body"})
                 if clashes:
-                    raise ValueError(f"{op['operationId']}: query parameters clash as {sorted(clashes)}")
+                    raise ValueError(f"{op['operationId']}: parameters clash as {sorted(clashes)}")
                 tag = (op.get("tags") or ["Other"])[0]
                 ops.append(
                     Op(
@@ -241,6 +285,7 @@ class Spec:
                         body=self._body(op),
                         response=self._response(op),
                         expects=self._expects(op),
+                        headers=headers,
                     )
                 )
         for op in ops:
@@ -248,6 +293,11 @@ class Spec:
                 raise ValueError(f"{op.id} is {op.method}; the SDK sends GET and POST only")
         for op in ops:
             mark = self.spec["paths"][op.path][op.method.lower()].get(BATCHABLE)
+            if op.headers and op.path.startswith("/v1/fhir/r4/") and mark is not False:
+                # A batch entry is one request inside the batch's body, which carries no headers of its own.
+                raise ValueError(
+                    f"{op.id} declares the header {op.headers[0].wire} and can go in a batch, whose entries carry no headers"
+                )
             if mark is not None and mark is not False:
                 raise ValueError(f"{op.id} carries {BATCHABLE}: {mark!r}, where the spec defines only false")
             if mark is False and not op.path.startswith("/v1/fhir/r4/"):
@@ -275,6 +325,7 @@ def _signature(op: Op, *, for_call: bool = False) -> str:
     if positional:
         parts.append("/")
     keywords = [f"{p.python}: {p.type}" if p.required else f"{p.python}: {p.type} | None = None" for p in op.query]
+    keywords += [f"{h.python}: str | None = None" for h in op.headers]
     if not for_call:
         keywords += [
             "timeout: float | None = None",
@@ -305,12 +356,35 @@ def _method_doc(op: Op) -> str:
             required = " Required." if p.required else ""
             lines.append(f"- `{p.python}`{wire}:{required} {p.description}".rstrip())
         parts.append("\n".join(lines))
+    if op.headers:
+        lines = ["Headers it declares, each a keyword of its own:", ""]
+        for h in op.headers:
+            limit = f", at most {h.max_length} characters" if h.max_length is not None else ""
+            lines.append(
+                f"- `{h.python}` (`{h.wire}`): {h.description} Checked against the form the API takes for it{limit},"
+                f" before sending; a value it does not take is refused without being repeated, and the keyword wins over"
+                f" a `{h.wire}` in `extra_headers`. Held from the moment the call takes it where nothing prints it.".strip()
+            )
+        parts.append("\n".join(lines))
     return "\n\n".join(parts)
 
 
 def _hide_body(op: Op, indent: str) -> list[str]:
     # A request body can be a patient's records; from here it is held where nothing prints it.
     return [f"{indent}hidden: Hidden[object] = Hidden(body)", f"{indent}del body"] if op.body else []
+
+
+def _hide_headers(op: Op, indent: str) -> list[str]:
+    # A declared header can carry a credential, such as a member's authorization: held at once, the same way.
+    if not op.headers:
+        return []
+    values = ", ".join(f"{h.python!r}: {h.python}" for h in op.headers)
+    return [f"{indent}declared = HeldHeaders({{{values}}})", f"{indent}del {', '.join(h.python for h in op.headers)}"]
+
+
+def _options(op: Op) -> str:
+    held = ", declared" if op.headers else ""
+    return f"Options(timeout, max_retries, correlation_id, extra_headers{held})"
 
 
 def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_response: bool) -> str:
@@ -352,7 +426,8 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
         else:
             lines.append(docstring(_method_doc(op), "        "))
         lines += _hide_body(op, "        ")
-        call = f"self._engine.call({_call_arguments(op, 'hidden')}, Options(timeout, max_retries, correlation_id, extra_headers))"
+        lines += _hide_headers(op, "        ")
+        call = f"self._engine.call({_call_arguments(op, 'hidden')}, {_options(op)})"
         if asynchronous:
             call = f"(await {call})"
         lines.append(f"        return {call}{'' if with_response else '.data'}")
@@ -430,7 +505,7 @@ def methods_module(spec: Spec) -> str:
         "from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, overload\n",
         "from . import fhir",
         "from ._batch import BatchResult, Call",
-        "from ._body import Hidden",
+        "from ._body import HeldHeaders, Hidden",
         f"from ._components import {', '.join(own)}",
         f"from ._operations import {', '.join(o.const for o in ops)}",
         "from ._response import Options, Response\n",
@@ -461,13 +536,21 @@ def operations_module(spec: Spec) -> str:
         "from typing import Final, Union\n",
         "from . import fhir",
         f"from ._components import {', '.join(own)}",
-        "from ._operation import Operation\n",
+        "from ._operation import DeclaredHeader, Operation\n",
         f"SPEC_VERSION: Final[str] = {spec.spec['info']['version']!r}",
         '"""The version of the API\'s spec this SDK was generated from."""\n',
     ]
     for op in spec.ops:
         expects = "(" + "".join(f"{t!r}, " for t in op.expects) + ")"
-        lines.append(f'{op.const}: Final[Operation[{op.response}]] = Operation("{op.method}", {op.path!r}, {expects})')
+        headers = ""
+        if op.headers:
+            declared = "".join(
+                f"DeclaredHeader({h.wire!r}, {h.python!r}, {h.max_length!r}, {h.pattern!r}), " for h in op.headers
+            )
+            headers = f", headers=({declared})"
+        lines.append(
+            f'{op.const}: Final[Operation[{op.response}]] = Operation("{op.method}", {op.path!r}, {expects}{headers})'
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -554,6 +637,17 @@ def _readable_signature(op: Op) -> str:
     return f"{op.name}({', '.join(args)})"
 
 
+def _header_keywords(spec: Spec) -> str:
+    """What api.md says of the keywords an operation's declared headers add."""
+    each = [f"`{op.name}` takes `{h.python}`, sent as `{h.wire}`" for op in spec.ops for h in op.headers]
+    if not each:
+        return ""
+    return (
+        "\nAn operation that declares a header takes it as one more keyword, named from the header in snake_case and\n"
+        f"checked before sending: {'; '.join(each)}.\n"
+    )
+
+
 def api_md(spec: Spec) -> str:
     tags = [t["name"] for t in spec.spec.get("tags", [])]
     text = {t["name"]: t.get("description", "") for t in spec.spec.get("tags", [])}
@@ -583,7 +677,7 @@ that takes one, and the query parameters are keyword arguments named by the API'
 snake_case (`name:contains` is `name_contains`, `_count` is `count`); each method's docstring gives
 both. Every method also takes the per-call options `timeout`, `max_retries`, `correlation_id` and
 `extra_headers`, and `client.with_response.<method>(...)` gives the request id and timing too.
-
+{_header_keywords(spec)}
 `batch()` sends several of these as one request, each with its own answer or error, from the entries
 `haau3.calls` makes. It takes every operation on the FHIR base except {excluded}: {len(batchable)} of the
 {len(spec.ops)}. See the README's "Several requests in one".

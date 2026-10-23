@@ -10,6 +10,9 @@ snake_case (`name:contains` is `name_contains`, `_count` is `count`); each metho
 both. Every method also takes the per-call options `timeout`, `max_retries`, `correlation_id` and
 `extra_headers`, and `client.with_response.<method>(...)` gives the request id and timing too.
 
+An operation that declares a header takes it as one more keyword, named from the header in snake_case and
+checked before sending: `process_message` takes `payer_authorization`, sent as `Payer-Authorization`.
+
 `batch()` sends several of these as one request, each with its own answer or error, from the entries
 `haau3.calls` makes. It takes every operation on the FHIR base except `fhir_batch`, `process_message` and `reconcile_medications`: 29 of the
 37. See the README's "Several requests in one".

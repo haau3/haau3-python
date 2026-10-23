@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, overload
 
 from . import fhir
 from ._batch import BatchResult, Call
-from ._body import Hidden
+from ._body import HeldHeaders, Hidden
 from ._components import (
     ListPublishersResponse,
     ListServiceTypesResponse,
@@ -389,6 +389,7 @@ class SyncMethods:
         body: fhir.Bundle,
         /,
         *,
+        payer_authorization: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -399,11 +400,17 @@ class SyncMethods:
         FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
 
         `POST /v1/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check
+
+        Headers it declares, each a keyword of its own:
+
+        - `payer_authorization` (`Payer-Authorization`): A member's own authorization at their insurer, for a member's request (event `rtpbc-request`) to an insurer that answers only with it: `Bearer` and the access token your app obtained from the member's login with that insurer, as an `Authorization` header carries one. It is forwarded once, to that insurer, for this request, and is never stored, logged or sent anywhere else. Without it, such a request is answered `payer-authorization-required`; a token the insurer refuses is answered `payer-authorization-rejected`. A request without patient details that carries it is refused. Checked against the form the API takes for it, at most 4096 characters, before sending; a value it does not take is refused without being repeated, and the keyword wins over a `Payer-Authorization` in `extra_headers`. Held from the moment the call takes it where nothing prints it.
         """
         hidden: Hidden[object] = Hidden(body)
         del body
+        declared = HeldHeaders({"payer_authorization": payer_authorization})
+        del payer_authorization
         return self._engine.call(
-            PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+            PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers, declared)
         ).data
 
     def read_endpoint(
@@ -1951,6 +1958,7 @@ class AsyncMethods:
         body: fhir.Bundle,
         /,
         *,
+        payer_authorization: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -1961,12 +1969,18 @@ class AsyncMethods:
         FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
 
         `POST /v1/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check
+
+        Headers it declares, each a keyword of its own:
+
+        - `payer_authorization` (`Payer-Authorization`): A member's own authorization at their insurer, for a member's request (event `rtpbc-request`) to an insurer that answers only with it: `Bearer` and the access token your app obtained from the member's login with that insurer, as an `Authorization` header carries one. It is forwarded once, to that insurer, for this request, and is never stored, logged or sent anywhere else. Without it, such a request is answered `payer-authorization-required`; a token the insurer refuses is answered `payer-authorization-rejected`. A request without patient details that carries it is refused. Checked against the form the API takes for it, at most 4096 characters, before sending; a value it does not take is refused without being repeated, and the keyword wins over a `Payer-Authorization` in `extra_headers`. Held from the moment the call takes it where nothing prints it.
         """
         hidden: Hidden[object] = Hidden(body)
         del body
+        declared = HeldHeaders({"payer_authorization": payer_authorization})
+        del payer_authorization
         return (
             await self._engine.call(
-                PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+                PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers, declared)
             )
         ).data
 
@@ -3460,6 +3474,7 @@ class SyncWithResponse:
         body: fhir.Bundle,
         /,
         *,
+        payer_authorization: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -3468,8 +3483,10 @@ class SyncWithResponse:
         """`Haau3.process_message`, returning a `Response` with the request id and timing as well as the answer."""
         hidden: Hidden[object] = Hidden(body)
         del body
+        declared = HeldHeaders({"payer_authorization": payer_authorization})
+        del payer_authorization
         return self._engine.call(
-            PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+            PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers, declared)
         )
 
     def read_endpoint(
@@ -4544,6 +4561,7 @@ class AsyncWithResponse:
         body: fhir.Bundle,
         /,
         *,
+        payer_authorization: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -4552,8 +4570,10 @@ class AsyncWithResponse:
         """`AsyncHaau3.process_message`, returning a `Response` with the request id and timing as well as the answer."""
         hidden: Hidden[object] = Hidden(body)
         del body
+        declared = HeldHeaders({"payer_authorization": payer_authorization})
+        del payer_authorization
         return await self._engine.call(
-            PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+            PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers, declared)
         )
 
     async def read_endpoint(
