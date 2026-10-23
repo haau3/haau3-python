@@ -299,13 +299,22 @@ def search_healthcare_service(
     *,
     location: str | None = None,
     network: str | None = None,
+    service_category: str | None = None,
+    specialty: str | None = None,
+    location_address_state: str | None = None,
+    location_address_postalcode: str | None = None,
+    location_address_city: str | None = None,
+    name: str | None = None,
+    organization: str | None = None,
+    organization_identifier: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
+    include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
     page: str | None = None,
 ) -> Call[fhir.Bundle]:
-    """Find healthcare services, as one entry of a batch. Called as `Haau3.search_healthcare_service` is.
+    """Find healthcare services and pharmacies, as one entry of a batch. Called as `Haau3.search_healthcare_service` is.
 
     `GET /v1/fhir/r4/HealthcareService`
     """
@@ -315,7 +324,16 @@ def search_healthcare_service(
         (
             ("location", location),
             ("network", network),
+            ("service-category", service_category),
+            ("specialty", specialty),
+            ("location.address-state", location_address_state),
+            ("location.address-postalcode", location_address_postalcode),
+            ("location.address-city", location_address_city),
+            ("name", name),
+            ("organization", organization),
+            ("organization.identifier", organization_identifier),
             ("active", active),
+            ("_include", include),
             ("_id", id),
             ("_summary", summary),
             ("_count", count),

@@ -94,7 +94,7 @@ class SyncMethods:
 
         FHIR instance-level operation `$in-network` on InsurancePlan: for each NPI, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then a `source` when the directory was asked. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).
 
-        `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`, https://docs.haau3.com/api-reference/plan-benefits/check-providers-against-a-plans-network
+        `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`, https://docs.haau3.com/api-reference/medical-benefits/check-providers-against-a-plans-network
 
         Query parameters, each with its name in the API:
 
@@ -298,7 +298,7 @@ class SyncMethods:
 
         FHIR type-level operation `$counties` on InsurancePlan: the counties and county equivalents of a state, the District of Columbia or a territory, sorted by name, each with the five-digit FIPS code `coverage-area-county` takes. The answer is a `Parameters` resource: one `county` parameter per county, whose `code` part is a Coding in `http://terminology.hl7.org/CodeSystem/FIPS64` with the county's name as its display and whose `state` part is the state's code, then a `source` parameter naming the list: the U.S. Census Bureau's 2020 county codes. It answers whether or not a plan is sold in a county. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-counties`).
 
-        `GET /v1/fhir/r4/InsurancePlan/$counties`, https://docs.haau3.com/api-reference/plan-benefits/list-a-states-counties
+        `GET /v1/fhir/r4/InsurancePlan/$counties`, https://docs.haau3.com/api-reference/medical-benefits/list-a-states-counties
 
         Query parameters, each with its name in the API:
 
@@ -396,7 +396,7 @@ class SyncMethods:
     ) -> fhir.Bundle:
         """Check what a medication costs (pharmacy benefit check)
 
-        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy or one or more ZIP codes. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. A check no connected source can answer carries `no-responder-for-coverage` or `no-price-source` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
+        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
 
         `POST /v1/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check
         """
@@ -438,7 +438,7 @@ class SyncMethods:
     ) -> fhir.HealthcareService:
         """Read a HealthcareService
 
-        Read one healthcare service by id, as returned by a search on this service.
+        Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.
 
         `GET /v1/fhir/r4/HealthcareService/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-healthcareservice
         """
@@ -458,9 +458,9 @@ class SyncMethods:
     ) -> fhir.InsurancePlan:
         """Read a plan
 
-        Read one plan by its id. A Medicare Advantage plan's id is CMS's plan id with the segment in three digits (`H2406-013-000`); a Marketplace plan's is its HIOS plan id with the variant (`19898FL0340001-01`). The plan conforms to the haau3 Plan Benefits profile and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.
+        Read one plan by its id. A Medicare Advantage plan's id is CMS's plan id with the segment in three digits (`H2406-013-000`); a Marketplace plan's is its HIOS plan id with the variant (`19898FL0340001-01`). The plan conforms to the haau3 Medical Benefits profile and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.
 
-        `GET /v1/fhir/r4/InsurancePlan/{id}`, https://docs.haau3.com/api-reference/plan-benefits/read-a-plan
+        `GET /v1/fhir/r4/InsurancePlan/{id}`, https://docs.haau3.com/api-reference/medical-benefits/read-a-plan
         """
         return self._engine.call(
             READ_INSURANCE_PLAN, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
@@ -478,7 +478,7 @@ class SyncMethods:
     ) -> fhir.Location:
         """Read a Location
 
-        Read one location by id, as returned by a search on this service.
+        Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.
 
         `GET /v1/fhir/r4/Location/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-location
         """
@@ -668,7 +668,16 @@ class SyncMethods:
         *,
         location: str | None = None,
         network: str | None = None,
+        service_category: str | None = None,
+        specialty: str | None = None,
+        location_address_state: str | None = None,
+        location_address_postalcode: str | None = None,
+        location_address_city: str | None = None,
+        name: str | None = None,
+        organization: str | None = None,
+        organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
+        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -678,17 +687,32 @@ class SyncMethods:
         correlation_id: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
     ) -> fhir.Bundle:
-        """Find healthcare services
+        """Find healthcare services and pharmacies
 
-        Search `HealthcareService` by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused rather than answered with nothing.
+        Search `HealthcareService` two ways.
 
-        `GET /v1/fhir/r4/HealthcareService`, https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services
+        **The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.
+
+        **Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.
+
+        Pharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. NPPES returns at most 1,200 records for one search, so a continuation past them is refused with a 422 that asks for a narrower search, rather than repeating a page or ending early. One store can bill under more than one NPI, and each is served as its own pharmacy.
+
+        `GET /v1/fhir/r4/HealthcareService`, https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services-and-pharmacies
 
         Query parameters, each with its name in the API:
 
         - `location`: The services offered at one location. Give a Location id, `Location/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
         - `network`: The services the directory lists in one insurance network. Cannot be used on its own: send it beside `location`. A search that breaks this rule is refused before the directory is asked. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
+        - `service_category` (`service-category`): `pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
+        - `specialty`: A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
+        - `location_address_state` (`location.address-state`): A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy.
+        - `location_address_postalcode` (`location.address-postalcode`): Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`.
+        - `location_address_city` (`location.address-city`): Narrows a pharmacy search to stores in a city whose name starts with this, so `Miami` also finds Miami Beach. Two or more letters. Send it with `location.address-state`.
+        - `name`: Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone.
+        - `organization`: One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
+        - `organization_identifier` (`organization.identifier`): One pharmacy by its NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Organization` accepts. Stands alone on a pharmacy search.
         - `active`: `true` or `false`. Narrows a search; cannot be used on its own.
+        - `include` (`_include`): On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`.
         - `id` (`_id`): A HealthcareService id. Searching by id rather than reading it lets one request also bring the records an `_include` or `_revinclude` names.
         - `summary` (`_summary`): `count` only: answers how many records match, as `total`, with no entries. Cannot be combined with `_include`, `_revinclude`, `_count` or `page`.
         - `count` (`_count`): Results are paged. `_count` sets the page size (1 to 100); a larger value is refused rather than quietly reduced. Follow `link` with relation `next` to continue. The cursor it carries is opaque and must not be constructed or modified.
@@ -700,7 +724,16 @@ class SyncMethods:
             (
                 ("location", location),
                 ("network", network),
+                ("service-category", service_category),
+                ("specialty", specialty),
+                ("location.address-state", location_address_state),
+                ("location.address-postalcode", location_address_postalcode),
+                ("location.address-city", location_address_city),
+                ("name", name),
+                ("organization", organization),
+                ("organization.identifier", organization_identifier),
                 ("active", active),
+                ("_include", include),
                 ("_id", id),
                 ("_summary", summary),
                 ("_count", count),
@@ -738,7 +771,7 @@ class SyncMethods:
 
         Drug-only and dental-only plans are not served. An identifier search that finds one answers no plan and an `OperationOutcome` entry saying why.
 
-        `GET /v1/fhir/r4/InsurancePlan`, https://docs.haau3.com/api-reference/plan-benefits/find-a-plan
+        `GET /v1/fhir/r4/InsurancePlan`, https://docs.haau3.com/api-reference/medical-benefits/find-a-plan
 
         Query parameters, each with its name in the API:
 
@@ -881,7 +914,7 @@ class SyncMethods:
         - `name`: Matches the organization's name.
         - `identifier`: An organization's NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Practitioner` accepts. An NPI search can return more than the practice that holds the NPI: a parent organization that lists it among several NPIs is a match too, because it carries the NPI as an NPI.
         - `partof`: The organizations that are part of one organization. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
-        - `type`: An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not.
+        - `type`: An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not. A NUCC provider taxonomy code is refused: the directory's organizations carry none, and pharmacies are searched as `HealthcareService` (`service-category=pharm`).
         - `active`: `true` or `false`. Narrows a search; cannot be used on its own.
         - `address_city` (`address-city`): Narrows a search by city; cannot be used on its own. Matches any of the organization's addresses, so a result can still list addresses in another city.
         - `address_state` (`address-state`): Narrows a search by state; cannot be used on its own. Matches any of the organization's addresses, so a result can still list addresses in another state.
@@ -1325,19 +1358,19 @@ class SyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with an optional text filter and paging (`count=0` returns the total only).
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the RxNorm value sets this service holds, the filter searches by name and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
 
         `GET /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set
 
         Query parameters, each with its name in the API:
 
-        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC.
-        - `filter`: Text filter to narrow the expansion to matching concepts. Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
-        - `count`: Maximum number of concepts to return (`0` returns the total only). Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
-        - `offset`: Number of concepts to skip for pagination. Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
-        - `display_language` (`displayLanguage`): Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole, in their source's own language and order.
-        - `include_designations` (`includeDesignations`): Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole.
-        - `active_only` (`activeOnly`): Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole.
+        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs).
+        - `filter`: Text to narrow the expansion: each word must be the start of a word in a concept's name, and every word must match, with case and accents ignored. On the RxNorm value sets it is required, with at least 3 letters or digits, and the matches come ranked, best first; without it, or with fewer, the answer is `422` coded `too-costly`. At most 500 characters. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
+        - `count`: Maximum number of concepts to return (`0` returns the total only). On the RxNorm value sets the first 20 come back when it is not sent. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
+        - `offset`: Number of concepts to skip, for paging; `expansion.total` is the number of matching concepts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
+        - `display_language` (`displayLanguage`): Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.
+        - `include_designations` (`includeDesignations`): Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.
+        - `active_only` (`activeOnly`): Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.
         """
         return self._engine.call(
             VALUE_SET_EXPAND,
@@ -1367,7 +1400,7 @@ class SyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with an optional text filter and paging (`count=0` returns the total only).
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the RxNorm value sets this service holds, the filter searches by name and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
 
         `POST /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set-1
         """
@@ -1597,7 +1630,7 @@ class AsyncMethods:
 
         FHIR instance-level operation `$in-network` on InsurancePlan: for each NPI, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then a `source` when the directory was asked. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).
 
-        `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`, https://docs.haau3.com/api-reference/plan-benefits/check-providers-against-a-plans-network
+        `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`, https://docs.haau3.com/api-reference/medical-benefits/check-providers-against-a-plans-network
 
         Query parameters, each with its name in the API:
 
@@ -1819,7 +1852,7 @@ class AsyncMethods:
 
         FHIR type-level operation `$counties` on InsurancePlan: the counties and county equivalents of a state, the District of Columbia or a territory, sorted by name, each with the five-digit FIPS code `coverage-area-county` takes. The answer is a `Parameters` resource: one `county` parameter per county, whose `code` part is a Coding in `http://terminology.hl7.org/CodeSystem/FIPS64` with the county's name as its display and whose `state` part is the state's code, then a `source` parameter naming the list: the U.S. Census Bureau's 2020 county codes. It answers whether or not a plan is sold in a county. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-counties`).
 
-        `GET /v1/fhir/r4/InsurancePlan/$counties`, https://docs.haau3.com/api-reference/plan-benefits/list-a-states-counties
+        `GET /v1/fhir/r4/InsurancePlan/$counties`, https://docs.haau3.com/api-reference/medical-benefits/list-a-states-counties
 
         Query parameters, each with its name in the API:
 
@@ -1925,7 +1958,7 @@ class AsyncMethods:
     ) -> fhir.Bundle:
         """Check what a medication costs (pharmacy benefit check)
 
-        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy or one or more ZIP codes. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. A check no connected source can answer carries `no-responder-for-coverage` or `no-price-source` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
+        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
 
         `POST /v1/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check
         """
@@ -1971,7 +2004,7 @@ class AsyncMethods:
     ) -> fhir.HealthcareService:
         """Read a HealthcareService
 
-        Read one healthcare service by id, as returned by a search on this service.
+        Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.
 
         `GET /v1/fhir/r4/HealthcareService/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-healthcareservice
         """
@@ -1993,9 +2026,9 @@ class AsyncMethods:
     ) -> fhir.InsurancePlan:
         """Read a plan
 
-        Read one plan by its id. A Medicare Advantage plan's id is CMS's plan id with the segment in three digits (`H2406-013-000`); a Marketplace plan's is its HIOS plan id with the variant (`19898FL0340001-01`). The plan conforms to the haau3 Plan Benefits profile and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.
+        Read one plan by its id. A Medicare Advantage plan's id is CMS's plan id with the segment in three digits (`H2406-013-000`); a Marketplace plan's is its HIOS plan id with the variant (`19898FL0340001-01`). The plan conforms to the haau3 Medical Benefits profile and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.
 
-        `GET /v1/fhir/r4/InsurancePlan/{id}`, https://docs.haau3.com/api-reference/plan-benefits/read-a-plan
+        `GET /v1/fhir/r4/InsurancePlan/{id}`, https://docs.haau3.com/api-reference/medical-benefits/read-a-plan
         """
         return (
             await self._engine.call(
@@ -2015,7 +2048,7 @@ class AsyncMethods:
     ) -> fhir.Location:
         """Read a Location
 
-        Read one location by id, as returned by a search on this service.
+        Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.
 
         `GET /v1/fhir/r4/Location/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-location
         """
@@ -2225,7 +2258,16 @@ class AsyncMethods:
         *,
         location: str | None = None,
         network: str | None = None,
+        service_category: str | None = None,
+        specialty: str | None = None,
+        location_address_state: str | None = None,
+        location_address_postalcode: str | None = None,
+        location_address_city: str | None = None,
+        name: str | None = None,
+        organization: str | None = None,
+        organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
+        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -2235,17 +2277,32 @@ class AsyncMethods:
         correlation_id: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
     ) -> fhir.Bundle:
-        """Find healthcare services
+        """Find healthcare services and pharmacies
 
-        Search `HealthcareService` by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused rather than answered with nothing.
+        Search `HealthcareService` two ways.
 
-        `GET /v1/fhir/r4/HealthcareService`, https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services
+        **The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.
+
+        **Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.
+
+        Pharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. NPPES returns at most 1,200 records for one search, so a continuation past them is refused with a 422 that asks for a narrower search, rather than repeating a page or ending early. One store can bill under more than one NPI, and each is served as its own pharmacy.
+
+        `GET /v1/fhir/r4/HealthcareService`, https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services-and-pharmacies
 
         Query parameters, each with its name in the API:
 
         - `location`: The services offered at one location. Give a Location id, `Location/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
         - `network`: The services the directory lists in one insurance network. Cannot be used on its own: send it beside `location`. A search that breaks this rule is refused before the directory is asked. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
+        - `service_category` (`service-category`): `pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
+        - `specialty`: A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
+        - `location_address_state` (`location.address-state`): A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy.
+        - `location_address_postalcode` (`location.address-postalcode`): Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`.
+        - `location_address_city` (`location.address-city`): Narrows a pharmacy search to stores in a city whose name starts with this, so `Miami` also finds Miami Beach. Two or more letters. Send it with `location.address-state`.
+        - `name`: Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone.
+        - `organization`: One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
+        - `organization_identifier` (`organization.identifier`): One pharmacy by its NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Organization` accepts. Stands alone on a pharmacy search.
         - `active`: `true` or `false`. Narrows a search; cannot be used on its own.
+        - `include` (`_include`): On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`.
         - `id` (`_id`): A HealthcareService id. Searching by id rather than reading it lets one request also bring the records an `_include` or `_revinclude` names.
         - `summary` (`_summary`): `count` only: answers how many records match, as `total`, with no entries. Cannot be combined with `_include`, `_revinclude`, `_count` or `page`.
         - `count` (`_count`): Results are paged. `_count` sets the page size (1 to 100); a larger value is refused rather than quietly reduced. Follow `link` with relation `next` to continue. The cursor it carries is opaque and must not be constructed or modified.
@@ -2258,7 +2315,16 @@ class AsyncMethods:
                 (
                     ("location", location),
                     ("network", network),
+                    ("service-category", service_category),
+                    ("specialty", specialty),
+                    ("location.address-state", location_address_state),
+                    ("location.address-postalcode", location_address_postalcode),
+                    ("location.address-city", location_address_city),
+                    ("name", name),
+                    ("organization", organization),
+                    ("organization.identifier", organization_identifier),
                     ("active", active),
+                    ("_include", include),
                     ("_id", id),
                     ("_summary", summary),
                     ("_count", count),
@@ -2297,7 +2363,7 @@ class AsyncMethods:
 
         Drug-only and dental-only plans are not served. An identifier search that finds one answers no plan and an `OperationOutcome` entry saying why.
 
-        `GET /v1/fhir/r4/InsurancePlan`, https://docs.haau3.com/api-reference/plan-benefits/find-a-plan
+        `GET /v1/fhir/r4/InsurancePlan`, https://docs.haau3.com/api-reference/medical-benefits/find-a-plan
 
         Query parameters, each with its name in the API:
 
@@ -2444,7 +2510,7 @@ class AsyncMethods:
         - `name`: Matches the organization's name.
         - `identifier`: An organization's NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Practitioner` accepts. An NPI search can return more than the practice that holds the NPI: a parent organization that lists it among several NPIs is a match too, because it carries the NPI as an NPI.
         - `partof`: The organizations that are part of one organization. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
-        - `type`: An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not.
+        - `type`: An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not. A NUCC provider taxonomy code is refused: the directory's organizations carry none, and pharmacies are searched as `HealthcareService` (`service-category=pharm`).
         - `active`: `true` or `false`. Narrows a search; cannot be used on its own.
         - `address_city` (`address-city`): Narrows a search by city; cannot be used on its own. Matches any of the organization's addresses, so a result can still list addresses in another city.
         - `address_state` (`address-state`): Narrows a search by state; cannot be used on its own. Matches any of the organization's addresses, so a result can still list addresses in another state.
@@ -2902,19 +2968,19 @@ class AsyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with an optional text filter and paging (`count=0` returns the total only).
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the RxNorm value sets this service holds, the filter searches by name and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
 
         `GET /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set
 
         Query parameters, each with its name in the API:
 
-        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC.
-        - `filter`: Text filter to narrow the expansion to matching concepts. Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
-        - `count`: Maximum number of concepts to return (`0` returns the total only). Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
-        - `offset`: Number of concepts to skip for pagination. Applies to value sets this service hosts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
-        - `display_language` (`displayLanguage`): Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole, in their source's own language and order.
-        - `include_designations` (`includeDesignations`): Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole.
-        - `active_only` (`activeOnly`): Not supported on this operation, and refused with a `400` naming it. Expansions are returned whole.
+        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs).
+        - `filter`: Text to narrow the expansion: each word must be the start of a word in a concept's name, and every word must match, with case and accents ignored. On the RxNorm value sets it is required, with at least 3 letters or digits, and the matches come ranked, best first; without it, or with fewer, the answer is `422` coded `too-costly`. At most 500 characters. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
+        - `count`: Maximum number of concepts to return (`0` returns the total only). On the RxNorm value sets the first 20 come back when it is not sent. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
+        - `offset`: Number of concepts to skip, for paging; `expansion.total` is the number of matching concepts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
+        - `display_language` (`displayLanguage`): Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.
+        - `include_designations` (`includeDesignations`): Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.
+        - `active_only` (`activeOnly`): Not supported on this operation, and refused with a `400` naming it. This service does not narrow an expansion by language, designation or status.
         """
         return (
             await self._engine.call(
@@ -2946,7 +3012,7 @@ class AsyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with an optional text filter and paging (`count=0` returns the total only).
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the RxNorm value sets this service holds, the filter searches by name and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
 
         `POST /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set-1
         """
@@ -3599,7 +3665,16 @@ class SyncWithResponse:
         *,
         location: str | None = None,
         network: str | None = None,
+        service_category: str | None = None,
+        specialty: str | None = None,
+        location_address_state: str | None = None,
+        location_address_postalcode: str | None = None,
+        location_address_city: str | None = None,
+        name: str | None = None,
+        organization: str | None = None,
+        organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
+        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -3616,7 +3691,16 @@ class SyncWithResponse:
             (
                 ("location", location),
                 ("network", network),
+                ("service-category", service_category),
+                ("specialty", specialty),
+                ("location.address-state", location_address_state),
+                ("location.address-postalcode", location_address_postalcode),
+                ("location.address-city", location_address_city),
+                ("name", name),
+                ("organization", organization),
+                ("organization.identifier", organization_identifier),
                 ("active", active),
+                ("_include", include),
                 ("_id", id),
                 ("_summary", summary),
                 ("_count", count),
@@ -4665,7 +4749,16 @@ class AsyncWithResponse:
         *,
         location: str | None = None,
         network: str | None = None,
+        service_category: str | None = None,
+        specialty: str | None = None,
+        location_address_state: str | None = None,
+        location_address_postalcode: str | None = None,
+        location_address_city: str | None = None,
+        name: str | None = None,
+        organization: str | None = None,
+        organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
+        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -4682,7 +4775,16 @@ class AsyncWithResponse:
             (
                 ("location", location),
                 ("network", network),
+                ("service-category", service_category),
+                ("specialty", specialty),
+                ("location.address-state", location_address_state),
+                ("location.address-postalcode", location_address_postalcode),
+                ("location.address-city", location_address_city),
+                ("name", name),
+                ("organization", organization),
+                ("organization.identifier", organization_identifier),
                 ("active", active),
+                ("_include", include),
                 ("_id", id),
                 ("_summary", summary),
                 ("_count", count),

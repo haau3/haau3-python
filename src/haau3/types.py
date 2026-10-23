@@ -176,7 +176,16 @@ class SearchHealthcareServiceQuery(TypedDict, total=False):
 
     location: str
     network: str
+    service_category: str
+    specialty: str
+    location_address_state: str
+    location_address_postalcode: str
+    location_address_city: str
+    name: str
+    organization: str
+    organization_identifier: str
     active: bool | Literal["true", "false"]
+    include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
     id: str
     summary: Literal["count"]
     count: int
