@@ -7,6 +7,7 @@ can raise, so a traceback that records locals shows neither.
 
 from __future__ import annotations
 
+import re
 import sys
 import time
 from collections.abc import Iterable, Sequence
@@ -17,11 +18,11 @@ import anyio
 import httpx2
 
 from ._batch import BatchResult, batch_bundle, read_batch
-from ._body import Hidden, Secret
+from ._body import HeldHeaders, Hidden, Secret
 from ._encode import FHIR_BASE, QueryValue, encode_query, fill_path, is_fhir, is_uuid, json_bytes, path_of, url_on_base
 from ._errors import Haau3Error, NoAnswerError, NoAnswerReason
 from ._judge import Context, detail, judge, parse_body, retry_after_seconds, wait_after_answer, wait_after_failure
-from ._operation import Operation
+from ._operation import DeclaredHeader, Operation
 from ._response import Options, RawResponse, Response
 from ._version import __version__
 
@@ -148,8 +149,50 @@ class _AttemptTimedOut(Exception):
     """A sync attempt's body was still arriving at its deadline."""
 
 
+def _problem(header: DeclaredHeader, declared: HeldHeaders) -> str | None:
+    """What is wrong with one declared header's value, in words that never carry it; None when it may go.
+
+    Its own frame, so the value is gone before anything is raised: a traceback that shows each frame's
+    local variables shows `declared`, which prints as `<headers hidden>`, and nothing else.
+    """
+    value = declared.reveal().get(header.option)
+    if value is None:
+        return None
+    if header.max_length is not None and len(value) > header.max_length:
+        return f"is longer than the {header.max_length} characters the API takes in {header.wire}."
+    # A header value never holds a line break, and Python's `$` would match before a final one.
+    if "\n" in value or "\r" in value or (header.pattern is not None and re.search(header.pattern, value) is None):
+        return f"is not in the form the API takes in {header.wire}, which the keyword's description gives."
+    return None
+
+
+def declared_headers(operation: Operation[Any], options: Options) -> HeldHeaders | None:
+    """The headers `operation` declares, from the call's own keywords, by header name and lower-cased.
+
+    Each value set is checked against the spec's schema for it, and one the API would refuse is refused
+    here, before anything is sent, in a message that names the keyword, never the value: a header such
+    as `Payer-Authorization` carries a credential.
+    """
+    if options.declared is None or not operation.headers:
+        return None
+    for header in operation.headers:
+        problem = _problem(header, options.declared)
+        if problem is not None:
+            raise Haau3Error(f"{operation.label} was not sent: {header.option} {problem}")
+    values = options.declared.reveal()
+    return HeldHeaders(
+        {h.wire.lower(): values[h.option] for h in operation.headers if values.get(h.option) is not None}
+    )
+
+
 def prepare(
-    config: Config, method: Method, url: str, content: Hidden[bytes] | None, options: Options, name: str
+    config: Config,
+    method: Method,
+    url: str,
+    content: Hidden[bytes] | None,
+    options: Options,
+    name: str,
+    declared: HeldHeaders | None = None,
 ) -> Prepared:
     """Headers and limits for a request. A `correlation_id` that is not a UUID is refused before the key is touched."""
     if options.correlation_id is not None and not is_uuid(options.correlation_id):
@@ -168,6 +211,10 @@ def prepare(
         headers["content-type"] = FHIR_JSON if fhir else "application/json"
     for header, value in (options.extra_headers or {}).items():
         headers[header.lower()] = value
+    # A header the operation declares is sent from its own keyword, over the same one in extra_headers.
+    for wire, held in (declared.reveal() if declared is not None else {}).items():
+        if held is not None:
+            headers[wire] = held
     if options.correlation_id is not None:
         headers["x-request-id"] = options.correlation_id
     return Prepared(
@@ -287,7 +334,8 @@ class SyncEngine(_Engine):
         options: Options,
     ) -> Response[T]:
         url = self.operation_url(operation, path_values, query)
-        sent = self.send(operation.method, url, body_bytes(body), options, operation.label)
+        declared = declared_headers(operation, options)
+        sent = self.send(operation.method, url, body_bytes(body), options, operation.label, declared)
         return sent.response(cast("T", answer_of(operation.label, operation.expects, sent).reveal()))
 
     def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
@@ -306,8 +354,16 @@ class SyncEngine(_Engine):
         url = self.resolve(path, query)
         return raw_response(self.send(method, url, raw_content(body), options, self.name(method, url)))
 
-    def send(self, method: Method, url: str, content: Hidden[bytes] | None, options: Options, name: str) -> Sent:
-        prepared = prepare(self._config, method, url, content, options, name)
+    def send(
+        self,
+        method: Method,
+        url: str,
+        content: Hidden[bytes] | None,
+        options: Options,
+        name: str,
+        declared: HeldHeaders | None = None,
+    ) -> Sent:
+        prepared = prepare(self._config, method, url, content, options, name, declared)
         started = time.monotonic()
         attempt = 0
         while True:
@@ -385,7 +441,8 @@ class AsyncEngine(_Engine):
         options: Options,
     ) -> Response[T]:
         url = self.operation_url(operation, path_values, query)
-        sent = await self.send(operation.method, url, body_bytes(body), options, operation.label)
+        declared = declared_headers(operation, options)
+        sent = await self.send(operation.method, url, body_bytes(body), options, operation.label, declared)
         return sent.response(cast("T", answer_of(operation.label, operation.expects, sent).reveal()))
 
     async def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
@@ -404,8 +461,16 @@ class AsyncEngine(_Engine):
         url = self.resolve(path, query)
         return raw_response(await self.send(method, url, raw_content(body), options, self.name(method, url)))
 
-    async def send(self, method: Method, url: str, content: Hidden[bytes] | None, options: Options, name: str) -> Sent:
-        prepared = prepare(self._config, method, url, content, options, name)
+    async def send(
+        self,
+        method: Method,
+        url: str,
+        content: Hidden[bytes] | None,
+        options: Options,
+        name: str,
+        declared: HeldHeaders | None = None,
+    ) -> Sent:
+        prepared = prepare(self._config, method, url, content, options, name, declared)
         started = time.monotonic()
         attempt = 0
         while True:

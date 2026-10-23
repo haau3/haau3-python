@@ -129,6 +129,17 @@ that call only:
 client.search_slots(state="MA", timeout=10, max_retries=0)
 ```
 
+An operation that declares a header of its own takes it as one more keyword, named from the header
+and typed from the spec. `process_message` takes `payer_authorization`, sent as
+`Payer-Authorization`: a member's own authorization at their insurer, `Bearer` and the access token
+your app got from the member's login there. The SDK checks it against the form the API takes before
+sending, refuses one the API would not take without repeating it, and holds it where nothing prints
+it, a traceback's local variables included.
+
+```python
+checked = client.process_message(message, payer_authorization=f"Bearer {access_token}")
+```
+
 `http_client` passes anything [httpx2](https://github.com/pydantic/httpx2) takes: a proxy,
 certificates, limits, event hooks, a transport. The SDK's own method, URL, headers, body and
 timeout always win, it never follows a redirect, and it never closes a client you pass.

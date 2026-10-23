@@ -45,6 +45,7 @@ def _arguments() -> dict[str, Any]:
         "message": message,
         "codes": ["2345-7", "2160-0"],
         "job_id": str(uuid.uuid4()),
+        "access_token": "eyJhbGciOiJub25lIn0.e30.example",
     }
 
 

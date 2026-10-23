@@ -18,7 +18,7 @@ from ._components import (
     SearchProviderLocationsResponse,
     SearchSlotsResponse,
 )
-from ._operation import Operation
+from ._operation import DeclaredHeader, Operation
 
 SPEC_VERSION: Final[str] = "1.0.0-preview.12"
 """The version of the API's spec this SDK was generated from."""
@@ -53,7 +53,16 @@ LIST_INSURANCE_PLAN_COUNTIES: Final[Operation[fhir.Parameters]] = Operation(
 LIST_PUBLISHERS: Final[Operation[ListPublishersResponse]] = Operation("GET", "/v1/scheduling/publishers", ())
 LIST_SERVICE_TYPES: Final[Operation[ListServiceTypesResponse]] = Operation("GET", "/v1/scheduling/service-types", ())
 LIST_SPECIALTIES: Final[Operation[ListSpecialtiesResponse]] = Operation("GET", "/v1/scheduling/specialties", ())
-PROCESS_MESSAGE: Final[Operation[fhir.Bundle]] = Operation("POST", "/v1/fhir/r4/$process-message", ("Bundle",))
+PROCESS_MESSAGE: Final[Operation[fhir.Bundle]] = Operation(
+    "POST",
+    "/v1/fhir/r4/$process-message",
+    ("Bundle",),
+    headers=(
+        DeclaredHeader(
+            "Payer-Authorization", "payer_authorization", 4096, "^[Bb][Ee][Aa][Rr][Ee][Rr] +[A-Za-z0-9\\-._~+/]+=*$"
+        ),
+    ),
+)
 READ_ENDPOINT: Final[Operation[fhir.Endpoint]] = Operation("GET", "/v1/fhir/r4/Endpoint/{id}", ("Endpoint",))
 READ_HEALTHCARE_SERVICE: Final[Operation[fhir.HealthcareService]] = Operation(
     "GET", "/v1/fhir/r4/HealthcareService/{id}", ("HealthcareService",)

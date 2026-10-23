@@ -154,6 +154,43 @@ def test_the_generator_refuses_a_parameter_it_cannot_name_or_type(parameters: li
         generate.Spec(_mini(parameters))
 
 
+def _header(**changes: object) -> dict[str, object]:
+    return {"name": "X-Example-Option", "in": "header", "schema": {"type": "string"}, **changes}
+
+
+def test_an_optional_header_is_a_keyword_of_the_operations_own() -> None:
+    op = next(
+        o
+        for o in generate.Spec(_mini([_header(schema={"type": "string", "maxLength": 9})])).ops
+        if o.id == "listPublishers"
+    )
+    assert [(h.wire, h.python, h.max_length) for h in op.headers] == [("X-Example-Option", "x_example_option", 9)]
+
+
+@pytest.mark.parametrize(
+    ("parameters", "words"),
+    [
+        ([_header(required=True)], "required header"),
+        ([{"name": "session", "in": "cookie", "schema": {"type": "string"}}], "in cookie"),
+        ([_header(name="Timeout")], "clash"),
+        ([_header(name="Name"), {"name": "name", "in": "query", "schema": {"type": "string"}}], "clash"),
+        ([_header(schema={"type": "integer"})], "not a string"),
+        ([_header(schema={"type": "string", "pattern": "(unclosed"})], "missing"),
+    ],
+    ids=["required", "a cookie", "an option's name", "a query parameter's name", "not a string", "a bad pattern"],
+)
+def test_the_generator_stops_on_a_header_it_cannot_send(parameters: list[dict[str, object]], words: str) -> None:
+    with pytest.raises(Exception, match=words):
+        generate.Spec(_mini(parameters))
+
+
+def test_a_header_on_an_operation_a_batch_can_carry_stops_the_generator() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    spec["paths"]["/v1/fhir/r4/metadata"]["get"].setdefault("parameters", []).append(_header())
+    with pytest.raises(ValueError, match="whose entries carry no headers"):
+        generate.Spec(spec)
+
+
 def test_the_generator_refuses_a_spec_without_the_batch() -> None:
     spec = json.loads(json.dumps(SPEC))
     del spec["paths"]["/v1/fhir/r4"]

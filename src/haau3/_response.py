@@ -8,6 +8,8 @@ from typing import Generic, TypeVar, final
 
 import httpx2
 
+from ._body import HeldHeaders
+
 T_co = TypeVar("T_co", covariant=True)
 
 
@@ -59,3 +61,5 @@ class Options:
     max_retries: int | None = None
     correlation_id: str | None = None
     extra_headers: Mapping[str, str] | None = field(default=None, repr=False)
+    declared: HeldHeaders | None = field(default=None, repr=False)
+    """The keywords of the headers the operation declares, held where nothing prints them."""
