@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.12"
+    "version": "1.0.0-preview.13"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
