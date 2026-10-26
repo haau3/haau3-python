@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.12",
+    "version": "1.0.0-preview.13",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-01 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -18330,7 +18330,7 @@
           "Pharmacy Benefits"
         ],
         "summary": "Check what a medication costs (pharmacy benefit check)",
-        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
+        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
         "operationId": "processMessage",
         "x-haau3-batchable": false,
         "parameters": [
@@ -19318,7 +19318,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "403": {
-            "description": "Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read. Coded `forbidden`.",
+            "description": "Refused before the operation runs, coded `forbidden`, for one of two reasons. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read. Or a member's request from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan that is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`: coded `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`, and a request labelled only in part names the first resources without the label in `expression`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -19335,6 +19335,28 @@
                           "code": "forbidden",
                           "details": {
                             "text": "Pharmacy Benefits is not yet open to customers."
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "Patient data without an agreement": {
+                    "summary": "Patient data without an agreement",
+                    "value": {
+                      "resourceType": "OperationOutcome",
+                      "issue": [
+                        {
+                          "severity": "error",
+                          "code": "forbidden",
+                          "details": {
+                            "coding": [
+                              {
+                                "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                                "code": "phi-agreement-required",
+                                "display": "PHI agreement required"
+                              }
+                            ],
+                            "text": "Real patient data needs a business associate agreement (BAA) with haau3 in force and the Team or Scale plan, and the organization sending this request has no BAA in force. Without both, this operation accepts only test data marked as such: the request and every resource in it labelled with the meta.security coding HTEST from http://terminology.hl7.org/CodeSystem/v3-ActReason. See https://docs.haau3.com/patient-data#test-data"
                           }
                         }
                       ]
@@ -19416,7 +19438,7 @@
           "MedList"
         ],
         "summary": "Reconcile one patient's medication records",
-        "description": "FHIR system-level operation `$reconcile-medications`. POST one patient's MedicationRequest, MedicationStatement, MedicationDispense and MedicationAdministration records, with the Medications they reference, as a `collection` or `searchset` Bundle; every entry needs a `fullUrl`. The response is one reconciled medication list: a `collection` Bundle holding one reconciled MedicationRequest per clinical drug, a Provenance for each naming the records behind it, and an OperationOutcome when a record was skipped. To evaluate the list as of another date, POST a Parameters resource with `resource` parts, or one `bundle` part, and an `asOf` part. This operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged, apart from the request's ids, and the operation is not offered inside a batch. The contract is published at https://fhir.haau3.com/OperationDefinition-reconcile-medications.html.",
+        "description": "FHIR system-level operation `$reconcile-medications`. POST one patient's MedicationRequest, MedicationStatement, MedicationDispense and MedicationAdministration records, with the Medications they reference, as a `collection` or `searchset` Bundle; every entry needs a `fullUrl`. The response is one reconciled medication list: a `collection` Bundle holding one reconciled MedicationRequest per clinical drug, a Provenance for each naming the records behind it, and an OperationOutcome when a record was skipped. To evaluate the list as of another date, POST a Parameters resource with `resource` parts, or one `bundle` part, and an `asOf` part. This operation receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send only test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. Nothing a request carries is stored or logged, apart from the request's ids, and the operation is not offered inside a batch. The contract is published at https://fhir.haau3.com/OperationDefinition-reconcile-medications.html.",
         "operationId": "reconcileMedications",
         "x-haau3-batchable": false,
         "requestBody": {
@@ -19532,6 +19554,15 @@
                   "value": {
                     "resourceType": "Bundle",
                     "id": "medlist-request-bundle",
+                    "meta": {
+                      "security": [
+                        {
+                          "code": "HTEST",
+                          "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                          "display": "test health data"
+                        }
+                      ]
+                    },
                     "type": "collection",
                     "timestamp": "2026-09-25T11:59:00Z",
                     "entry": [
@@ -19540,6 +19571,15 @@
                         "resource": {
                           "resourceType": "MedicationRequest",
                           "id": "janumet-order",
+                          "meta": {
+                            "security": [
+                              {
+                                "code": "HTEST",
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                                "display": "test health data"
+                              }
+                            ]
+                          },
                           "medicationReference": {
                             "reference": "Medication/janumet"
                           },
@@ -19559,6 +19599,15 @@
                         "resource": {
                           "resourceType": "Medication",
                           "id": "janumet",
+                          "meta": {
+                            "security": [
+                              {
+                                "code": "HTEST",
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                                "display": "test health data"
+                              }
+                            ]
+                          },
                           "code": {
                             "coding": [
                               {
@@ -19576,6 +19625,15 @@
                         "resource": {
                           "resourceType": "MedicationStatement",
                           "id": "janumet-statement",
+                          "meta": {
+                            "security": [
+                              {
+                                "code": "HTEST",
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                                "display": "test health data"
+                              }
+                            ]
+                          },
                           "medicationCodeableConcept": {
                             "coding": [
                               {
@@ -19605,6 +19663,15 @@
                         "resource": {
                           "resourceType": "MedicationStatement",
                           "id": "lisinopril-statement",
+                          "meta": {
+                            "security": [
+                              {
+                                "code": "HTEST",
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                                "display": "test health data"
+                              }
+                            ]
+                          },
                           "medicationCodeableConcept": {
                             "coding": [
                               {
@@ -19635,6 +19702,15 @@
                         "resource": {
                           "resourceType": "MedicationRequest",
                           "id": "unnamed-order",
+                          "meta": {
+                            "security": [
+                              {
+                                "code": "HTEST",
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                                "display": "test health data"
+                              }
+                            ]
+                          },
                           "medicationCodeableConcept": {
                             "extension": [
                               {
@@ -20060,6 +20136,48 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "description": "Real patient data from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan, refused before the operation runs: the request is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`. Coded `forbidden`, with `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`; a request labelled only in part names the first resources without the label in `expression`.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                },
+                "examples": {
+                  "Patient data without an agreement": {
+                    "summary": "Patient data without an agreement",
+                    "value": {
+                      "resourceType": "OperationOutcome",
+                      "issue": [
+                        {
+                          "severity": "error",
+                          "code": "forbidden",
+                          "details": {
+                            "coding": [
+                              {
+                                "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                                "code": "phi-agreement-required",
+                                "display": "PHI agreement required"
+                              }
+                            ],
+                            "text": "Real patient data needs a business associate agreement (BAA) with haau3 in force and the Team or Scale plan, and the organization sending this request has no BAA in force. Without both, this operation accepts only test data marked as such: the request and every resource in it labelled with the meta.security coding HTEST from http://terminology.hl7.org/CodeSystem/v3-ActReason. See https://docs.haau3.com/patient-data#test-data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
           },
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
