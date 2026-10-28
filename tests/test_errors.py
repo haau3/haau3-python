@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import copy
+import json
 import pickle
+from typing import Any
 
+import httpx2
 import pytest
 
 from haau3 import AuthError, ForbiddenError, Haau3Error, NoAnswerError, RefusedError
@@ -159,3 +162,148 @@ def test_every_error_is_a_haau3_error_and_an_exception() -> None:
     for cls in (AuthError, RefusedError, NoAnswerError):
         assert issubclass(cls, Haau3Error)
     assert issubclass(Haau3Error, Exception)
+
+
+# A 403 names its reason when the API names it by a code of its own: in an OperationOutcome's
+# `api-error` coding on a FHIR base, or in a problem's `code` elsewhere. The message says it in words
+# chosen by the code, never the body's.
+
+API_ERROR = "https://haau3.com/fhir/CodeSystem/api-error"
+
+
+def coded(code: str, system: str = API_ERROR) -> dict[str, object]:
+    return {
+        "resourceType": "OperationOutcome",
+        "issue": [
+            {
+                "severity": "error",
+                "code": "forbidden",
+                "details": {"coding": [{"system": system, "code": code}], "text": "the API's own words"},
+            }
+        ],
+    }
+
+
+@pytest.mark.anyio
+async def test_a_403_names_a_test_key_outside_the_sandbox(kind: str) -> None:
+    error = await Client(kind, Recorder(answer(403, coded("test-key-outside-sandbox")))).raises(
+        "read_insurance_plan", "H1"
+    )
+    assert isinstance(error, ForbiddenError)
+    assert isinstance(error, AuthError)
+    assert error.code == "test-key-outside-sandbox"
+    assert error.message == (
+        "GET /v1/fhir/r4/InsurancePlan/{id} was refused: this is a test key, which works only in the Sandbox (403)."
+    )
+    assert "the API's own words" not in error.message
+    assert error.to_dict()["code"] == "test-key-outside-sandbox"
+
+
+@pytest.mark.anyio
+async def test_a_403_names_a_live_key_in_the_sandbox(kind: str) -> None:
+    bundle = {"resourceType": "Bundle", "type": "message", "entry": []}
+    error = await Client(kind, Recorder(answer(403, coded("live-key-in-sandbox")))).raises(
+        "sandbox_process_message", bundle
+    )
+    assert isinstance(error, ForbiddenError)
+    assert error.code == "live-key-in-sandbox"
+    assert error.message == (
+        "POST /v1/sandbox/fhir/r4/$process-message was refused: "
+        "this is a live key, which does not work in the Sandbox (403)."
+    )
+
+
+@pytest.mark.anyio
+async def test_a_403_reads_its_code_from_a_problem_off_the_fhir_bases(kind: str) -> None:
+    problem = {
+        **PROBLEM,
+        "status": 403,
+        "type": "https://docs.haau3.com/errors#forbidden",
+        "code": "test-key-outside-sandbox",
+    }
+    error = await Client(kind, Recorder(answer(403, problem, fhir=False))).raises("search_slots", state="MA")
+    assert isinstance(error, ForbiddenError)
+    assert error.code == "test-key-outside-sandbox"
+    assert error.message == (
+        "GET /v1/scheduling/slots was refused: this is a test key, which works only in the Sandbox (403)."
+    )
+
+
+@pytest.mark.anyio
+async def test_a_403_carries_a_code_it_has_no_sentence_for_under_the_general_message(kind: str) -> None:
+    error = await Client(kind, Recorder(answer(403, coded("phi-agreement-required")))).raises(
+        "read_insurance_plan", "H1"
+    )
+    assert isinstance(error, ForbiddenError)
+    assert error.code == "phi-agreement-required"
+    assert error.message.endswith("the API key was accepted, and its organization may not make this request (403).")
+
+
+# Negative controls: no code, and a code from another system, are not the API's reason.
+@pytest.mark.anyio
+@pytest.mark.parametrize("body", [OUTCOME, coded("test-key-outside-sandbox", "http://example.org/other")])
+async def test_a_403_has_no_code_when_the_api_names_none(kind: str, body: dict[str, object]) -> None:
+    error = await Client(kind, Recorder(answer(403, body))).raises("read_insurance_plan", "H1")
+    assert isinstance(error, ForbiddenError)
+    assert error.code is None
+    assert error.message.endswith("the API key was accepted, and its organization may not make this request (403).")
+    assert "code" not in error.to_dict()
+
+
+# Every answer and every error the API answered carries its status's text: the answer's own, or the
+# standard one when it came with none, as HTTP/2 answers do.
+
+
+def with_phrase(status: int, body: object, phrase: bytes) -> Any:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(
+            status,
+            headers={"x-request-id": REQUEST_ID, "content-type": "application/fhir+json"},
+            content=json.dumps(body).encode(),
+            extensions={"reason_phrase": phrase},
+        )
+
+    return handler
+
+
+@pytest.mark.anyio
+async def test_a_typed_answer_carries_its_reason_phrase(kind: str) -> None:
+    plan = {"resourceType": "InsurancePlan", "id": "H1"}
+    standard = await Client(kind, Recorder(answer(200, plan))).with_response("read_insurance_plan", "H1")
+    assert standard.reason_phrase == "OK"
+    own = await Client(kind, Recorder(with_phrase(200, plan, b"Fine"))).with_response("read_insurance_plan", "H1")
+    assert own.reason_phrase == "Fine"
+
+
+@pytest.mark.anyio
+async def test_each_error_the_api_answered_carries_its_reason_phrase(kind: str) -> None:
+    auth = await Client(kind, Recorder(answer(401, OUTCOME))).raises("read_insurance_plan", "H1")
+    forbidden = await Client(kind, Recorder(answer(403, OUTCOME))).raises("read_insurance_plan", "H1")
+    refused = await Client(kind, Recorder(with_phrase(404, OUTCOME, b"Nothing Here"))).raises(
+        "read_insurance_plan", "H1"
+    )
+    none = await Client(kind, Recorder(answer(503, OUTCOME)), max_retries=0).raises("read_insurance_plan", "H1")
+    assert isinstance(auth, AuthError)
+    assert isinstance(forbidden, ForbiddenError)
+    assert isinstance(refused, RefusedError)
+    assert isinstance(none, NoAnswerError)
+    assert [auth.reason_phrase, forbidden.reason_phrase, refused.reason_phrase, none.reason_phrase] == [
+        "Unauthorized",
+        "Forbidden",
+        "Nothing Here",
+        "Service Unavailable",
+    ]
+    assert none.to_dict()["reason_phrase"] == "Service Unavailable"
+
+
+# Negative control: a request that got no answer has no status, so no reason phrase either.
+@pytest.mark.anyio
+async def test_no_reason_phrase_when_no_answer_came(kind: str) -> None:
+    error = await Client(kind, Recorder(httpx2.ConnectError("refused")), max_retries=0).raises(
+        "read_insurance_plan", "H1"
+    )
+    assert isinstance(error, NoAnswerError)
+    assert error.reason == "network"
+    assert error.status is None
+    assert error.reason_phrase is None
+    assert "reason_phrase" not in error.to_dict()
