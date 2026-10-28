@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/haau3/haau3-python/compare/v0.2.2...v0.2.3) (2026-10-28)
+
+
+### Features
+
+* a 403 is a ForbiddenError that says why, and every answer and error carries its reason phrase ([#29](https://github.com/haau3/haau3-python/issues/29)) ([cefbe8c](https://github.com/haau3/haau3-python/commit/cefbe8c6dacb92b68507def78ae25de9a1f3786c))
+* the API's spec at 1.0.0-preview.16 ([#27](https://github.com/haau3/haau3-python/issues/27)) ([18305fd](https://github.com/haau3/haau3-python/commit/18305fd0516016378ffea4c37e51ccfc22b9f90c))
+
 ## [0.2.2](https://github.com/haau3/haau3-python/compare/v0.2.1...v0.2.2) (2026-10-28)
 
 
