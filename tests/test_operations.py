@@ -13,7 +13,18 @@ import pytest
 import haau3
 from haau3 import AsyncHaau3, Haau3, calls
 
-from .helpers import KEY, REQUEST_ID, SPEC, Client, Recorder, answer, example_answer, example_body, operations
+from .helpers import (
+    KEY,
+    REQUEST_ID,
+    SPEC,
+    Client,
+    Recorder,
+    answer,
+    answers_fhir,
+    example_answer,
+    example_body,
+    operations,
+)
 
 OPERATIONS = sorted(operations())
 SPEC_OPERATION_IDS = {o["operationId"] for item in SPEC["paths"].values() for o in item.values()}
@@ -47,8 +58,7 @@ async def test_each_operation_sends_its_example_and_returns_its_answer(
     kind: str, operation_id: str, method: str, path: str, op: dict[str, Any]
 ) -> None:
     expected = example_answer(op)
-    fhir = path.startswith("/v1/fhir/")
-    recorder = Recorder(answer(200, expected, fhir=fhir))
+    recorder = Recorder(answer(200, expected, fhir=answers_fhir(op)))
     client = Client(kind, recorder)
     path_values, kwargs, sent = _case(op)
     body = [example_body(op)] if "requestBody" in op else []
@@ -65,9 +75,10 @@ async def test_each_operation_sends_its_example_and_returns_its_answer(
     assert sorted(recorder.query()) == sorted(sent)
     assert request.headers["authorization"] == f"Bearer {KEY}"
     assert request.headers["user-agent"].startswith(f"haau3-python/{haau3.__version__} (python ")
-    assert request.headers["accept"] == ("application/fhir+json" if fhir else "application/json")
+    # The media types the spec gives the answer and the body, not a copy of the client's own rule.
+    assert request.headers["accept"] == next(iter(op["responses"]["200"]["content"]))
     if body:
-        assert request.headers["content-type"] == "application/fhir+json"
+        assert request.headers["content-type"] == next(iter(op["requestBody"]["content"]))
         assert json.loads(request.content) == body[0]
     else:
         assert "content-type" not in request.headers
