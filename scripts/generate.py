@@ -1,7 +1,8 @@
 """Generates the SDK's typed surface from the pinned spec, openapi/openapi.json:
 
 - src/haau3/fhir.py: FHIR R4 as TypedDicts, from HL7's own schema (scripts/fhir_emit.py), for the
-  resource types the spec names (a component whose `resourceType` is a `const`).
+  resource types the spec names (a component whose `resourceType` is a `const`) and those its
+  request examples carry.
 - src/haau3/_components.py: the spec's other components (Scheduling's records and answers, Problem)
   as TypedDicts, by datamodel-code-generator.
 - src/haau3/_operations.py: one Operation per operation: its method, path and the FHIR resource types
@@ -135,6 +136,34 @@ class Spec:
                 raise ValueError(f"the FHIR component {name} is named for another resource type")
         self.own = sorted(n for n in self.schemas if n not in self.fhir)
         self.ops = self._operations()
+        self.carried = self._carried()
+
+    def _carried(self) -> list[str]:
+        """The resource types the spec's request examples carry, the request's own type included.
+
+        fhir.py types these as well as the spec's own, so a record written into a request as the
+        docs' examples write it is checked as its own type, never as `OtherResource`. As the examples
+        grow, so do the types.
+        """
+        found: set[str] = set()
+        for item in self.spec["paths"].values():
+            for op in item.values():
+                if not isinstance(op, dict):
+                    continue
+                for media in ((op.get("requestBody") or {}).get("content") or {}).values():
+                    stack: list[object] = [example.get("value") for example in (media.get("examples") or {}).values()]
+                    if "example" in media:
+                        stack.append(media["example"])
+                    while stack:
+                        node = stack.pop()
+                        if isinstance(node, dict):
+                            type_ = node.get("resourceType")
+                            if isinstance(type_, str):
+                                found.add(type_)
+                            stack.extend(node.values())
+                        elif isinstance(node, list):
+                            stack.extend(node)
+        return sorted(found)
 
     @staticmethod
     def fhir_type(schema: Json | None) -> str | None:
@@ -909,7 +938,7 @@ def fhir_module(spec: Spec) -> str:
         raw = archive.read("fhir.schema.json")
     if hashlib.sha256(raw).hexdigest() != FHIR_SCHEMA_SHA256:
         raise ValueError("fhir.schema.json in the zip is not the HL7 schema this generator was pinned to")
-    return fhir_emit.emit(json.loads(raw), spec.fhir)
+    return fhir_emit.emit(json.loads(raw), sorted(set(spec.fhir) | set(spec.carried)))
 
 
 def components_module(spec: Spec) -> str:

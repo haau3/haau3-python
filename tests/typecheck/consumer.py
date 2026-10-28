@@ -59,6 +59,42 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     assert_type(marked, types.ReconcileMedicationsBody)
     assert_type(client.reconcile_medications(marked), fhir.Bundle)
     haau3.mark_as_test_data("not a resource")  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    # A record written inline is checked as the resource it is: a message's MessageHeader, and
+    # MedList's records.
+    client.process_message(
+        {
+            "resourceType": "Bundle",
+            "type": "message",
+            "entry": [
+                {
+                    "resource": {
+                        "resourceType": "MessageHeader",
+                        "eventCoding": {"code": "rtpbc-request-non-phi"},
+                        "source": {"endpoint": "urn:example"},
+                    }
+                },
+            ],
+        }
+    )
+    misspelt: fhir.MessageHeader = {"resourceType": "MessageHeader", "source": {"endpoint": "e"}, "eventCodin": {}}  # type: ignore[typeddict-unknown-key]  # pyright: ignore[reportAssignmentType]
+    incomplete: fhir.Claim = {"resourceType": "Claim", "status": "active"}  # type: ignore[typeddict-item]  # pyright: ignore[reportAssignmentType]
+    _ = (misspelt, incomplete)
+    client.reconcile_medications(
+        {
+            "resourceType": "Bundle",
+            "type": "collection",
+            "entry": [
+                {
+                    "resource": {
+                        "resourceType": "MedicationRequest",
+                        "status": "active",
+                        "intent": "order",
+                        "subject": {"reference": "Patient/p"},
+                    }
+                }
+            ],
+        }
+    )
     network = client.check_insurance_plan_network("H3359-038-000", npi=["1518929058"])
     assert_type(network, fhir.Parameters)
 
