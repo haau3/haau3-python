@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2](https://github.com/haau3/haau3-python/compare/v0.2.1...v0.2.2) (2026-10-28)
+
+
+### Features
+
+* the API's spec at 1.0.0-preview.15 ([#24](https://github.com/haau3/haau3-python/issues/24)) ([aa26e05](https://github.com/haau3/haau3-python/commit/aa26e05f662b12e3da0e11237646f6edfc542fd8))
+
+
+### Bug Fixes
+
+* a call to the Sandbox's FHIR base sends and asks for FHIR JSON ([#25](https://github.com/haau3/haau3-python/issues/25)) ([f54f044](https://github.com/haau3/haau3-python/commit/f54f04443ab7f2b329c8e2e01fb56d1598fb0c1d))
+
 ## [0.2.1](https://github.com/haau3/haau3-python/compare/v0.2.0...v0.2.1) (2026-10-26)
 
 
