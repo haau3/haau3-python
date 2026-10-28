@@ -31,6 +31,8 @@ class ErrorDict(TypedDict, total=False):
     name: Required[str]
     message: Required[str]
     status: int
+    reason_phrase: str
+    code: str
     reason: NoAnswerReason
     retry_after: int
     attempts: int
@@ -41,7 +43,18 @@ class ErrorDict(TypedDict, total=False):
 
 
 # The fields `to_dict()` copies when they are set, in this order.
-_LOGGED = ("status", "reason", "retry_after", "attempts", "duration_ms", "request_id", "correlation_id", "detail")
+_LOGGED = (
+    "status",
+    "reason_phrase",
+    "code",
+    "reason",
+    "retry_after",
+    "attempts",
+    "duration_ms",
+    "request_id",
+    "correlation_id",
+    "detail",
+)
 # The bodies an error holds, which are never pickled or copied.
 _BODIES = ("_outcome", "_problem")
 
@@ -139,15 +152,23 @@ class _Answered(Haau3Error):
 
 
 class AuthError(_Answered):
-    """The API refused the key: none was sent, it is not one the API knows, or it was revoked (401, 403)."""
+    """The API refused the request because of the key.
+
+    A 401 means the key itself: none was sent, it is not one the API knows, or it was revoked. A 403
+    is a `ForbiddenError`, this class's subclass: the key was accepted, and it may not make this
+    request, as its `code` says when the API names why.
+    """
 
     status: int
+    reason_phrase: str
+    """The status's text: `"Unauthorized"`, `"Forbidden"`."""
 
     def __init__(
         self,
         message: str,
         *,
         status: int,
+        reason_phrase: str = "",
         attempts: int = 1,
         duration_ms: int | None = None,
         request_id: str | None = None,
@@ -165,6 +186,57 @@ class AuthError(_Answered):
             problem=problem,
         )
         self.status = status
+        self.reason_phrase = reason_phrase
+
+
+API_ERROR_SYSTEM = "https://haau3.com/fhir/CodeSystem/api-error"
+"""The code system the API names its own reasons in, inside an OperationOutcome's `details.coding`."""
+
+
+class ForbiddenError(AuthError):
+    """The API accepted the key and refused the request (403).
+
+    The key itself is real, so there is nothing to rotate. `code` says why when the API names it,
+    and the message says it in words:
+
+    - `test-key-outside-sandbox`: a test key works only in the Sandbox. Send a live key.
+    - `live-key-in-sandbox`: a live key does not work in the Sandbox. Send a test key.
+    - `phi-agreement-required`: patient data sent without the agreement and plan it needs.
+
+    Without a code, the key's organization may not make the request, or the operation is not yet
+    open to it; `outcome` (or `problem`) says why, in the API's words. A subclass of `AuthError`, so
+    `except AuthError` still catches it.
+    """
+
+    code: str | None
+    """The API's code for why, from its `api-error` code system, when it names one."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status: int,
+        reason_phrase: str = "",
+        attempts: int = 1,
+        duration_ms: int | None = None,
+        request_id: str | None = None,
+        correlation_id: str | None = None,
+        outcome: Hidden[OperationOutcome] | None = None,
+        problem: Hidden[Problem] | None = None,
+        code: str | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            status=status,
+            reason_phrase=reason_phrase,
+            attempts=attempts,
+            duration_ms=duration_ms,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            outcome=outcome,
+            problem=problem,
+        )
+        self.code = code
 
 
 class RefusedError(_Answered):
@@ -175,12 +247,15 @@ class RefusedError(_Answered):
     """
 
     status: int
+    reason_phrase: str
+    """The status's text: `"Not Found"`."""
 
     def __init__(
         self,
         message: str,
         *,
         status: int,
+        reason_phrase: str = "",
         attempts: int = 1,
         duration_ms: int | None = None,
         request_id: str | None = None,
@@ -198,6 +273,7 @@ class RefusedError(_Answered):
             problem=problem,
         )
         self.status = status
+        self.reason_phrase = reason_phrase
 
 
 class NoAnswerError(_Answered):
@@ -210,6 +286,8 @@ class NoAnswerError(_Answered):
     reason: NoAnswerReason
     status: int | None
     """The last status the API answered with, when it answered at all."""
+    reason_phrase: str | None
+    """That status's text, when it answered at all: `"Service Unavailable"`."""
     retry_after: int | None
     """Seconds to wait before trying again, when the API said."""
     detail: str | None
@@ -223,6 +301,7 @@ class NoAnswerError(_Answered):
         attempts: int,
         duration_ms: int | None = None,
         status: int | None = None,
+        reason_phrase: str | None = None,
         retry_after: int | None = None,
         request_id: str | None = None,
         correlation_id: str | None = None,
@@ -240,6 +319,7 @@ class NoAnswerError(_Answered):
             problem=problem,
         )
         self.status = status
+        self.reason_phrase = reason_phrase if status is not None else None
         self.reason = reason
         self.retry_after = retry_after
         self.detail = detail

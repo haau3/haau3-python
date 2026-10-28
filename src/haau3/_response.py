@@ -32,6 +32,8 @@ class Response(Generic[T_co]):
     attempts: int
     """How many attempts were made."""
     status: int
+    reason_phrase: str
+    """The status's text: the answer's own, or the standard one (`"OK"`) when it came with none, as HTTP/2 answers do."""
     headers: httpx2.Headers = field(repr=False)
 
 

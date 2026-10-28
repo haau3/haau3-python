@@ -15,11 +15,12 @@ import socket
 import ssl
 from collections.abc import Sequence
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import TYPE_CHECKING, TypeAlias, Union, cast
 
 from ._body import Hidden
-from ._errors import AuthError, NoAnswerError, NoAnswerReason, RefusedError
-from ._json import as_dict
+from ._errors import API_ERROR_SYSTEM, AuthError, ForbiddenError, NoAnswerError, NoAnswerReason, RefusedError
+from ._json import as_dict, as_list
 
 if TYPE_CHECKING:
     from ._components import Problem
@@ -33,6 +34,46 @@ _DIGITS = re.compile(r"\d+", re.A)
 _PLAUSIBLE_TYPE = re.compile(r"[A-Z][A-Za-z]{0,63}", re.A)
 
 Verdict: TypeAlias = Union[Hidden[object], AuthError, RefusedError, NoAnswerError]
+
+# Why the API refused a request with a 403, in the words of each message: the reasons the API names
+# by a code of its own. Any other 403, or one without a code, keeps the general sentence.
+_FORBIDDEN_REASONS = {
+    "test-key-outside-sandbox": "this is a test key, which works only in the Sandbox",
+    "live-key-in-sandbox": "this is a live key, which does not work in the Sandbox",
+}
+_FORBIDDEN_GENERAL = "the API key was accepted, and its organization may not make this request"
+
+
+def standard_phrase(status: int) -> str:
+    """A status's standard text (RFC 9110), or "" for one with none."""
+    try:
+        return HTTPStatus(status).phrase
+    except ValueError:
+        return ""
+
+
+def api_error_code(outcome: Hidden[OperationOutcome] | None, problem: Hidden[Problem] | None) -> str | None:
+    """The API's own code for why it refused a request, when it names one.
+
+    The `api-error` coding of an OperationOutcome's first issue that has one, or a problem's `code`.
+    A code, never words, so it is safe to log.
+    """
+    if problem is not None:
+        value = as_dict(problem.reveal())
+        code = value.get("code") if value is not None else None
+        return code if isinstance(code, str) else None
+    if outcome is None:
+        return None
+    value = as_dict(outcome.reveal())
+    for issue in (as_list(value.get("issue")) if value is not None else None) or []:
+        entry = as_dict(issue)
+        details = as_dict(entry.get("details")) if entry is not None else None
+        for coding in (as_list(details.get("coding")) if details is not None else None) or []:
+            c = as_dict(coding)
+            code = c.get("code") if c is not None else None
+            if c is not None and c.get("system") == API_ERROR_SYSTEM and isinstance(code, str):
+                return code
+    return None
 
 
 def parse_body(content: Hidden[bytes], content_type: str | None) -> Hidden[object] | None:
@@ -166,6 +207,8 @@ class Context:
     entry: bool = False
     """An answer inside a batch: the key is checked once for the whole batch, so a 401 or 403 on one
     entry is a refusal of that entry, not of the key."""
+    reason_phrase: str = ""
+    """The status's text the answer came with; empty means the standard one."""
 
 
 def _no_answer_reason(status: int) -> NoAnswerReason:
@@ -185,6 +228,7 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
     operation's path with its `{id}` left in. `body` is None when the answer was not JSON.
     """
     c = context
+    phrase = c.reason_phrase or standard_phrase(status)
 
     def no_answer(message: str, reason: NoAnswerReason, retry_after: int | None = None) -> NoAnswerError:
         outcome, problem = read_error_body(body) if status >= 400 else (None, None)
@@ -192,6 +236,7 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
             message,
             reason=reason,
             status=status,
+            reason_phrase=phrase,
             retry_after=retry_after,
             attempts=c.attempts,
             duration_ms=c.duration_ms,
@@ -215,7 +260,22 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
     if status < 400:
         return no_answer(f"{name} answered {status}, which is not an answer.", "unreadable")
     outcome, problem = read_error_body(body)
-    kind = AuthError if status in (401, 403) and not c.entry else RefusedError
+    if status == 403 and not c.entry:
+        code = api_error_code(outcome, problem)
+        why = _FORBIDDEN_REASONS.get(code, _FORBIDDEN_GENERAL) if code is not None else _FORBIDDEN_GENERAL
+        return ForbiddenError(
+            f"{name} was refused: {why} ({status}).",
+            status=status,
+            reason_phrase=phrase,
+            attempts=c.attempts,
+            duration_ms=c.duration_ms,
+            request_id=c.request_id,
+            correlation_id=c.correlation_id,
+            outcome=outcome,
+            problem=problem,
+            code=code,
+        )
+    kind = AuthError if status == 401 and not c.entry else RefusedError
     message = (
         f"{name} was refused: the API key was not accepted ({status})."
         if kind is AuthError
@@ -224,6 +284,7 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
     return kind(
         message,
         status=status,
+        reason_phrase=phrase,
         attempts=c.attempts,
         duration_ms=c.duration_ms,
         request_id=c.request_id,

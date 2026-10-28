@@ -21,7 +21,7 @@ async def test_with_response_gives_the_answer_and_what_came_with_it(kind: str, w
     assert isinstance(response.duration_ms, int) and response.duration_ms >= 0
     assert (
         repr(response)
-        == f"Response(request_id='{REQUEST_ID}', correlation_id=None, duration_ms={response.duration_ms}, attempts=2, status=200)"
+        == f"Response(request_id='{REQUEST_ID}', correlation_id=None, duration_ms={response.duration_ms}, attempts=2, status=200, reason_phrase='OK')"
     )
     with pytest.raises(AttributeError):
         response.status = 1  # type: ignore[misc]
