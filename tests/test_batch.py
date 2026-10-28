@@ -9,7 +9,7 @@ from typing import Any
 import naming
 import pytest
 
-from haau3 import AuthError, BatchError, BatchOk, Haau3Error, NoAnswerError, RefusedError, calls
+from haau3 import AuthError, BatchError, BatchOk, ForbiddenError, Haau3Error, NoAnswerError, RefusedError, calls
 
 from .helpers import REQUEST_ID, Client, Recorder, answer, example_body, operations, sync_client
 from .test_operations import _case
@@ -155,6 +155,9 @@ async def test_the_batch_itself_is_judged_and_retried_as_any_call(kind: str, wai
     assert isinstance(
         await Client(kind, Recorder(answer(401))).raises("batch", calls.read_insurance_plan("H1")), AuthError
     )
+    forbidden = await Client(kind, Recorder(answer(403))).raises("batch", calls.read_insurance_plan("H1"))
+    assert isinstance(forbidden, ForbiddenError)
+    assert not isinstance(forbidden, AuthError)
     assert isinstance(
         await Client(kind, Recorder(answer(413))).raises("batch", calls.read_insurance_plan("H1")), RefusedError
     )
