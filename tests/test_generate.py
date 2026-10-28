@@ -56,7 +56,7 @@ def _keyword_bases(path: str) -> dict[str, dict[str, bool]]:
                 assert isinstance(name, ast.Name)
                 bases[name.id] = {
                     ast.literal_eval(k): ast.literal_eval(v).startswith("Required[")
-                    for k, v in zip(fields.keys, fields.values)
+                    for k, v in zip(fields.keys, fields.values, strict=True)
                     if k is not None
                 }
     return bases
