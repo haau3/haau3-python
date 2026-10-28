@@ -137,12 +137,22 @@ def _matches(template: str, path: str) -> bool:
     return re.fullmatch(pattern, path) is not None
 
 
-def spec_answer(method: str, path: str) -> Any:
-    """The spec's example answer for a request to this method and path."""
+def spec_operation(method: str, path: str) -> dict[str, Any]:
+    """The spec's operation for a request to this method and path."""
     for _, op_method, template, op in operations():
         if op_method == method and _matches(template, path):
-            return example_answer(op)
+            return op
     raise LookupError(f"no operation answers {method} {path}")
+
+
+def spec_answer(method: str, path: str) -> Any:
+    """The spec's example answer for a request to this method and path."""
+    return example_answer(spec_operation(method, path))
+
+
+def answers_fhir(op: dict[str, Any]) -> bool:
+    """Whether the spec gives an operation's answer as FHIR JSON."""
+    return "application/fhir+json" in op["responses"]["200"]["content"]
 
 
 def _without_next(value: Any) -> Any:
@@ -164,5 +174,5 @@ def spec_example_handler(request: httpx2.Request) -> httpx2.Response:
             resource = spec_answer(entry["request"]["method"], "/v1/fhir/r4/" + relative)
             entries.append({"resource": _without_next(resource), "response": {"status": "200 OK"}})
         return answer(200, {"resourceType": "Bundle", "type": "batch-response", "entry": entries})
-    body = _without_next(spec_answer(request.method, path))
-    return answer(200, body, fhir=path.startswith("/v1/fhir/"))
+    op = spec_operation(request.method, path)
+    return answer(200, _without_next(example_answer(op)), fhir=answers_fhir(op))

@@ -19,7 +19,7 @@ from urllib.parse import parse_qsl, unquote, urljoin, urlsplit
 
 import pytest
 
-from .helpers import KEY, ROOT, example_answer, example_body, operations
+from .helpers import KEY, ROOT, answers_fhir, example_answer, example_body, operations
 
 OVERLAY: dict[str, Any] = json.loads((ROOT / "openapi" / "code-samples.json").read_text(encoding="utf-8"))
 OPERATIONS = list(operations())
@@ -93,7 +93,7 @@ def stand_in() -> Iterator[str]:
             batch_op = op
             continue
         body = example_body(op) if "requestBody" in op else None
-        answers[_example_key(method, path, op)] = (example_answer(op), path.startswith("/v1/fhir/"), body)
+        answers[_example_key(method, path, op)] = (example_answer(op), answers_fhir(op), body)
     batch_keys = _batch_keys(example_body(batch_op))
 
     class Handler(BaseHTTPRequestHandler):
