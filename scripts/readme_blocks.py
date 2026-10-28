@@ -7,8 +7,8 @@
 Blocks are kept in order, so a later one uses what an earlier one made (`client`). A block that
 awaits goes into `readme_async`, the others into `readme_sync`. A block after the line
 `<!-- not run: <why> -->` is type-checked only, in `readme_not_run`. The names the README leaves to
-the reader (`plan_id`, `records`, `message`, `codes`, `job_id`, `access_token`) are the functions'
-parameters.
+the reader (`plan_id`, `records`, `message`, `sandbox_message`, `codes`, `job_id`, `access_token`) are
+the functions' parameters.
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ _NOT_RUN = re.compile(r"<!-- not run: [^>]+ -->\s*$")
 _AWAITS = re.compile(r"\bawait\b|\basync (for|with)\b")
 
 PARAMETERS = (
-    "plan_id: str, records: ReconcileMedicationsBody, message: ProcessMessageBody, codes: list[str], job_id: str,"
-    " access_token: str"
+    "plan_id: str, records: ReconcileMedicationsBody, message: ProcessMessageBody,"
+    " sandbox_message: SandboxProcessMessageBody, codes: list[str], job_id: str, access_token: str"
 )
 
 
@@ -70,7 +70,7 @@ def module_source(readme: str) -> str:
         "# ruff: noqa\n\n"
         "from __future__ import annotations\n\n"
         "from haau3 import Haau3\n"
-        "from haau3.types import ProcessMessageBody, ReconcileMedicationsBody\n\n\n"
+        "from haau3.types import ProcessMessageBody, ReconcileMedicationsBody, SandboxProcessMessageBody\n\n\n"
         f"def readme_sync({PARAMETERS}) -> None:\n{_body(run_sync)}\n\n"
         f"async def readme_async({PARAMETERS}) -> None:\n{_body(run_async)}\n\n"
         f"def readme_not_run(client: Haau3) -> None:\n{_body(not_run)}"
