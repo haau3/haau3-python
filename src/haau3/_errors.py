@@ -152,16 +152,15 @@ class _Answered(Haau3Error):
 
 
 class AuthError(_Answered):
-    """The API refused the request because of the key.
+    """The API did not accept the key (401).
 
-    A 401 means the key itself: none was sent, it is not one the API knows, or it was revoked. A 403
-    is a `ForbiddenError`, this class's subclass: the key was accepted, and it may not make this
-    request, as its `code` says when the API names why.
+    None was sent, it is not one the API knows, or it was revoked. A 403 is never this error: the
+    key was accepted, and the answer is a `ForbiddenError`.
     """
 
     status: int
     reason_phrase: str
-    """The status's text: `"Unauthorized"`, `"Forbidden"`."""
+    """The status's text: `"Unauthorized"`."""
 
     def __init__(
         self,
@@ -193,7 +192,7 @@ API_ERROR_SYSTEM = "https://haau3.com/fhir/CodeSystem/api-error"
 """The code system the API names its own reasons in, inside an OperationOutcome's `details.coding`."""
 
 
-class ForbiddenError(AuthError):
+class ForbiddenError(_Answered):
     """The API accepted the key and refused the request (403).
 
     The key itself is real, so there is nothing to rotate. `code` says why when the API names it,
@@ -201,13 +200,17 @@ class ForbiddenError(AuthError):
 
     - `test-key-outside-sandbox`: a test key works only in the Sandbox. Send a live key.
     - `live-key-in-sandbox`: a live key does not work in the Sandbox. Send a test key.
-    - `phi-agreement-required`: patient data sent without the agreement and plan it needs.
+    - `phi-agreement-required`: the organization may not send patient data, and not every resource
+      in the request is labelled as test data.
 
     Without a code, the key's organization may not make the request, or the operation is not yet
-    open to it; `outcome` (or `problem`) says why, in the API's words. A subclass of `AuthError`, so
-    `except AuthError` still catches it.
+    open to it; `outcome` (or `problem`) says why, in the API's words. Not an `AuthError`, which is
+    a key the API did not accept (401).
     """
 
+    status: int
+    reason_phrase: str
+    """The status's text: `"Forbidden"`."""
     code: str | None
     """The API's code for why, from its `api-error` code system, when it names one."""
 
@@ -227,8 +230,6 @@ class ForbiddenError(AuthError):
     ) -> None:
         super().__init__(
             message,
-            status=status,
-            reason_phrase=reason_phrase,
             attempts=attempts,
             duration_ms=duration_ms,
             request_id=request_id,
@@ -236,6 +237,8 @@ class ForbiddenError(AuthError):
             outcome=outcome,
             problem=problem,
         )
+        self.status = status
+        self.reason_phrase = reason_phrase
         self.code = code
 
 

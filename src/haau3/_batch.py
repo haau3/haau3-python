@@ -198,6 +198,6 @@ def read_batch(
             results.append(BatchOk(verdict.reveal(), code))
         elif isinstance(verdict, (RefusedError, NoAnswerError)):
             results.append(BatchError(verdict))
-        else:  # An entry is never judged an AuthError; the key is checked once, for the whole batch.
-            raise AssertionError("an entry was judged an AuthError")
+        else:  # An entry is never judged an AuthError or a ForbiddenError; the key is checked once, for the whole batch.
+            raise AssertionError("an entry was judged an AuthError or a ForbiddenError")
     return tuple(results)
