@@ -135,8 +135,13 @@ def path_of(base_url: str, url: str) -> str:
     return path[len(prefix) :] if prefix and path.startswith(prefix) else path
 
 
+# The FHIR bases: production's, and the Sandbox's, which serves the same paths with synthetic data.
+_FHIR_BASES = ("/v1/fhir", "/v1/sandbox/fhir")
+
+
 def is_fhir(relative_path: str) -> bool:
-    return relative_path == "/v1/fhir" or relative_path.startswith("/v1/fhir/")
+    """Whether a path speaks FHIR: one equal to or under either base, as the API reads it."""
+    return any(relative_path == base or relative_path.startswith(base + "/") for base in _FHIR_BASES)
 
 
 def is_uuid(value: str) -> bool:
