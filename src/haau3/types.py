@@ -152,6 +152,11 @@ ReconcileMedicationsBody: TypeAlias = Union[fhir.Bundle, fhir.Parameters]
 ReconcileMedicationsResponse: TypeAlias = fhir.Bundle
 """What `reconcile_medications` answers with."""
 
+SandboxProcessMessageBody: TypeAlias = fhir.Bundle
+"""The request body of `sandbox_process_message`."""
+SandboxProcessMessageResponse: TypeAlias = fhir.Bundle
+"""What `sandbox_process_message` answers with."""
+
 
 class SearchEndpointQuery(TypedDict, total=False):
     """The query parameters of `search_endpoint`, by their Python names, to pass as `**query`."""
