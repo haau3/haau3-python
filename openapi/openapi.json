@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.15",
+    "version": "1.0.0-preview.16",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-01 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -51,7 +51,7 @@
     },
     {
       "name": "Sandbox",
-      "description": "The FHIR base without production behind it, to build and test against: the same paths at `/v1/sandbox/fhir/r4`, answered with synthetic data that always gives the same answer. Its first service is the CARIN Consumer Real-Time Pharmacy Benefit Check, answered by Example Health Plan, a test insurer. The same API keys work, and each request counts like any other. Send test members only, never a real person."
+      "description": "The FHIR base without production behind it, to build and test against: the same paths at `/v1/sandbox/fhir/r4`, answered with synthetic data that always gives the same answer. Its first service is the CARIN Consumer Real-Time Pharmacy Benefit Check, answered by Example Health Plan, a test insurer. It takes a test key (`haau3_sk_test_…`), made on the API keys page, and each request counts like any other. Send test members only, never a real person."
     }
   ],
   "paths": {
@@ -338,6 +338,9 @@
           },
           "401": {
             "$ref": "#/components/responses/ProblemUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemForbiddenTestKey"
           },
           "406": {
             "$ref": "#/components/responses/ProblemNotAcceptable"
@@ -679,6 +682,9 @@
           "401": {
             "$ref": "#/components/responses/ProblemUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/ProblemForbiddenTestKey"
+          },
           "406": {
             "$ref": "#/components/responses/ProblemNotAcceptable"
           },
@@ -820,6 +826,9 @@
           },
           "401": {
             "$ref": "#/components/responses/ProblemUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemForbiddenTestKey"
           },
           "406": {
             "$ref": "#/components/responses/ProblemNotAcceptable"
@@ -1407,6 +1416,9 @@
           },
           "401": {
             "$ref": "#/components/responses/ProblemUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemForbiddenTestKey"
           },
           "406": {
             "$ref": "#/components/responses/ProblemNotAcceptable"
@@ -2200,6 +2212,9 @@
           },
           "401": {
             "$ref": "#/components/responses/ProblemUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemForbiddenTestKey"
           },
           "406": {
             "$ref": "#/components/responses/ProblemNotAcceptable"
@@ -3120,6 +3135,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
@@ -3392,6 +3410,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
@@ -3526,6 +3547,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
@@ -3810,6 +3834,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
@@ -4058,6 +4085,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
@@ -4315,6 +4345,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
@@ -4587,6 +4620,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
@@ -4882,6 +4918,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
             "content": {
@@ -5106,6 +5145,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
@@ -5349,6 +5391,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "The code system is not served here, or the code was not found. The `OperationOutcome` says which, and why: an unrecognised system, a system we are not licensed to serve, and a genuinely missing code are different answers.",
@@ -5992,6 +6037,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -6407,6 +6455,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -6888,6 +6939,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -7099,6 +7153,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -7520,6 +7577,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -7711,6 +7771,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -8048,6 +8111,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -8230,6 +8296,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -8612,6 +8681,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -8814,6 +8886,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -9240,6 +9315,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -9438,6 +9516,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -9761,6 +9842,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
             "content": {
@@ -9966,6 +10050,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No such resource, or no such interaction on this base.",
@@ -10637,6 +10724,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
@@ -11261,6 +11351,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "Neither this service nor its source publishes a questionnaire with that id.",
@@ -14041,6 +14134,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No such interaction on this base.",
             "content": {
@@ -15366,6 +15462,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No state, district or territory has this code.",
@@ -17975,6 +18074,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
           "404": {
             "description": "No plan with that id is in the releases being served, or the plan is held but is not a medical plan. The `OperationOutcome` says which.",
             "content": {
@@ -18236,6 +18338,9 @@
           },
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
             "description": "No plan with that id is in the releases being served, or the plan is held but is not a medical plan. The `OperationOutcome` says which.",
@@ -19322,7 +19427,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "403": {
-            "description": "Refused before the operation runs, coded `forbidden`, for one of two reasons. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read. Or a member's request from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan that is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`: coded `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`, and a request labelled only in part names the first resources without the label in `expression`.",
+            "description": "Refused before the operation runs, coded `forbidden`, for one of two reasons. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read. Or a member's request from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan that is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`: coded `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`, and a request labelled only in part names the first resources without the label in `expression`. A test key (`haau3_sk_test_…`) works only in the Sandbox, so one sent here is refused before the request runs: coded `forbidden`, with `test-key-outside-sandbox` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Send a live key.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -19365,11 +19470,39 @@
                         }
                       ]
                     }
+                  },
+                  "A test key outside the Sandbox": {
+                    "summary": "A test key outside the Sandbox",
+                    "value": {
+                      "resourceType": "OperationOutcome",
+                      "issue": [
+                        {
+                          "severity": "error",
+                          "code": "forbidden",
+                          "details": {
+                            "coding": [
+                              {
+                                "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                                "code": "test-key-outside-sandbox",
+                                "display": "Test key outside the Sandbox"
+                              }
+                            ],
+                            "text": "This is a test key, which works only in the Sandbox (https://api.haau3.com/v1/sandbox/fhir/r4). Send this request with a live key; create one in the dashboard. See https://docs.haau3.com/authentication#test-and-live-keys"
+                          }
+                        }
+                      ]
+                    }
                   }
                 }
               }
             },
             "headers": {
+              "WWW-Authenticate": {
+                "description": "Sent when the API key works only in the other mode: `Bearer realm=\"api.haau3.com\", error=\"insufficient_scope\"`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
               "X-Request-Id": {
                 "$ref": "#/components/headers/XRequestId"
               },
@@ -20142,7 +20275,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "403": {
-            "description": "Real patient data from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan, refused before the operation runs: the request is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`. Coded `forbidden`, with `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`; a request labelled only in part names the first resources without the label in `expression`.",
+            "description": "Real patient data from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan, refused before the operation runs: the request is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`. Coded `forbidden`, with `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`; a request labelled only in part names the first resources without the label in `expression`. A test key (`haau3_sk_test_…`) works only in the Sandbox, so one sent here is refused before the request runs: coded `forbidden`, with `test-key-outside-sandbox` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Send a live key.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -20170,11 +20303,39 @@
                         }
                       ]
                     }
+                  },
+                  "A test key outside the Sandbox": {
+                    "summary": "A test key outside the Sandbox",
+                    "value": {
+                      "resourceType": "OperationOutcome",
+                      "issue": [
+                        {
+                          "severity": "error",
+                          "code": "forbidden",
+                          "details": {
+                            "coding": [
+                              {
+                                "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                                "code": "test-key-outside-sandbox",
+                                "display": "Test key outside the Sandbox"
+                              }
+                            ],
+                            "text": "This is a test key, which works only in the Sandbox (https://api.haau3.com/v1/sandbox/fhir/r4). Send this request with a live key; create one in the dashboard. See https://docs.haau3.com/authentication#test-and-live-keys"
+                          }
+                        }
+                      ]
+                    }
                   }
                 }
               }
             },
             "headers": {
+              "WWW-Authenticate": {
+                "description": "Sent when the API key works only in the other mode: `Bearer realm=\"api.haau3.com\", error=\"insufficient_scope\"`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
               "X-Request-Id": {
                 "$ref": "#/components/headers/XRequestId"
               },
@@ -20969,6 +21130,9 @@
           "401": {
             "$ref": "#/components/responses/FhirUnauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenLiveKey"
+          },
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
@@ -21268,6 +21432,139 @@
             "$ref": "#/components/headers/XCorrelationId"
           }
         }
+      },
+      "FhirForbiddenTestKey": {
+        "description": "A test key (`haau3_sk_test_…`) works only in the Sandbox, so one sent here is refused before the request runs: coded `forbidden`, with `test-key-outside-sandbox` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Send a live key.",
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Sent when the API key works only in the other mode: `Bearer realm=\"api.haau3.com\", error=\"insufficient_scope\"`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "X-Request-Id": {
+            "$ref": "#/components/headers/XRequestId"
+          },
+          "X-Correlation-Id": {
+            "$ref": "#/components/headers/XCorrelationId"
+          }
+        },
+        "content": {
+          "application/fhir+json": {
+            "schema": {
+              "$ref": "#/components/schemas/OperationOutcome"
+            },
+            "examples": {
+              "A test key outside the Sandbox": {
+                "summary": "A test key outside the Sandbox",
+                "value": {
+                  "resourceType": "OperationOutcome",
+                  "issue": [
+                    {
+                      "severity": "error",
+                      "code": "forbidden",
+                      "details": {
+                        "coding": [
+                          {
+                            "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                            "code": "test-key-outside-sandbox",
+                            "display": "Test key outside the Sandbox"
+                          }
+                        ],
+                        "text": "This is a test key, which works only in the Sandbox (https://api.haau3.com/v1/sandbox/fhir/r4). Send this request with a live key; create one in the dashboard. See https://docs.haau3.com/authentication#test-and-live-keys"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProblemForbiddenTestKey": {
+        "description": "A test key (`haau3_sk_test_…`) works only in the Sandbox, so one sent here is refused before the request runs, with the problem's `code` `test-key-outside-sandbox`. Send a live key.",
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Sent when the API key works only in the other mode: `Bearer realm=\"api.haau3.com\", error=\"insufficient_scope\"`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "X-Request-Id": {
+            "$ref": "#/components/headers/XRequestId"
+          },
+          "X-Correlation-Id": {
+            "$ref": "#/components/headers/XCorrelationId"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "examples": {
+              "A test key outside the Sandbox": {
+                "summary": "A test key outside the Sandbox",
+                "value": {
+                  "type": "https://docs.haau3.com/errors#forbidden",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "This is a test key, which works only in the Sandbox (https://api.haau3.com/v1/sandbox/fhir/r4). Send this request with a live key; create one in the dashboard. See https://docs.haau3.com/authentication#test-and-live-keys",
+                  "instance": "urn:uuid:0b6f2d4e-8c1a-4e3b-9f5d-2a7c6e1b4d90",
+                  "code": "test-key-outside-sandbox"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FhirForbiddenLiveKey": {
+        "description": "A live key (`haau3_sk_live_…`) does not work in the Sandbox, so one sent here is refused before the request runs: coded `forbidden`, with `live-key-in-sandbox` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Send a test key.",
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Sent when the API key works only in the other mode: `Bearer realm=\"api.haau3.com\", error=\"insufficient_scope\"`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "X-Request-Id": {
+            "$ref": "#/components/headers/XRequestId"
+          },
+          "X-Correlation-Id": {
+            "$ref": "#/components/headers/XCorrelationId"
+          }
+        },
+        "content": {
+          "application/fhir+json": {
+            "schema": {
+              "$ref": "#/components/schemas/OperationOutcome"
+            },
+            "examples": {
+              "A live key in the Sandbox": {
+                "summary": "A live key in the Sandbox",
+                "value": {
+                  "resourceType": "OperationOutcome",
+                  "issue": [
+                    {
+                      "severity": "error",
+                      "code": "forbidden",
+                      "details": {
+                        "coding": [
+                          {
+                            "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                            "code": "live-key-in-sandbox",
+                            "display": "Live key in the Sandbox"
+                          }
+                        ],
+                        "text": "This is a live key, which does not work in the Sandbox. Send this request with a test key; create one in the dashboard. See https://docs.haau3.com/authentication#test-and-live-keys"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     },
     "parameters": {
@@ -21302,7 +21599,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Your platform API key (`haau3_sk_…`), sent as `Authorization: Bearer <key>`."
+        "description": "Your platform API key, sent as `Authorization: Bearer <key>`: a live key (`haau3_sk_live_…`) for every service, or a test key (`haau3_sk_test_…`) for the Sandbox, the one place a test key works and a live key does not."
       }
     },
     "schemas": {
@@ -21335,6 +21632,13 @@
             "description": "This request's id as `urn:uuid:<id>`, the same id as the `X-Request-Id` header.",
             "examples": [
               "urn:uuid:0b6f2d4e-8c1a-4e3b-9f5d-2a7c6e1b4d90"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "description": "On a 403: why, as a code from `https://haau3.com/fhir/CodeSystem/api-error`, the same one an OperationOutcome carries in `issue.details.coding`.",
+            "examples": [
+              "test-key-outside-sandbox"
             ]
           },
           "issues": {
