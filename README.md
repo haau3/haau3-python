@@ -85,11 +85,12 @@ plan = client.read_insurance_plan("H2406-013-000")
 network = client.check_insurance_plan_network("H3359-038-000", npi=["1518929058"])
 
 # Pharmacy Benefits: what a medication would cost, as the CARIN pharmacy benefit check, from a FHIR
-# message Bundle. A member's check carries patient data, so send it only under an executed agreement.
+# message Bundle. It is not yet open to customers.
 checked = client.process_message(message)
 
 # MedList: one reconciled medication list from one patient's FHIR medication records. It receives
-# patient data, so send it only under an executed agreement.
+# patient data, so send it only under an executed agreement. Test data labelled as such works on every
+# plan, and mark_as_test_data labels a request and every resource in it. Label only made-up data.
 reconciled = client.reconcile_medications(records)
 
 # Sandbox: the same pharmacy benefit check at /v1/sandbox/fhir/r4, where a test insurer answers
@@ -195,8 +196,9 @@ A 403 is a `ForbiddenError`, never an `AuthError`: the key was accepted, so ther
 rotate. Its `code` says why when the API names it, and its message says the same in words. A test
 key works only in the Sandbox (`test-key-outside-sandbox`: send a live key), and a live key does not
 work there (`live-key-in-sandbox`: send a test key). `phi-agreement-required` means the organization
-may not send patient data, and not every resource in the request is labelled as test data. Without
-a code, the body says what the organization may not do.
+may not send patient data, and not every resource in the request is labelled as test data:
+`mark_as_test_data` labels made-up data. Without a code, the body says what the organization may not
+do.
 
 No answer is never reported as an empty result, and an empty result is never an error. Every error
 the API answered carries `attempts`, `duration_ms` and `reason_phrase` too.

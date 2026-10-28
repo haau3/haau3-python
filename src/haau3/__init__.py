@@ -36,6 +36,7 @@ from ._methods import SyncWithResponse as SyncWithResponse
 from ._operations import SPEC_VERSION as SPEC_VERSION
 from ._response import RawResponse as RawResponse
 from ._response import Response as Response
+from ._test_data import mark_as_test_data as mark_as_test_data
 from ._version import __version__ as __version__
 
 __all__ = [
@@ -64,5 +65,6 @@ __all__ = [
     "__version__",
     "calls",
     "fhir",
+    "mark_as_test_data",
     "types",
 ]
