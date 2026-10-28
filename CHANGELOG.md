@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/haau3/haau3-python/compare/v0.2.3...v0.3.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* a 403 is a ForbiddenError of its own, beside AuthError, which is a 401 only ([#30](https://github.com/haau3/haau3-python/issues/30))
+
+### Features
+
+* a 403 is a ForbiddenError of its own, beside AuthError, which is a 401 only ([#30](https://github.com/haau3/haau3-python/issues/30)) ([b8b25c1](https://github.com/haau3/haau3-python/commit/b8b25c1684ae663f37e9c2326915e0bb5608405e))
+* mark_as_test_data labels a request and every resource in it as test data ([#32](https://github.com/haau3/haau3-python/issues/32)) ([6b79bf4](https://github.com/haau3/haau3-python/commit/6b79bf48e5a6a7bcb6d33e1e918c28dc1279ce12))
+* the records a request carries, as the spec's examples show them, are typed as the resources they are ([#31](https://github.com/haau3/haau3-python/issues/31)) ([560fde2](https://github.com/haau3/haau3-python/commit/560fde27458910f384d8bebc0c9e02c24b1f650d))
+
 ## [0.2.3](https://github.com/haau3/haau3-python/compare/v0.2.2...v0.2.3) (2026-10-28)
 
 
