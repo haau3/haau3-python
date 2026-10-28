@@ -54,6 +54,11 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     assert_type(metadata, "fhir.CapabilityStatement | fhir.TerminologyCapabilities")
     reconciled = client.reconcile_medications(records)
     assert_type(reconciled, fhir.Bundle)
+    # Test data: what goes in is what comes out, so a call takes it as it takes the original.
+    marked = haau3.mark_as_test_data(records)
+    assert_type(marked, types.ReconcileMedicationsBody)
+    assert_type(client.reconcile_medications(marked), fhir.Bundle)
+    haau3.mark_as_test_data("not a resource")  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
     network = client.check_insurance_plan_network("H3359-038-000", npi=["1518929058"])
     assert_type(network, fhir.Parameters)
 
