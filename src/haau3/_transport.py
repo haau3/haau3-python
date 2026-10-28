@@ -131,6 +131,7 @@ class Sent:
             retry_after=retry_after_seconds(self.headers.get("retry-after")),
             missing=missing,
             expects=expects,
+            reason_phrase=self.reason_phrase,
         )
 
     def response(self, data: T) -> Response[T]:
@@ -141,6 +142,7 @@ class Sent:
             duration_ms=self.duration_ms,
             attempts=self.attempts,
             status=self.status,
+            reason_phrase=self.reason_phrase,
             headers=self.headers,
         )
 

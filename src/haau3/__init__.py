@@ -26,6 +26,7 @@ from ._client import Haau3 as Haau3
 from ._encode import QueryValue as QueryValue
 from ._errors import AuthError as AuthError
 from ._errors import ErrorDict as ErrorDict
+from ._errors import ForbiddenError as ForbiddenError
 from ._errors import Haau3Error as Haau3Error
 from ._errors import NoAnswerError as NoAnswerError
 from ._errors import NoAnswerReason as NoAnswerReason
@@ -50,6 +51,7 @@ __all__ = [
     "BatchResult",
     "Call",
     "ErrorDict",
+    "ForbiddenError",
     "Haau3",
     "Haau3Error",
     "NoAnswerError",

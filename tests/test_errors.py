@@ -7,7 +7,7 @@ import pickle
 
 import pytest
 
-from haau3 import AuthError, Haau3Error, NoAnswerError, RefusedError
+from haau3 import AuthError, ForbiddenError, Haau3Error, NoAnswerError, RefusedError
 
 from .helpers import REQUEST_ID, Client, Recorder, answer
 
@@ -27,11 +27,27 @@ async def test_401_and_403_are_auth_errors(kind: str, status: int) -> None:
     error = await Client(kind, Recorder(answer(status, OUTCOME))).raises("read_insurance_plan", "H1")
     assert isinstance(error, AuthError)
     assert error.status == status
-    assert (
-        error.message == f"GET /v1/fhir/r4/InsurancePlan/{{id}} was refused: the API key was not accepted ({status})."
-    )
     assert error.outcome == OUTCOME
     assert error.request_id == REQUEST_ID
+
+
+@pytest.mark.anyio
+async def test_401_says_the_key_was_not_accepted(kind: str) -> None:
+    error = await Client(kind, Recorder(answer(401, OUTCOME))).raises("read_insurance_plan", "H1")
+    assert isinstance(error, AuthError)
+    assert not isinstance(error, ForbiddenError)
+    assert error.message == "GET /v1/fhir/r4/InsurancePlan/{id} was refused: the API key was not accepted (401)."
+
+
+@pytest.mark.anyio
+async def test_403_is_a_forbidden_error_that_says_the_key_was_accepted(kind: str) -> None:
+    error = await Client(kind, Recorder(answer(403, OUTCOME))).raises("read_insurance_plan", "H1")
+    assert isinstance(error, ForbiddenError)
+    assert error.message == (
+        "GET /v1/fhir/r4/InsurancePlan/{id} was refused: "
+        "the API key was accepted, and its organization may not make this request (403)."
+    )
+    assert "not accepted" not in error.message
 
 
 @pytest.mark.anyio
