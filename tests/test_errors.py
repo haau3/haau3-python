@@ -1,4 +1,4 @@
-"""What each answer means: the three errors, their fields and their messages."""
+"""What each answer means: the four errors, their fields and their messages."""
 
 from __future__ import annotations
 
@@ -25,10 +25,13 @@ PROBLEM = {
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("status", [401, 403])
-async def test_401_and_403_are_auth_errors(kind: str, status: int) -> None:
+@pytest.mark.parametrize(("status", "error_type"), [(401, AuthError), (403, ForbiddenError)])
+async def test_401_is_an_auth_error_and_403_a_forbidden_error(
+    kind: str, status: int, error_type: type[Haau3Error]
+) -> None:
     error = await Client(kind, Recorder(answer(status, OUTCOME))).raises("read_insurance_plan", "H1")
-    assert isinstance(error, AuthError)
+    assert isinstance(error, error_type)
+    assert isinstance(error, (AuthError, ForbiddenError))
     assert error.status == status
     assert error.outcome == OUTCOME
     assert error.request_id == REQUEST_ID
@@ -46,6 +49,9 @@ async def test_401_says_the_key_was_not_accepted(kind: str) -> None:
 async def test_403_is_a_forbidden_error_that_says_the_key_was_accepted(kind: str) -> None:
     error = await Client(kind, Recorder(answer(403, OUTCOME))).raises("read_insurance_plan", "H1")
     assert isinstance(error, ForbiddenError)
+    assert isinstance(error, Haau3Error)
+    # A 403 is not a key the API did not accept, so `except AuthError` to rotate a key never catches it.
+    assert not isinstance(error, AuthError)
     assert error.message == (
         "GET /v1/fhir/r4/InsurancePlan/{id} was refused: "
         "the API key was accepted, and its organization may not make this request (403)."
@@ -190,7 +196,7 @@ async def test_a_403_names_a_test_key_outside_the_sandbox(kind: str) -> None:
         "read_insurance_plan", "H1"
     )
     assert isinstance(error, ForbiddenError)
-    assert isinstance(error, AuthError)
+    assert not isinstance(error, AuthError)
     assert error.code == "test-key-outside-sandbox"
     assert error.message == (
         "GET /v1/fhir/r4/InsurancePlan/{id} was refused: this is a test key, which works only in the Sandbox (403)."
@@ -230,12 +236,29 @@ async def test_a_403_reads_its_code_from_a_problem_off_the_fhir_bases(kind: str)
 
 
 @pytest.mark.anyio
-async def test_a_403_carries_a_code_it_has_no_sentence_for_under_the_general_message(kind: str) -> None:
+async def test_a_403_names_patient_data_not_all_labelled_as_test_data_and_never_a_refused_key(kind: str) -> None:
+    bundle = {"resourceType": "Bundle", "type": "collection", "entry": []}
     error = await Client(kind, Recorder(answer(403, coded("phi-agreement-required")))).raises(
+        "reconcile_medications", bundle
+    )
+    assert isinstance(error, ForbiddenError)
+    assert not isinstance(error, AuthError)
+    assert error.code == "phi-agreement-required"
+    assert error.message == (
+        "POST /v1/fhir/r4/$reconcile-medications was refused: its organization may not send patient data, "
+        "and not every resource in this request is labelled as test data (403)."
+    )
+    assert "the API's own words" not in error.message
+    assert error.to_dict()["code"] == "phi-agreement-required"
+
+
+@pytest.mark.anyio
+async def test_a_403_carries_a_code_it_has_no_sentence_for_under_the_general_message(kind: str) -> None:
+    error = await Client(kind, Recorder(answer(403, coded("a-code-from-a-later-version")))).raises(
         "read_insurance_plan", "H1"
     )
     assert isinstance(error, ForbiddenError)
-    assert error.code == "phi-agreement-required"
+    assert error.code == "a-code-from-a-later-version"
     assert error.message.endswith("the API key was accepted, and its organization may not make this request (403).")
 
 

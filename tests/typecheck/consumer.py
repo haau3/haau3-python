@@ -15,9 +15,11 @@ from typing_extensions import assert_type
 import haau3
 from haau3 import (
     AsyncHaau3,
+    AuthError,
     BatchError,
     BatchOk,
     BatchResult,
+    ForbiddenError,
     Haau3,
     Haau3Error,
     NoAnswerError,
@@ -139,3 +141,10 @@ def context_manager() -> None:
         assert_type(client, Haau3)
     assert_type(haau3.__version__, str)
     assert_type(haau3.SPEC_VERSION, str)
+
+
+def a_403_is_not_an_auth_error(forbidden: ForbiddenError, auth: AuthError) -> Haau3Error:
+    assert_type(forbidden.code, "str | None")
+    assert_type(forbidden.status, int)
+    wrong: AuthError = forbidden  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    return wrong if auth.status == 401 else forbidden

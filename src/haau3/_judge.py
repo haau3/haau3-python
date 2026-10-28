@@ -33,13 +33,16 @@ _JSON = re.compile("json", re.I)
 _DIGITS = re.compile(r"\d+", re.A)
 _PLAUSIBLE_TYPE = re.compile(r"[A-Z][A-Za-z]{0,63}", re.A)
 
-Verdict: TypeAlias = Union[Hidden[object], AuthError, RefusedError, NoAnswerError]
+Verdict: TypeAlias = Union[Hidden[object], AuthError, ForbiddenError, RefusedError, NoAnswerError]
 
 # Why the API refused a request with a 403, in the words of each message: the reasons the API names
 # by a code of its own. Any other 403, or one without a code, keeps the general sentence.
 _FORBIDDEN_REASONS = {
     "test-key-outside-sandbox": "this is a test key, which works only in the Sandbox",
     "live-key-in-sandbox": "this is a live key, which does not work in the Sandbox",
+    "phi-agreement-required": (
+        "its organization may not send patient data, and not every resource in this request is labelled as test data"
+    ),
 }
 _FORBIDDEN_GENERAL = "the API key was accepted, and its organization may not make this request"
 

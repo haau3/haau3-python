@@ -169,8 +169,7 @@ the timeout again.
 
 ## Errors
 
-Every error is a `Haau3Error`, with the `request_id` the API answered with. There are three kinds,
-and `AuthError` has a subclass for a 403:
+Every error is a `Haau3Error`, with the `request_id` the API answered with. There are four kinds:
 
 ```python
 from haau3 import AuthError, ForbiddenError, NoAnswerError, RefusedError
@@ -185,17 +184,19 @@ except NoAnswerError as error:
     print(error.retry_after)  # seconds, when the API said
     print(error.detail)  # for a timeout or a network failure: what failed, such as "ConnectError: Connection refused"
 except ForbiddenError as error:
-    # 403: the key was accepted, and it may not make this request
-    print(error.code)  # why, when the API names it: "test-key-outside-sandbox" or "live-key-in-sandbox"
+    # 403: the key was accepted, and it may not make this request. Why, when the API names it:
+    # "test-key-outside-sandbox", "live-key-in-sandbox" or "phi-agreement-required"
+    print(error.code)
 except AuthError:
     pass  # 401: the key was missing, unknown or revoked
 ```
 
-`ForbiddenError` is a subclass of `AuthError`, so catch it first, as above. A 403 never means the
-key is wrong: there is nothing to rotate. Its `code` says why when the API names it, and its message
-says the same in words. A test key works only in the Sandbox (`test-key-outside-sandbox`: send a
-live key), and a live key does not work there (`live-key-in-sandbox`: send a test key). Without a
-code, the body says what the organization may not do.
+A 403 is a `ForbiddenError`, never an `AuthError`: the key was accepted, so there is nothing to
+rotate. Its `code` says why when the API names it, and its message says the same in words. A test
+key works only in the Sandbox (`test-key-outside-sandbox`: send a live key), and a live key does not
+work there (`live-key-in-sandbox`: send a test key). `phi-agreement-required` means the organization
+may not send patient data, and not every resource in the request is labelled as test data. Without
+a code, the body says what the organization may not do.
 
 No answer is never reported as an empty result, and an empty result is never an error. Every error
 the API answered carries `attempts`, `duration_ms` and `reason_phrase` too.
