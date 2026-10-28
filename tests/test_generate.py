@@ -45,13 +45,37 @@ def _classes(path: str) -> dict[str, ast.ClassDef]:
     return {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
 
 
+def _keyword_bases(path: str) -> dict[str, dict[str, bool]]:
+    """The TypedDicts written as a call, for keys that are Python keywords: each key, and whether it is Required."""
+    bases: dict[str, dict[str, bool]] = {}
+    for node in ast.parse((ROOT / path).read_text()).body:
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) and len(node.value.args) == 2:
+            fields = node.value.args[1]
+            if isinstance(fields, ast.Dict):
+                name = node.targets[0]
+                assert isinstance(name, ast.Name)
+                bases[name.id] = {
+                    ast.literal_eval(k): ast.literal_eval(v).startswith("Required[")
+                    for k, v in zip(fields.keys, fields.values)
+                    if k is not None
+                }
+    return bases
+
+
+KEYWORD_BASES = _keyword_bases("src/haau3/fhir.py")
+
+
 def _keys(node: ast.ClassDef) -> dict[str, bool]:
-    """Each key and whether it is Required."""
-    return {
+    """Each key and whether it is Required, a keyword key from the TypedDict the class extends included."""
+    keys = {
         s.target.id: ast.unparse(s.annotation).startswith("Required[")
         for s in node.body
         if isinstance(s, ast.AnnAssign) and isinstance(s.target, ast.Name)
     }
+    for base in node.bases:
+        if isinstance(base, ast.Name) and base.id in KEYWORD_BASES:
+            keys.update(KEYWORD_BASES[base.id])
+    return keys
 
 
 def test_the_fhir_roots_are_the_specs_fhir_components() -> None:
@@ -79,6 +103,20 @@ def test_every_fhir_key_is_hl7s_own_and_required_as_hl7_says() -> None:
     assert outcome["issue"] is True
     assert _keys(classes["Bundle"])["type"] is False  # a required primitive may arrive as `_type` alone
     assert "_birthDate" in _keys(classes["Practitioner"])
+    # A key that is a Python keyword is the class's own too, Required as HL7 says.
+    assert _keys(classes["Coverage"])["class"] is False
+    assert "_class" not in KEYWORD_BASES["_CoverageKeywords"]
+
+
+def test_every_resource_type_a_request_example_carries_is_written() -> None:
+    spec = generate.Spec(SPEC)
+    classes = _classes("src/haau3/fhir.py")
+    # The pharmacy benefit check's and MedList's records, as the spec's examples carry them.
+    assert {"Claim", "Coverage", "MedicationRequest", "MedicationStatement", "MessageHeader", "Patient"} <= set(
+        spec.carried
+    )
+    for name in spec.carried:
+        assert _keys(classes[name])["resourceType"] is True, name
 
 
 def test_other_resource_is_every_other_resource_type() -> None:
@@ -91,7 +129,8 @@ def test_other_resource_is_every_other_resource_type() -> None:
         if isinstance(s, ast.AnnAssign) and getattr(s.target, "id", "") == "resourceType"
     )
     named = set(ast.literal_eval("[" + annotation.removeprefix("Required[Literal[").removesuffix("]]") + "]"))
-    assert named == every - set(generate.Spec(SPEC).fhir)
+    spec = generate.Spec(SPEC)
+    assert named == every - set(spec.fhir) - set(spec.carried)
 
 
 def test_the_components_are_the_specs_own() -> None:
