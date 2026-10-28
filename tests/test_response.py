@@ -111,3 +111,25 @@ async def test_request_sends_a_str_as_it_is_and_anything_else_as_json(kind: str)
     await client("request", "POST", "/v1/other", body={"é": [1, None]})
     assert recorder.last.content == '{"é":[1,null]}'.encode()
     assert recorder.last.headers["content-type"] == "application/json"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "path", ["/v1/sandbox/fhir/r4/$process-message", "/v1/sandbox/fhir", "/v1/fhir/r4/$process-message", "/v1/fhir"]
+)
+async def test_a_call_to_either_fhir_base_asks_for_and_sends_fhir_json(kind: str, path: str) -> None:
+    # The API reads a path equal to or under /v1/fhir or /v1/sandbox/fhir as FHIR, and nothing else.
+    for base_url in ("https://api.haau3.com", "https://proxy.example.test/haau3/"):
+        recorder = Recorder(answer(200, {"resourceType": "Bundle"}))
+        await Client(kind, recorder, base_url=base_url)("request", "POST", path, body={"resourceType": "Bundle"})
+        assert recorder.last.headers["accept"] == "application/fhir+json"
+        assert recorder.last.headers["content-type"] == "application/fhir+json"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("path", ["/v1/sandbox", "/v1/sandbox/fhirish", "/v1/scheduling/slots"])
+async def test_any_other_path_asks_for_and_sends_plain_json(kind: str, path: str) -> None:
+    recorder = Recorder(answer(200, {}, fhir=False))
+    await Client(kind, recorder)("request", "POST", path, body={})
+    assert recorder.last.headers["accept"] == "application/json"
+    assert recorder.last.headers["content-type"] == "application/json"
