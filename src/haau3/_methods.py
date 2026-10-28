@@ -44,6 +44,7 @@ from ._operations import (
     READ_PRACTITIONER_ROLE,
     READ_QUESTIONNAIRE,
     RECONCILE_MEDICATIONS,
+    SANDBOX_PROCESS_MESSAGE,
     SEARCH_ENDPOINT,
     SEARCH_HEALTHCARE_SERVICE,
     SEARCH_INSURANCE_PLAN,
@@ -397,7 +398,7 @@ class SyncMethods:
     ) -> fhir.Bundle:
         """Check what a medication costs (pharmacy benefit check)
 
-        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
+        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A member's request the insurer declines under its own rules carries `insurer-declined-request`, and sending it again gives the same answer. An insurer that prices by NDC is asked about the request's NDC, or, for an RxNorm code, an NDC haau3's RxNorm release holds for the code or one of its branded forms, named in the answer's note; with none held it is not asked and the answer carries `ndc-required`, so send the NDC. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
 
         `POST /v1/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check
 
@@ -615,6 +616,28 @@ class SyncMethods:
         del body
         return self._engine.call(
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+        ).data
+
+    def sandbox_process_message(
+        self,
+        body: fhir.Bundle,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """Check a test member's medication cost with a test insurer
+
+        The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data. Every organization may call it on every plan, and each request counts like any other. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with the event `rtpbc-request`: a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. A request is read by the same rules as Pharmacy Benefits' member's request. The member must be one of the test insurer's test members, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse naming the insurer by its Payer ID, `SANDBOX-EHP`, and the request's Patient as it was sent, a test member's labelled `HTEST`; a process note says which test member and formulary row answered. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan.
+
+        `POST /v1/sandbox/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/sandbox/check-a-test-members-medication-cost-with-a-test-insurer
+        """
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return self._engine.call(
+            SANDBOX_PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
     def search_endpoint(
@@ -1966,7 +1989,7 @@ class AsyncMethods:
     ) -> fhir.Bundle:
         """Check what a medication costs (pharmacy benefit check)
 
-        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
+        FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A member's request the insurer declines under its own rules carries `insurer-declined-request`, and sending it again gives the same answer. An insurer that prices by NDC is asked about the request's NDC, or, for an RxNorm code, an NDC haau3's RxNorm release holds for the code or one of its branded forms, named in the answer's note; with none held it is not asked and the answer carries `ndc-required`, so send the NDC. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.
 
         `POST /v1/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/pharmacy-benefits/check-what-a-medication-costs-pharmacy-benefit-check
 
@@ -2209,6 +2232,30 @@ class AsyncMethods:
         return (
             await self._engine.call(
                 RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+            )
+        ).data
+
+    async def sandbox_process_message(
+        self,
+        body: fhir.Bundle,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """Check a test member's medication cost with a test insurer
+
+        The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data. Every organization may call it on every plan, and each request counts like any other. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with the event `rtpbc-request`: a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. A request is read by the same rules as Pharmacy Benefits' member's request. The member must be one of the test insurer's test members, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse naming the insurer by its Payer ID, `SANDBOX-EHP`, and the request's Patient as it was sent, a test member's labelled `HTEST`; a process note says which test member and formulary row answered. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan.
+
+        `POST /v1/sandbox/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/sandbox/check-a-test-members-medication-cost-with-a-test-insurer
+        """
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return (
+            await self._engine.call(
+                SANDBOX_PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
             )
         ).data
 
@@ -3641,6 +3688,23 @@ class SyncWithResponse:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    def sandbox_process_message(
+        self,
+        body: fhir.Bundle,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`Haau3.sandbox_process_message`, returning a `Response` with the request id and timing as well as the answer."""
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return self._engine.call(
+            SANDBOX_PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
     def search_endpoint(
         self,
         *,
@@ -4726,6 +4790,23 @@ class AsyncWithResponse:
         del body
         return await self._engine.call(
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
+    async def sandbox_process_message(
+        self,
+        body: fhir.Bundle,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`AsyncHaau3.sandbox_process_message`, returning a `Response` with the request id and timing as well as the answer."""
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return await self._engine.call(
+            SANDBOX_PROCESS_MESSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
     async def search_endpoint(

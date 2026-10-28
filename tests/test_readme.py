@@ -39,10 +39,15 @@ def _arguments() -> dict[str, Any]:
     records = next(iter(reconcile["examples"].values()))["value"]
     check = SPEC["paths"]["/v1/fhir/r4/$process-message"]["post"]["requestBody"]["content"]["application/fhir+json"]
     message = next(iter(check["examples"].values()))["value"]
+    sandbox = SPEC["paths"]["/v1/sandbox/fhir/r4/$process-message"]["post"]["requestBody"]["content"][
+        "application/fhir+json"
+    ]
+    sandbox_message = next(iter(sandbox["examples"].values()))["value"]
     return {
         "plan_id": "H2406-013-000",
         "records": records,
         "message": message,
+        "sandbox_message": sandbox_message,
         "codes": ["2345-7", "2160-0"],
         "job_id": str(uuid.uuid4()),
         "access_token": "eyJhbGciOiJub25lIn0.e30.example",
