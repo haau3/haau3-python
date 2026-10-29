@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/haau3/haau3-python/compare/v0.3.0...v0.3.1) (2026-10-29)
+
+
+### Features
+
+* the API's spec at 1.0.0-preview.18 ([#34](https://github.com/haau3/haau3-python/issues/34)) ([9d8f6a2](https://github.com/haau3/haau3-python/commit/9d8f6a2c23dd2ff918d7a54413ccbfbb6c1ef098))
+
 ## [0.3.0](https://github.com/haau3/haau3-python/compare/v0.2.3...v0.3.0) (2026-10-28)
 
 
