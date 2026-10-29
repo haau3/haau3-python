@@ -254,6 +254,9 @@ def test_each_sample_against_production(op_id: str, method: str, path: str, op: 
         assert result.stderr == ""
         assert result.returncode == 0
         assert result.stdout.strip() != ""
+        # A search that finds nothing still answers: its example found something, so this must too.
+        if _expected_output(op_id, op) != "0":
+            assert result.stdout.strip() != "0"
     else:
         assert result.returncode != 0
         assert "ForbiddenError" in result.stderr
