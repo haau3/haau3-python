@@ -2,7 +2,7 @@
 
 # API reference
 
-Every operation of the haau3 platform API (`1.0.0-preview.16`) is a method on `Haau3` and on
+Every operation of the haau3 platform API (`1.0.0-preview.18`) is a method on `Haau3` and on
 `AsyncHaau3`, named by its operationId in snake_case. Each links to its page on docs.haau3.com, which
 shows its parameters and an example exchange. Path values come first, then `body` for an operation
 that takes one, and the query parameters are keyword arguments named by the API's own names in
@@ -15,7 +15,7 @@ checked before sending: `process_message` takes `payer_authorization`, sent as `
 
 `batch()` sends several of these as one request, each with its own answer or error, from the entries
 `haau3.calls` makes. It takes every operation on the FHIR base except `fhir_batch`, `process_message` and `reconcile_medications`: 29 of the
-38. See the README's "Several requests in one".
+39. See the README's "Several requests in one".
 
 ## Scheduling
 
@@ -117,3 +117,4 @@ The FHIR base without production behind it, to build and test against: the same 
 | Method | Request | What it does |
 |---|---|---|
 | [`sandbox_process_message(body)`](https://docs.haau3.com/api-reference/sandbox/check-a-test-members-medication-cost-with-a-test-insurer) | `POST /v1/sandbox/fhir/r4/$process-message` | Check a test member's medication cost with a test insurer |
+| [`sandbox_metadata()`](https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement) | `GET /v1/sandbox/fhir/r4/metadata` | The Sandbox's capability statement |

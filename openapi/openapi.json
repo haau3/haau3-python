@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.16",
+    "version": "1.0.0-preview.18",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-01 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -4028,7 +4028,7 @@
                       "parameter": [
                         {
                           "name": "result",
-                          "valueString": "true"
+                          "valueBoolean": true
                         },
                         {
                           "name": "code",
@@ -4288,7 +4288,7 @@
                       "parameter": [
                         {
                           "name": "result",
-                          "valueString": "true"
+                          "valueBoolean": true
                         },
                         {
                           "name": "code",
@@ -8409,8 +8409,7 @@
               "minLength": 1,
               "maxLength": 256
             },
-            "description": "The services offered at one location. Give a Location id, `Location/{id}`, or the `fullUrl` this service returned. An address on another server is refused.",
-            "example": "Location-ba334cb2-a0f9-4147-ab31-1c5af4ab9a4d"
+            "description": "The services offered at one location. Give a Location id, `Location/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
           },
           {
             "name": "network",
@@ -8432,7 +8431,8 @@
               "minLength": 1,
               "maxLength": 256
             },
-            "description": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+            "description": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.",
+            "example": "pharm"
           },
           {
             "name": "specialty",
@@ -8454,7 +8454,8 @@
               "minLength": 1,
               "maxLength": 50
             },
-            "description": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy."
+            "description": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy.",
+            "example": "FL"
           },
           {
             "name": "location.address-postalcode",
@@ -8465,7 +8466,8 @@
               "minLength": 1,
               "maxLength": 10
             },
-            "description": "Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`."
+            "description": "Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`.",
+            "example": "33131"
           },
           {
             "name": "location.address-city",
@@ -8602,42 +8604,130 @@
                   "$ref": "#/components/schemas/Bundle"
                 },
                 "examples": {
-                  "The services at a location": {
-                    "summary": "The services at a location",
+                  "Pharmacies near a ZIP code": {
+                    "summary": "Pharmacies near a ZIP code",
                     "value": {
                       "resourceType": "Bundle",
                       "type": "searchset",
                       "link": [
                         {
                           "relation": "self",
-                          "url": "https://api.haau3.com/v1/fhir/r4/HealthcareService?location=Location-ba334cb2-a0f9-4147-ab31-1c5af4ab9a4d&_count=2"
+                          "url": "https://api.haau3.com/v1/fhir/r4/HealthcareService?service-category=pharm&location.address-state=FL&location.address-postalcode=33131&_count=2"
+                        },
+                        {
+                          "relation": "next",
+                          "url": "https://api.haau3.com/v1/fhir/r4/HealthcareService?service-category=pharm&location.address-state=FL&location.address-postalcode=33131&_count=2&page=np1-2"
                         }
                       ],
                       "entry": [
                         {
-                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-0009bcae-631e-45c0-9d3c-5691acb4a05d",
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1376440388",
                           "resource": {
                             "resourceType": "HealthcareService",
-                            "id": "HealthcareService-0009bcae-631e-45c0-9d3c-5691acb4a05d",
+                            "id": "HealthcareService-pharmacy-1376440388",
                             "meta": {
-                              "versionId": "1",
-                              "lastUpdated": "2026-10-14T21:17:34.307230248Z",
-                              "profile": [
-                                "http://hl7.org/fhir/us/ndh/StructureDefinition/ndh-HealthcareService"
-                              ]
+                              "source": "https://npiregistry.cms.hhs.gov"
                             },
-                            "extension": [
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-1376440388",
+                              "display": "CARE 4 SOLUTIONS LLC"
+                            },
+                            "category": [
                               {
-                                "url": "http://hl7.org/fhir/us/ndh/StructureDefinition/base-ext-network-reference",
-                                "valueReference": {
-                                  "reference": "Organization/Organization-ea579d05-454e-4359-8751-900c940a599a"
-                                }
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
                               }
                             ],
-                            "active": true,
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Pharmacy, Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
                             "location": [
                               {
-                                "reference": "Location/Location-ba334cb2-a0f9-4147-ab31-1c5af4ab9a4d"
+                                "reference": "Location/Location-pharmacy-1376440388"
+                              }
+                            ],
+                            "name": "CARE 4 SOLUTIONS LLC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1780099325",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1780099325",
+                            "meta": {
+                              "source": "https://npiregistry.cms.hhs.gov"
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-1780099325",
+                              "display": "CVS PHARMACY #10132"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "333600000X",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Pharmacy, Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1780099325"
+                              }
+                            ],
+                            "name": "CVS PHARMACY #10132",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-358-7577",
+                                "use": "work"
                               }
                             ]
                           },
@@ -8832,7 +8922,7 @@
                       "resourceType": "HealthcareService",
                       "id": "HealthcareService-0009bcae-631e-45c0-9d3c-5691acb4a05d",
                       "meta": {
-                        "lastUpdated": "2026-10-14T21:17:34.307230248Z",
+                        "lastUpdated": "2026-10-28T20:40:03.274622990Z",
                         "profile": [
                           "http://hl7.org/fhir/us/ndh/StructureDefinition/ndh-HealthcareService"
                         ],
@@ -8841,7 +8931,7 @@
                       "active": true,
                       "location": [
                         {
-                          "reference": "Location/Location-ba334cb2-a0f9-4147-ab31-1c5af4ab9a4d"
+                          "reference": "Location/Location-6e138dc1-b541-419e-867c-66cbc77d1ce8"
                         }
                       ],
                       "extension": [
@@ -9165,56 +9255,52 @@
                         },
                         {
                           "relation": "next",
-                          "url": "https://api.haau3.com/v1/fhir/r4/Location?organization=Organization-1093090342&_count=2&page=AAMA-EFRSURBSGd2bzlHTkh2NkZNeXNGMkNKelNQaUp6aCtWTXNCNXh6R0owVG0xQ1RtRzZRSFYrVWVUaXNmMW1uT2R0blB3TzlaQUFBQUFmakI4QmdrcWhraUc5dzBCQndhZ2J6QnRBZ0VBTUdnR0NTcUdTSWIzRFFFSEFUQWVCZ2xnaGtnQlpRTUVBUzR3RVFRTVVSeGw1WmpNUHlzTHhwQkRBZ0VRZ0R1MDNCRmxyalc0ODhlRkhCUk5JS2xpcmtPSUlYeDZ6dWpnMnBGbFBBWEdwSy9ENTBtS3NWRk5BOXlycW5VK0FZc2htb1JxeFcwa2kvUk4wZz09Q3F5uM4EUvNqzomohLSqIkCV4eWlofCoKUy2qmGw20wX56X-dEkL05DRKciQwBgqF0un_m3MQXTUgcXiBaPYGxUgP_5KCbItOjprTWTPFlnno11u4b8cfr3AQ-vjNKAct5dPw7YBtd81XGSgavrT6KEqreKfbS_gHF1LQHcxVcPcngHry6Q1d9KN6nj7rXqNWZWK0NC6kNX2ANEgBWhAj_4g5A5E1RMMKoY2IW5GIb-aWDY1NrWqOBU2GXE4PgpueouEMBESe_Uw3Jx8N311Uh4SV08H2QLdXpLpWrgPYFrwizjb6eXygnWVpBRbzfMJrzJKH137w-jWQqyIe7kpZAqMIzFHokChI6uAifmsvZ1V0uq2WbkbK6qrghKuU1UNPAVpFkpnxUIx-FHTi5Z2WRJUFJJ3jflT1FrArVyU2hOspNbowsl0bulGhq05BY1WPfF_WmwwbeTyvH6W93vlVXr7nywckBi-jdSzO42mjgM07i5MGeiiZN9Yh2Jz4XJV6XhkO8Z2qwgL4xskdMczQBJnHAYY4uVF7chDZ1UqY_G71lXgqU1RdcmRQJ1EE1c96zf8kMZwOUeb3dpvEV2KFv-4dfQ-U172EiHW9zSJCaWNgpaN-N1jv-WOWUM67cT4kTjRa_zoFQKTKe9xIoIc4CG_K4iTFHdAzGw3P6i1VUsBReI3cm0rxqc_fdRiuadIhyb4OR8pE_yP-I0fCwEX7u9TeZ6iBrsyEc_feeuRj_oOX25aR4LwdvC6iBcpHy591XaZGY_yjHrapfe-pAWI3ndAEydpQ_KalQrihraoGGQEhc6Ka1_qxhMyQVEckm43J-GSXxeDe1QITwbAjQVXR778OznOf8RWYqyXOtl70XBWX5dM6IRtP_M5NrxtTKumqg_pDqYB47gYPnU0t8fA2AcDVjY5yHtkxgTwt3Plq0ZiwMImCOOyu62QxCYBdwNNGvyrX5WTd5gYjgHn4DqS4-owEvQgwiit1Wk6fXuqx8QM53cRYUzBxgwpTgaKwKqKWthKXw%3D%3D"
+                          "url": "https://api.haau3.com/v1/fhir/r4/Location?organization=Organization-1093090342&_count=2&page=AAMA-EFRSURBSGd2bzlHTkh2NkZNeXNGMkNKelNQaUp6aCtWTXNCNXh6R0owVG0xQ1RtRzZRRkxtTmwxSmxMcHZqd3JsZ2ZlLzl6MkFBQUFmakI4QmdrcWhraUc5dzBCQndhZ2J6QnRBZ0VBTUdnR0NTcUdTSWIzRFFFSEFUQWVCZ2xnaGtnQlpRTUVBUzR3RVFRTTU5cGVid3pWdWlNVUxqbVVBZ0VRZ0R0YWRpVzNyVTlhcFBLMlVHMXp3MGtUaFdLa2JhTEZQMEFRVjY4NmticFkzZ0FpTlo3TGpFNGpXWlBFaGRHNEppaW5VeTBaNVIyV21qMVBQQT09HtZeBPV8vaXo3XAmumyf_AaZ5GdPUKy19rSp-gQdsmUJCAtv3CQAf7_uWe0mlQEggK8oJhx8EzxxOqdOVeW7mT4opmacY4V0NRyZ8fdbFnXMRx0sUJ_-wwq05_JWIwWFy2PJ6rnoztydEbpIlCWw-GAavIm1igrlx3yf_J0xyeuPlyZ6N--kiuYURbCFNlGSPJtu95_ZwVMTDwQd6dzlUm0OTQ_SwMtdPhWleEMsUxhCJEeWz9yV9fw_59gJB75zQOLiOFi7yb_6RJZGwoWqUW84a7jEna5NnrrD_hYPwKOpl08k4SbWWxVQrtMAPIcVZPSmjh9JubTJdQMEpgpouzl4UeMuxFhWc9aXqFXN12ghIPcQu1HKEeZb01OVaUAS5VptyzgAAavaplRJKqViGl-EnZy94Ptv1RnANs_2hnOgwfm95a6-MAfHCBYftVfUXSx2Tewzho7YxHItco81B1JY5fhELOt5MnyNT6ZXrt06PYNFCeVjCmHMnzXdp7C_l4UHKVr02xP_JNjE1Mk74SvjDq6pqWtzIeTSoYS1tZrVY0Xx7uolcIoC00L81Ih1AFuTeP5_25SPTj9bkAYDhirz8uacp2RNcPj0IXaIZTPS9YAfDuKEKb41S0geomTzpThGDhxr9J4OiSC_xiAP_JpVMaViVR6eNcZn4GZYOsjo5UVYzeIzdpOVMpEgm1lOoByTUHBax6R3_86tzq0veM02gCLGdcG795w3ItbnuZmx5zJyGHWPqldRe7VHeMWIlkyjHRDToViaUhEFf8wPgFTvVkY7BBo0LkVMdAk_K2tO0gsoeWEX6eXWmRfwZ0khrXtThCsynky1DmroQcjJ_EavNQQr9CNfGK9g71hJvWi_od8xNWcLFPkBekgwdYSFJRtA9EiDTmQr6Vu-PLpkFxnsubtu1W26AEJTGos9nMwsin9uJzNkhsYmR6yCaXQKtzdVaUy4Kpt5x2hhjCvcuvf8umuRKfDjLjwNL7qA6A5QD4Pg7CsLI7QRnMpNaH62jZ4g-A%3D%3D"
                         }
                       ],
                       "entry": [
                         {
-                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-19ee3838-0fb8-4af1-a912-2906f6a315f7",
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-20125945-4cac-4e1f-bd40-1c77a9478462",
                           "resource": {
                             "resourceType": "Location",
-                            "id": "Location-19ee3838-0fb8-4af1-a912-2906f6a315f7",
+                            "id": "Location-20125945-4cac-4e1f-bd40-1c77a9478462",
                             "meta": {
                               "versionId": "1",
-                              "lastUpdated": "2026-10-14T20:57:02.131435914Z",
+                              "lastUpdated": "2026-10-28T20:25:14.159088230Z",
                               "profile": [
                                 "http://hl7.org/fhir/us/ndh/StructureDefinition/ndh-Location"
                               ]
                             },
                             "status": "active",
-                            "name": "7511 S Louise Ave",
-                            "description": "7511 S Louise Ave",
+                            "name": "1420 W 22nd St",
+                            "description": "1420 W 22nd St",
                             "mode": "instance",
                             "telecom": [
                               {
                                 "system": "fax",
-                                "value": "6053353282",
+                                "value": "6053287899",
                                 "use": "work"
                               },
                               {
                                 "system": "phone",
-                                "value": "6053128700",
-                                "use": "work"
-                              },
-                              {
-                                "system": "phone",
-                                "value": "6053345850",
+                                "value": "6053287800",
                                 "use": "work"
                               }
                             ],
                             "address": {
                               "type": "physical",
                               "line": [
-                                "7511 S Louise Ave"
+                                "1420 W 22nd St",
+                                "Ste 307"
                               ],
                               "city": "Sioux Falls",
                               "state": "SD",
-                              "postalCode": "57108",
+                              "postalCode": "57105",
                               "country": "US"
                             },
                             "position": {
-                              "longitude": -96.76733,
-                              "latitude": 43.47856
+                              "longitude": -96.74187,
+                              "latitude": 43.53136
                             },
                             "managingOrganization": {
                               "reference": "Organization/Organization-1093090342"
@@ -9225,51 +9311,41 @@
                           }
                         },
                         {
-                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-1c36f608-52f8-4d45-8bac-158ef184882d",
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-250d0657-d77f-45f4-81bc-7f5b292b383d",
                           "resource": {
                             "resourceType": "Location",
-                            "id": "Location-1c36f608-52f8-4d45-8bac-158ef184882d",
+                            "id": "Location-250d0657-d77f-45f4-81bc-7f5b292b383d",
                             "meta": {
                               "versionId": "1",
-                              "lastUpdated": "2026-10-14T20:59:16.681817075Z",
+                              "lastUpdated": "2026-10-28T20:25:14.475268414Z",
                               "profile": [
                                 "http://hl7.org/fhir/us/ndh/StructureDefinition/ndh-Location"
                               ]
                             },
                             "status": "active",
-                            "name": "5920 E Madison St",
-                            "description": "5920 E Madison St",
+                            "name": "4820 23rd Ave S",
+                            "description": "4820 23rd Ave S",
                             "mode": "instance",
                             "telecom": [
                               {
                                 "system": "fax",
-                                "value": "6053282957",
-                                "use": "work"
-                              },
-                              {
-                                "system": "fax",
-                                "value": "6056100661",
-                                "use": "work"
-                              },
-                              {
-                                "system": "phone",
-                                "value": "6053125000",
+                                "value": "9725910085",
                                 "use": "work"
                               }
                             ],
                             "address": {
                               "type": "physical",
                               "line": [
-                                "5920 E Madison St"
+                                "4820 23rd Ave S"
                               ],
-                              "city": "Sioux Falls",
-                              "state": "SD",
-                              "postalCode": "57110",
+                              "city": "Fargo",
+                              "state": "ND",
+                              "postalCode": "58104",
                               "country": "US"
                             },
                             "position": {
-                              "longitude": -96.64536,
-                              "latitude": 43.51173
+                              "longitude": -96.84716,
+                              "latitude": 46.81624
                             },
                             "managingOrganization": {
                               "reference": "Organization/Organization-1093090342"
@@ -9427,7 +9503,7 @@
               "pattern": "^[A-Za-z0-9\\-.]{1,64}$"
             },
             "description": "The resource id, as returned by a search on this service. Ids are opaque: they are not constructed from an NPI or any other identifier.",
-            "example": "Location-26e6731f-5e6a-48e4-aa2f-9f4c40cf402b"
+            "example": "Location-5e79e878-cef0-4a63-a41c-b77cfd3f8062"
           },
           {
             "$ref": "#/components/parameters/XRequestId"
@@ -9446,41 +9522,41 @@
                     "summary": "A practice location",
                     "value": {
                       "resourceType": "Location",
-                      "id": "Location-26e6731f-5e6a-48e4-aa2f-9f4c40cf402b",
+                      "id": "Location-5e79e878-cef0-4a63-a41c-b77cfd3f8062",
                       "meta": {
-                        "lastUpdated": "2026-10-14T20:54:15.371019820Z",
+                        "lastUpdated": "2026-10-28T20:27:12.173893403Z",
                         "profile": [
                           "http://hl7.org/fhir/us/ndh/StructureDefinition/ndh-Location"
                         ],
                         "versionId": "1"
                       },
                       "status": "active",
-                      "name": "Atlanta-Sandy Springs-Roswell, GA",
-                      "description": "Atlanta-Sandy Springs-Roswell, GA",
+                      "name": "Sioux Falls, SD-MN",
+                      "description": "Sioux Falls, SD-MN",
                       "mode": "instance",
                       "telecom": [
                         {
                           "system": "phone",
-                          "value": "4047787525",
+                          "value": "6053289000",
                           "use": "work"
                         }
                       ],
                       "address": {
                         "line": [
-                          "1365 Clifton Rd NE"
+                          "4405 E 26th St"
                         ],
-                        "city": "Atlanta",
-                        "state": "GA",
-                        "postalCode": "30322",
+                        "city": "Sioux Falls",
+                        "state": "SD",
+                        "postalCode": "57103",
                         "country": "US",
                         "type": "physical"
                       },
                       "position": {
-                        "longitude": -84.32084,
-                        "latitude": 33.79225
+                        "longitude": -96.67262,
+                        "latitude": 43.52927
                       },
                       "managingOrganization": {
-                        "reference": "Organization/Organization-1437493467"
+                        "reference": "Organization/Organization-1922030212"
                       }
                     }
                   }
@@ -20434,6 +20510,163 @@
                 "$ref": "#/components/headers/XCorrelationId"
               }
             }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestId"
+          }
+        ]
+      }
+    },
+    "/v1/sandbox/fhir/r4/metadata": {
+      "get": {
+        "tags": [
+          "Sandbox"
+        ],
+        "summary": "The Sandbox's capability statement",
+        "description": "FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving a member's request. It takes no parameters.",
+        "operationId": "sandboxMetadata",
+        "responses": {
+          "200": {
+            "description": "The Sandbox's FHIR `CapabilityStatement`.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilityStatement"
+                },
+                "examples": {
+                  "The Sandbox's CapabilityStatement": {
+                    "summary": "The Sandbox's CapabilityStatement",
+                    "value": {
+                      "resourceType": "CapabilityStatement",
+                      "status": "active",
+                      "date": "2026-10-27",
+                      "publisher": "haau3",
+                      "kind": "instance",
+                      "instantiates": [
+                        "http://hl7.org/fhir/us/carin-rtpbc/CapabilityStatement/rtpbc-responder|2.0.0-ballot"
+                      ],
+                      "software": {
+                        "name": "haau3 Sandbox"
+                      },
+                      "implementation": {
+                        "description": "haau3's Sandbox: the platform FHIR base's non-production twin, the same paths answered with synthetic data. It serves the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot), answered by Example Health Plan, haau3's test insurer, for its test members only, each outcome fixed by the medication. Send test members only, never a real person.",
+                        "url": "https://api.haau3.com/v1/sandbox/fhir/r4"
+                      },
+                      "fhirVersion": "4.0.1",
+                      "format": [
+                        "application/fhir+json",
+                        "json"
+                      ],
+                      "rest": [
+                        {
+                          "mode": "server",
+                          "documentation": "haau3's Sandbox: the platform FHIR base's non-production twin, the same paths answered with synthetic data. It serves the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot), answered by Example Health Plan, haau3's test insurer, for its test members only, each outcome fixed by the medication. Send test members only, never a real person.",
+                          "operation": [
+                            {
+                              "name": "process-message",
+                              "definition": "http://hl7.org/fhir/OperationDefinition/MessageHeader-process-message",
+                              "documentation": "A member's pharmacy benefit check, answered by a test insurer: a CARIN request message in, a CARIN response message out. Test members only; any other member gets the error no-test-member."
+                            }
+                          ]
+                        }
+                      ],
+                      "messaging": [
+                        {
+                          "documentation": "haau3's Sandbox: the platform FHIR base's non-production twin, the same paths answered with synthetic data. It serves the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot), answered by Example Health Plan, haau3's test insurer, for its test members only, each outcome fixed by the medication. Send test members only, never a real person.",
+                          "supportedMessage": [
+                            {
+                              "mode": "receiver",
+                              "definition": "http://hl7.org/fhir/us/carin-rtpbc/MessageDefinition/rtpbc-request"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "`private, max-age=300`: keep this answer up to five minutes.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "ETag": {
+                "description": "Send it back in `If-None-Match` to get a `304` when nothing has changed.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified: the `ETag` sent in `If-None-Match` still matches, so the copy you hold is current. No body.",
+            "headers": {
+              "Cache-Control": {
+                "description": "`private, max-age=300`: keep this answer up to five minutes.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "ETag": {
+                "description": "Send it back in `If-None-Match` to get a `304` when nothing has changed.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "400": {
+            "description": "Two different FHIR versions were named in one request, or a query parameter was sent: `metadata` takes none on this base.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenLiveKey"
+          },
+          "406": {
+            "$ref": "#/components/responses/FhirNotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/FhirTooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/FhirServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/FhirUnavailable"
           }
         },
         "parameters": [

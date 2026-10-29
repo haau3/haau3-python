@@ -20,7 +20,7 @@ from ._components import (
 )
 from ._operation import DeclaredHeader, Operation
 
-SPEC_VERSION: Final[str] = "1.0.0-preview.16"
+SPEC_VERSION: Final[str] = "1.0.0-preview.18"
 """The version of the API's spec this SDK was generated from."""
 
 CHECK_INSURANCE_PLAN_NETWORK: Final[Operation[fhir.Parameters]] = Operation(
@@ -88,6 +88,9 @@ READ_QUESTIONNAIRE: Final[Operation[fhir.Questionnaire]] = Operation(
 )
 RECONCILE_MEDICATIONS: Final[Operation[fhir.Bundle]] = Operation(
     "POST", "/v1/fhir/r4/$reconcile-medications", ("Bundle",)
+)
+SANDBOX_METADATA: Final[Operation[fhir.CapabilityStatement]] = Operation(
+    "GET", "/v1/sandbox/fhir/r4/metadata", ("CapabilityStatement",)
 )
 SANDBOX_PROCESS_MESSAGE: Final[Operation[fhir.Bundle]] = Operation(
     "POST", "/v1/sandbox/fhir/r4/$process-message", ("Bundle",)

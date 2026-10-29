@@ -805,8 +805,9 @@ def _answer_name(op: Op) -> str:
 
 def _print_lines(spec: Spec, op: Op, raw: Json, name: str) -> list[str]:
     """What shows the answer: a resource's id, a Bundle's entry count, each output parameter's name, a
-    search's total, or how many records a list holds."""
-    if len(op.expects) > 1:
+    search's total, or how many records a list holds. A CapabilityStatement, which a base's `metadata`
+    answers without an id, prints its resource type."""
+    if len(op.expects) > 1 or op.expects == ["CapabilityStatement"]:
         return [f'print({name}["resourceType"])']
     if op.expects == ["Bundle"]:
         return [f'print(len({name}.get("entry", [])))']
