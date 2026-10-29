@@ -1,6 +1,17 @@
 """The code samples in openapi/code-samples.json, one per operation, each run as it is written: a program
 of its own, with HAAU3_BASE_URL pointing at a stand-in API that answers only the operation's example
-request, exactly as the spec writes it, and refuses anything else."""
+request, exactly as the spec writes it, and refuses anything else.
+
+Against the production API too, on a real key, when asked, as tests/test_live.py is:
+
+    HAAU3_LIVE_TEST=1 HAAU3_API_KEY=haau3_sk_... uv run pytest tests/test_samples.py
+
+There each sample runs with no address set, as a customer runs it, one at a time. What it must do is
+set by the key's mode, read from its prefix: a live key (`haau3_sk_live_`) is answered everywhere but the
+Sandbox and refused there, a test key (`haau3_sk_test_`) the reverse, each refusal a ForbiddenError
+whose message gives its reason. The live key comes from an organization with no agreement on file, which
+Pharmacy Benefits refuses, since it is not yet open. A key with neither prefix works on both bases, and
+its run leaves Pharmacy Benefits out. CI sets neither variable."""
 
 from __future__ import annotations
 
@@ -145,13 +156,17 @@ def stand_in() -> Iterator[str]:
     server.server_close()
 
 
-def _run(source: str, base_url: str, files: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    """Runs one sample as a program of its own, as a customer would."""
+def _run(
+    source: str, base_url: str | None, files: dict[str, str] | None = None, key: str = KEY
+) -> subprocess.CompletedProcess[str]:
+    """Runs one sample as a program of its own, as a customer would. With no base URL, on the API itself."""
     with tempfile.TemporaryDirectory() as tmp:
         (Path(tmp) / "sample.py").write_text(source)
         for name, text in (files or {}).items():
             (Path(tmp) / name).write_text(text)
-        env = {"PATH": os.environ.get("PATH", ""), "HAAU3_API_KEY": KEY, "HAAU3_BASE_URL": base_url}
+        env = {"PATH": os.environ.get("PATH", ""), "HAAU3_API_KEY": key}
+        if base_url is not None:
+            env["HAAU3_BASE_URL"] = base_url
         return subprocess.run(
             [sys.executable, "sample.py"], cwd=tmp, env=env, capture_output=True, text=True, timeout=60, check=False
         )
@@ -201,3 +216,45 @@ def test_a_sample_that_sends_anything_else_is_refused(stand_in: str) -> None:
     result = _run(changed, stand_in)
     assert result.returncode != 0
     assert "RefusedError" in result.stderr
+
+
+LIVE = os.environ.get("HAAU3_LIVE_TEST") == "1" and bool(os.environ.get("HAAU3_API_KEY"))
+LIVE_KEY = os.environ.get("HAAU3_API_KEY", "")
+KEY_MODE = (
+    "live" if LIVE_KEY.startswith("haau3_sk_live_") else "test" if LIVE_KEY.startswith("haau3_sk_test_") else "either"
+)
+
+
+def _on_this_key(op_id: str, path: str) -> tuple[str, str | None] | None:
+    """What a sample must do on this key: ("answers", None), or ("refused", its code or None); None when not run."""
+    sandbox = path.startswith("/v1/sandbox/")
+    if KEY_MODE == "test" and not sandbox:
+        return ("refused", "test-key-outside-sandbox")
+    if KEY_MODE == "live" and sandbox:
+        return ("refused", "live-key-in-sandbox")
+    if op_id == "processMessage":
+        return ("refused", None) if KEY_MODE == "live" else None
+    return ("answers", None)
+
+
+@pytest.mark.live
+@pytest.mark.skipif(not LIVE, reason="set HAAU3_LIVE_TEST=1 and HAAU3_API_KEY to call the production API")
+@pytest.mark.parametrize(("op_id", "method", "path", "op"), OPERATIONS, ids=[o[0] for o in OPERATIONS])
+def test_each_sample_against_production(op_id: str, method: str, path: str, op: dict[str, Any]) -> None:
+    from haau3._judge import _FORBIDDEN_GENERAL, _FORBIDDEN_REASONS
+
+    expected = _on_this_key(op_id, path)
+    if expected is None:
+        pytest.skip("a key with neither prefix may belong to an organization Pharmacy Benefits is open to")
+    source = _sample(method, path)
+    files = {"request.json": json.dumps(example_body(op))} if 'open("request.json")' in source else None
+    result = _run(source, None, files, LIVE_KEY)
+    outcome, code = expected
+    if outcome == "answers":
+        assert result.stderr == ""
+        assert result.returncode == 0
+        assert result.stdout.strip() != ""
+    else:
+        assert result.returncode != 0
+        assert "ForbiddenError" in result.stderr
+        assert (_FORBIDDEN_REASONS[code] if code else _FORBIDDEN_GENERAL) in result.stderr
