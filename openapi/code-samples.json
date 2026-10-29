@@ -457,7 +457,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\ncapability_statement = client.sandbox_metadata()\nprint(capability_statement.get(\"id\"))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\ncapability_statement = client.sandbox_metadata()\nprint(capability_statement[\"resourceType\"])\n"
           }
         ]
       }

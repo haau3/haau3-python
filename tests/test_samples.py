@@ -71,7 +71,7 @@ def _expected_output(op_id: str, op: dict[str, Any]) -> str:
     answer = example_answer(op)
     if op_id == "fhirBatch":
         return "\n".join(str(int(re.match(r"\d+", e["response"]["status"]).group())) for e in answer["entry"])  # type: ignore[union-attr]
-    if op_id == "fhirMetadata":
+    if op_id == "fhirMetadata" or answer.get("resourceType") == "CapabilityStatement":
         return str(answer["resourceType"])
     if answer.get("resourceType") == "Bundle":
         return str(len(answer.get("entry", [])))
