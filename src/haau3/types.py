@@ -152,6 +152,9 @@ ReconcileMedicationsBody: TypeAlias = Union[fhir.Bundle, fhir.Parameters]
 ReconcileMedicationsResponse: TypeAlias = fhir.Bundle
 """What `reconcile_medications` answers with."""
 
+SandboxMetadataResponse: TypeAlias = fhir.CapabilityStatement
+"""What `sandbox_metadata` answers with."""
+
 SandboxProcessMessageBody: TypeAlias = fhir.Bundle
 """The request body of `sandbox_process_message`."""
 SandboxProcessMessageResponse: TypeAlias = fhir.Bundle

@@ -44,6 +44,7 @@ from ._operations import (
     READ_PRACTITIONER_ROLE,
     READ_QUESTIONNAIRE,
     RECONCILE_MEDICATIONS,
+    SANDBOX_METADATA,
     SANDBOX_PROCESS_MESSAGE,
     SEARCH_ENDPOINT,
     SEARCH_HEALTHCARE_SERVICE,
@@ -616,6 +617,24 @@ class SyncMethods:
         del body
         return self._engine.call(
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+        ).data
+
+    def sandbox_metadata(
+        self,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.CapabilityStatement:
+        """The Sandbox's capability statement
+
+        FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving a member's request. It takes no parameters.
+
+        `GET /v1/sandbox/fhir/r4/metadata`, https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement
+        """
+        return self._engine.call(
+            SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
     def sandbox_process_message(
@@ -2235,6 +2254,26 @@ class AsyncMethods:
             )
         ).data
 
+    async def sandbox_metadata(
+        self,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.CapabilityStatement:
+        """The Sandbox's capability statement
+
+        FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving a member's request. It takes no parameters.
+
+        `GET /v1/sandbox/fhir/r4/metadata`, https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement
+        """
+        return (
+            await self._engine.call(
+                SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+            )
+        ).data
+
     async def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -3688,6 +3727,19 @@ class SyncWithResponse:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    def sandbox_metadata(
+        self,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.CapabilityStatement]:
+        """`Haau3.sandbox_metadata`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
     def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -4790,6 +4842,19 @@ class AsyncWithResponse:
         del body
         return await self._engine.call(
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
+    async def sandbox_metadata(
+        self,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.CapabilityStatement]:
+        """`AsyncHaau3.sandbox_metadata`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
     async def sandbox_process_message(

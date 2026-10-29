@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.16"
+    "version": "1.0.0-preview.18"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -289,7 +289,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_healthcare_service(location=\"Location-ba334cb2-a0f9-4147-ab31-1c5af4ab9a4d\", count=2)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_healthcare_service(\n    service_category=\"pharm\", location_address_state=\"FL\", location_address_postalcode=\"33131\", count=2\n)\nprint(len(bundle.get(\"entry\", [])))\n"
           }
         ]
       }
@@ -325,7 +325,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nlocation = client.read_location(\"Location-26e6731f-5e6a-48e4-aa2f-9f4c40cf402b\")\nprint(location.get(\"id\"))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nlocation = client.read_location(\"Location-5e79e878-cef0-4a63-a41c-b77cfd3f8062\")\nprint(location.get(\"id\"))\n"
           }
         ]
       }
@@ -446,6 +446,18 @@
             "lang": "python",
             "label": "Python",
             "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# request.json holds one patient's medication records, as a Bundle.\nwith open(\"request.json\") as file:\n    body: fhir.Bundle = json.load(file)\nbundle = client.reconcile_medications(body)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/sandbox/fhir/r4/metadata'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\ncapability_statement = client.sandbox_metadata()\nprint(capability_statement.get(\"id\"))\n"
           }
         ]
       }
