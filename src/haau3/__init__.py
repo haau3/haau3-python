@@ -34,6 +34,8 @@ from ._errors import RefusedError as RefusedError
 from ._methods import AsyncWithResponse as AsyncWithResponse
 from ._methods import SyncWithResponse as SyncWithResponse
 from ._operations import SPEC_VERSION as SPEC_VERSION
+from ._parameters import DosageReview as DosageReview
+from ._parameters import ReviewFlag as ReviewFlag
 from ._response import RawResponse as RawResponse
 from ._response import Response as Response
 from ._test_data import mark_as_test_data as mark_as_test_data

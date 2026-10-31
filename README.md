@@ -286,6 +286,39 @@ every entry. From async code, `async for page in async_client.pages(first)` and 
 in async_client.resources(first)`. Scheduling's searches page with `limit` and `offset`, and answer
 with a `total`.
 
+## Reading a Parameters answer
+
+FHIR operations answer with a `Parameters` resource whose parts are named: `$lookup`'s `display` and
+`property` parts, `$structure-dosage`'s `dosage` part. `parameters()` gives every part with a name and
+`parameter()` the one, both with no request, as FHIR's own SDKs read one (Firely's `Get` and
+`GetSingleValue`, HAPI's `ParametersUtil`). A part holds its value in the `value[x]` its operation
+names. `parameter()` raises when two parts share the name.
+
+```python
+lookup = client.code_system_lookup(system="http://loinc.org", code="2345-7")
+display = client.parameter(lookup, "display")
+print(display.get("valueString") if display else None)
+```
+
+Structured Sig answers with one `dosage` part, a FHIR `Dosage`, and writes on it a review flag for
+anything a person should check. `review_flags()` reads each flag's code, display and the words of the
+directions it is about, and the versions the Dosage names:
+
+```python
+answer = client.structure_dosage(
+    {
+        "resourceType": "Parameters",
+        "parameter": [{"name": "text", "valueString": "Instill 2 drops in the affected ear twice daily"}],
+    }
+)
+part = client.parameter(answer, "dosage")
+if part and "valueDosage" in part:
+    review = client.review_flags(part["valueDosage"])
+    for flag in review.flags:
+        print(flag.code, flag.display, flag.words)
+    print(review.engine_version, review.vocabulary_version, review.rxnorm_release)
+```
+
 ## Several requests in one
 
 `batch()` sends several operations of the FHIR base as one request. Each entry comes from
