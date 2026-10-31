@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.19",
+    "version": "1.0.0-preview.20",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -48,6 +48,10 @@
     {
       "name": "MedList",
       "description": "One reconciled medication list from one patient's FHIR medication records, as US Core MedicationRequests with a Provenance for each. This operation receives patient data, so send it only under an executed agreement."
+    },
+    {
+      "name": "Structured Sig",
+      "description": "A prescription's free-text directions as a FHIR Dosage: the dose, unit, route, method and timing coded in SNOMED CT, NCIt and UCUM where the words support them, the directions kept verbatim, and a review flag on anything a person should check. It takes the directions and the medication's codings, never a patient."
     },
     {
       "name": "Sandbox",
@@ -2300,7 +2304,7 @@
                     "value": {
                       "resourceType": "CapabilityStatement",
                       "status": "active",
-                      "date": "2026-10-20",
+                      "date": "2026-10-30",
                       "kind": "instance",
                       "fhirVersion": "4.0.1",
                       "format": [
@@ -2315,14 +2319,14 @@
                         "name": "haau3 platform FHIR API"
                       },
                       "implementation": {
-                        "description": "haau3 platform FHIR R4 API. Four services and two operations are served from this one base: terminology (CodeSystem, ValueSet), the provider directory (Practitioner, PractitionerRole, Organization, OrganizationAffiliation, HealthcareService, Location, Endpoint), questionnaires (Questionnaire), Medical Benefits (InsurancePlan), MedList's reconcile-medications and Pharmacy Benefits' process-message. Note that `/v1/` versions the haau3 platform API contract, not FHIR; the FHIR release is `r4`, and is echoed on every response as the `fhirVersion` media-type parameter.",
+                        "description": "haau3 platform FHIR R4 API. Four services and three operations are served from this one base: terminology (CodeSystem, ValueSet), the provider directory (Practitioner, PractitionerRole, Organization, OrganizationAffiliation, HealthcareService, Location, Endpoint), questionnaires (Questionnaire), Medical Benefits (InsurancePlan), MedList's reconcile-medications, Pharmacy Benefits' process-message and Structured Sig's structure-dosage. Note that `/v1/` versions the haau3 platform API contract, not FHIR; the FHIR release is `r4`, and is echoed on every response as the `fhirVersion` media-type parameter.",
                         "url": "https://api.haau3.com/v1/fhir/r4"
                       },
-                      "copyright": "This material contains content from LOINC (http://loinc.org). LOINC is copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes (LOINC) Committee and is available at no cost under the license at http://loinc.org/license. LOINC® is a registered United States trademark of Regenstrief Institute, Inc.\n\nThis product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.\n\nCode systems this service holds locally are served from a dated release, named in the version of every answer and in this statement's TerminologyCapabilities. A held release may not reflect the most current data available from its publisher.\n\nFHIR® is the registered trademark of Health Level Seven International and its use here does not constitute endorsement by HL7.",
+                      "copyright": "This material contains content from LOINC (http://loinc.org). LOINC is copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes (LOINC) Committee and is available at no cost under the license at http://loinc.org/license. LOINC® is a registered United States trademark of Regenstrief Institute, Inc.\n\nThis product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.\n\nCode systems this service holds locally are served from a dated release, named in the version of every answer and in this statement's TerminologyCapabilities. A held release may not reflect the most current data available from its publisher.\n\nFHIR® is the registered trademark of Health Level Seven International and its use here does not constitute endorsement by HL7.\n\nStructured Sig's answers carry SNOMED CT concepts only from the SNOMED CT Global Patient Set (GPS), release 2026-01-01, by SNOMED International, licensed under the Creative Commons Attribution-NoDerivatives 4.0 International License (https://creativecommons.org/licenses/by-nd/4.0/). Each concept's identifier and term are sent unmodified. SNOMED CT is © and ® SNOMED International. SNOMED CT® was originally created by the College of American Pathologists. The GPS is provided as is, without warranty.\n\nThis material includes SNOMED Clinical Terms® (SNOMED CT®) which is used by permission of the International Health Terminology Standards Development Organisation (IHTSDO). All rights reserved. SNOMED CT®, was originally created by The College of American Pathologists. \"SNOMED\" and \"SNOMED CT\" are registered trademarks of the IHTSDO.\n\nThe SNOMED CT concepts were selected using the UMLS Metathesaurus from the U.S. National Library of Medicine, release 2026AA, which holds the US Edition of SNOMED CT of 2026-03-01. NLM does not endorse haau3 or its products.\n\nStructured Sig's answers carry route codes from the NCI Thesaurus™, version 26.10d, produced by the Enterprise Vocabulary Services group of the Center for Biomedical Informatics and Information Technology, National Cancer Institute, Maryland, USA, and released under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). Each code and its term are sent unmodified, and are provided as is, without warranty. The routes Structured Sig uses are a selection of its codes, not the NCI Thesaurus.",
                       "rest": [
                         {
                           "mode": "server",
-                          "documentation": "All operations accept GET with query parameters and POST with a Parameters resource. Complex inputs — coding, and codeableConcept on the validate-code operations — are accepted on POST only, as the operations framework requires; on GET pass system and code as separate parameters. A codeableConcept validates if ANY of its codings is a member, which fits data whose elements carry a vendor-local coding alongside a standard one; per-coding membership deliberately ignores each coding's display (a wrong label must not veto a right code — display checking is available on the single-coding form). A coding's version is honoured where the operation defines a version parameter (the CodeSystem operations); ValueSet validation always uses the current code-system version and refuses a versioned coding rather than silently ignoring it. A coding whose system disagrees with an explicitly supplied system or url parameter is refused. Value sets and code systems are addressed by canonical url only; instance-level operation paths ([type]/[id]/$operation) are not offered. An expansion is returned whole: displayLanguage, includeDesignations and activeOnly are refused by name on $expand, and filter, count and offset narrow only a value set this service hosts, being refused for one resolved from its own source. A batch Bundle POSTed to the base runs several operations in one round trip; each entry succeeds or fails independently.\n\nProvider directory resources are proxied from the CMS National Provider Directory and served as published, without modification. Search is GET only. Every search parameter is either declared here or refused by name: a parameter this service does not serve is never silently ignored. Where the directory requires a parameter to be sent beside another (`network` on PractitionerRole and HealthcareService), the rule is applied here, before the directory is asked.\n\nA curated set of questionnaires is served from copies vendored at a recorded release of their source, so those forms render the same way on every request. A search that names a canonical URL this service holds no copy of is answered from the source directly, and depends on that source being reachable. A search with no parameters lists the curated set. Search is GET only, and every search parameter is either declared here or refused by name. No operations are served on Questionnaire, and no QuestionnaireResponse is accepted or stored: a completed response is built by the application that collected it and references the questionnaire as `{url}|{version}`.\n\nMedical Benefits (InsurancePlan): what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Each plan conforms to the haau3 Medical Benefits profile (https://haau3.com/fhir/StructureDefinition/haau3-insurance-plan) and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.\n\nMedList: POST [base]/$reconcile-medications reconciles one patient's medication records into one clean list, returned as a Bundle of reconciled MedicationRequests with a Provenance for each. The operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nPharmacy Benefits: POST [base]/$process-message answers a pharmacy benefit check of the CARIN Consumer Real-Time Pharmacy Benefit Check: what a medication would cost a member under their coverage (event rtpbc-request), or its price at pharmacies near a ZIP code, without patient details (event rtpbc-request-non-phi). A member's request carries patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.",
+                          "documentation": "All operations accept GET with query parameters and POST with a Parameters resource. Complex inputs — coding, and codeableConcept on the validate-code operations — are accepted on POST only, as the operations framework requires; on GET pass system and code as separate parameters. A codeableConcept validates if ANY of its codings is a member, which fits data whose elements carry a vendor-local coding alongside a standard one; per-coding membership deliberately ignores each coding's display (a wrong label must not veto a right code — display checking is available on the single-coding form). A coding's version is honoured where the operation defines a version parameter (the CodeSystem operations); ValueSet validation always uses the current code-system version and refuses a versioned coding rather than silently ignoring it. A coding whose system disagrees with an explicitly supplied system or url parameter is refused. Value sets and code systems are addressed by canonical url only; instance-level operation paths ([type]/[id]/$operation) are not offered. On $expand, displayLanguage, includeDesignations and activeOnly are refused by name. filter, count and offset narrow a value set this service hosts and the RxNorm value sets it holds, and are refused for a value set resolved from its own source, which is returned whole. On the RxNorm value sets filter is required, the first 20 matches come back when count is not sent, and expansion.total is the exact number of matches; how filter matches is in the TerminologyCapabilities (metadata?mode=terminology), expansion.textFilter. A batch Bundle POSTed to the base runs several operations in one round trip; each entry succeeds or fails independently.\n\nProvider directory resources are proxied from the CMS National Provider Directory and served as published, without modification. Pharmacies, which the directory does not serve yet, are found in NPPES, CMS's NPI Registry, and served as NDH 2.0.0 models them: a HealthcareService with category `pharm`, its organization and its store (a pharmacy search on HealthcareService). Search is GET only. Every search parameter is either declared here or refused by name: a parameter this service does not serve is never silently ignored. Where the directory requires a parameter to be sent beside another (`network` on PractitionerRole and HealthcareService), the rule is applied here, before the directory is asked.\n\nA curated set of questionnaires is served from copies vendored at a recorded release of their source, so those forms render the same way on every request. A search that names a canonical URL this service holds no copy of is answered from the source directly, and depends on that source being reachable. A search with no parameters lists the curated set. Search is GET only, and every search parameter is either declared here or refused by name. No operations are served on Questionnaire, and no QuestionnaireResponse is accepted or stored: a completed response is built by the application that collected it and references the questionnaire as `{url}|{version}`.\n\nMedical Benefits (InsurancePlan): what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Each plan conforms to the haau3 Medical Benefits profile (https://haau3.com/fhir/StructureDefinition/haau3-insurance-plan) and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.\n\nMedList: POST [base]/$reconcile-medications reconciles one patient's medication records into one clean list, returned as a Bundle of reconciled MedicationRequests with a Provenance for each. The operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nPharmacy Benefits: POST [base]/$process-message answers a pharmacy benefit check of the CARIN Consumer Real-Time Pharmacy Benefit Check: what a medication would cost a member under their coverage (event rtpbc-request), or its price at pharmacies near a ZIP code, without patient details (event rtpbc-request-non-phi). A member's request carries patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nStructured Sig: POST [base]/$structure-dosage turns one prescription's free-text directions into a FHIR R4 Dosage, returned in a Parameters resource, with a review flag on anything a person should check. It takes the directions and, optionally, the medication's codings, never a patient. Nothing a request carries is stored or logged. It may also be sent inside a batch.",
                           "interaction": [
                             {
                               "code": "batch"
@@ -2961,6 +2965,11 @@
                               "name": "process-message",
                               "definition": "http://hl7.org/fhir/OperationDefinition/MessageHeader-process-message",
                               "documentation": "The CARIN Consumer Real-Time Pharmacy Benefit Check. POST a message Bundle carrying the event rtpbc-request and rtpbc-request-non-phi; the answer is a message Bundle with one ClaimResponse."
+                            },
+                            {
+                              "name": "structure-dosage",
+                              "definition": "https://haau3.com/fhir/OperationDefinition/structure-dosage",
+                              "documentation": "Structures one prescription's free-text directions as a FHIR R4 Dosage, the directions kept verbatim in Dosage.text. POST a Parameters resource with a text part and, optionally, a medication part holding the medication's codings."
                             }
                           ]
                         }
@@ -2972,7 +2981,7 @@
                     "value": {
                       "resourceType": "TerminologyCapabilities",
                       "status": "active",
-                      "date": "2026-08-12",
+                      "date": "2026-10-30",
                       "kind": "instance",
                       "fhirVersion": "4.0.1",
                       "software": {
@@ -2983,7 +2992,7 @@
                         "url": "https://api.haau3.com/v1/fhir/r4"
                       },
                       "copyright": "This material contains content from LOINC (http://loinc.org). LOINC is copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes (LOINC) Committee and is available at no cost under the license at http://loinc.org/license. LOINC® is a registered United States trademark of Regenstrief Institute, Inc.\n\nThis product uses publicly available data courtesy of the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.\n\nCode systems this service holds locally are served from a dated release, named in the version of every answer and in this statement's TerminologyCapabilities. A held release may not reflect the most current data available from its publisher.\n\nFHIR® is the registered trademark of Health Level Seven International and its use here does not constitute endorsement by HL7.",
-                      "description": "Recognised but not served here: http://snomed.info/sct (SNOMED CT is free in the United States only through a UMLS Metathesaurus licence, and NLM does not permit a vendor to cover its customers under its own licence. Callers holding their own UMLS credentials will be able to use them here; there is no path that serves SNOMED CT to an unlicensed caller.); http://www.ama-assn.org/go/cpt (CPT is licensed by the American Medical Association and requires a paid distributor licence per product. haau3 does not hold one, so this service will not answer about CPT codes at all.); http://hl7.org/fhir/sid/icd-10-cm (ICD-10-CM is public domain and carries no licence restriction, but this service does not yet have a source configured for it.); http://unitsofmeasure.org (UCUM is a grammar rather than a list of codes, so it is validated by a unit parser rather than looked up on a terminology server. A lookup endpoint is the wrong shape for the question.). A request naming one of these returns an OperationOutcome with issue code not-supported, never a guess.",
+                      "description": "Recognised but not served here: http://snomed.info/sct (SNOMED CT is free in the United States only through a UMLS Metathesaurus licence, and NLM does not permit a vendor to cover its customers under its own licence, so the terminology operations do not serve it. Callers holding their own UMLS credentials will be able to use them here.); http://www.ama-assn.org/go/cpt (CPT is licensed by the American Medical Association and requires a paid distributor licence per product. haau3 does not hold one, so this service will not answer about CPT codes at all.); http://hl7.org/fhir/sid/icd-10-cm (ICD-10-CM is public domain and carries no licence restriction, but this service does not yet have a source configured for it.); http://unitsofmeasure.org (UCUM is a grammar rather than a list of codes, so it is validated by a unit parser rather than looked up on a terminology server. A lookup endpoint is the wrong shape for the question.). A request naming one of these returns an OperationOutcome with issue code not-supported, never a guess.",
                       "codeSearch": "all",
                       "codeSystem": [
                         {
@@ -20495,6 +20504,296 @@
           },
           "504": {
             "description": "The terminology store behind RxNorm did not respond in time. No partial list is returned.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestId"
+          }
+        ]
+      }
+    },
+    "/v1/fhir/r4/$structure-dosage": {
+      "post": {
+        "tags": [
+          "Structured Sig"
+        ],
+        "summary": "Structure a prescription's directions as a FHIR Dosage",
+        "description": "FHIR system-level operation `$structure-dosage`. POST a Parameters resource with one `text` part, a prescription's directions as written, at most 1,000 characters, and optionally one `medication` part, the medication's codings as a CodeableConcept (RxNorm or NDC). The answer is a Parameters resource with one `dosage` part: a FHIR Dosage conforming to haau3 Structured Dosage, whose `text` is the directions exactly as sent and whose dose and unit, route, method, timing and as-needed elements are coded where the words support them, in SNOMED CT (Global Patient Set concepts only), NCIt and UCUM. Nothing is invented: an element the directions do not support is absent. Anything a person should check is a review flag on the Dosage, an extension with a code from `https://haau3.com/fhir/CodeSystem/structured-sig-review-flag` and, when the flag is about words, those words. Every Dosage names the engine and vocabulary versions it was written under, and the RxNorm release when the medication's code was looked up. With an RxNorm code, the product's dose form checks the dose's unit and the route, and supplies either when the directions name none, each flagged. Send the directions and the medication's codings only, never a patient's name or identifiers. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters, and may be sent inside a batch, one request per entry. The contract is published at https://fhir.haau3.com/OperationDefinition-structure-dosage.html.",
+        "operationId": "structureDosage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Parameters"
+              },
+              "examples": {
+                "One prescription's directions and its medication": {
+                  "summary": "One prescription's directions and its medication",
+                  "value": {
+                    "resourceType": "Parameters",
+                    "parameter": [
+                      {
+                        "name": "text",
+                        "valueString": "Instill 2 drops in the affected ear twice daily"
+                      },
+                      {
+                        "valueCodeableConcept": {
+                          "coding": [
+                            {
+                              "code": "1923428",
+                              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                              "display": "timolol 2.5 MG/ML Ophthalmic Solution"
+                            }
+                          ]
+                        },
+                        "name": "medication"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The structured directions: a FHIR `Parameters` resource with one `dosage` part, a Dosage conforming to haau3 Structured Dosage.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Parameters"
+                },
+                "examples": {
+                  "The directions as a Dosage, with a review flag": {
+                    "summary": "The directions as a Dosage, with a review flag",
+                    "value": {
+                      "resourceType": "Parameters",
+                      "parameter": [
+                        {
+                          "valueDosage": {
+                            "extension": [
+                              {
+                                "extension": [
+                                  {
+                                    "url": "code",
+                                    "valueCoding": {
+                                      "code": "route-form-mismatch",
+                                      "system": "https://haau3.com/fhir/CodeSystem/structured-sig-review-flag",
+                                      "display": "Route and dose form differ"
+                                    }
+                                  },
+                                  {
+                                    "url": "words",
+                                    "valueString": "in the affected ear"
+                                  }
+                                ],
+                                "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-review-flag"
+                              },
+                              {
+                                "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-engine-version",
+                                "valueString": "2026-10-30.v2"
+                              },
+                              {
+                                "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-vocabulary-version",
+                                "valueString": "2026-10-29.v1"
+                              },
+                              {
+                                "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-rxnorm-release",
+                                "valueString": "10052026"
+                              }
+                            ],
+                            "timing": {
+                              "repeat": {
+                                "frequency": 2,
+                                "period": 1,
+                                "periodUnit": "d"
+                              },
+                              "code": {
+                                "coding": [
+                                  {
+                                    "code": "229799001",
+                                    "system": "http://snomed.info/sct",
+                                    "display": "Twice a day"
+                                  },
+                                  {
+                                    "code": "BID",
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation",
+                                    "display": "BID"
+                                  }
+                                ]
+                              }
+                            },
+                            "site": {
+                              "text": "affected ear"
+                            },
+                            "route": {
+                              "coding": [
+                                {
+                                  "code": "10547007",
+                                  "system": "http://snomed.info/sct",
+                                  "display": "Otic route"
+                                },
+                                {
+                                  "code": "C38192",
+                                  "system": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl",
+                                  "display": "Auricular Route of Administration"
+                                }
+                              ]
+                            },
+                            "method": {
+                              "coding": [
+                                {
+                                  "code": "421538008",
+                                  "system": "http://snomed.info/sct",
+                                  "display": "Instill"
+                                }
+                              ]
+                            },
+                            "doseAndRate": [
+                              {
+                                "doseQuantity": {
+                                  "value": 2,
+                                  "unit": "Drop",
+                                  "system": "http://unitsofmeasure.org",
+                                  "code": "[drp]"
+                                }
+                              }
+                            ],
+                            "text": "Instill 2 drops in the affected ear twice daily"
+                          },
+                          "name": "dosage"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "400": {
+            "description": "The request was refused: a query parameter (the operation takes its input in the body only), a body that is not a Parameters resource, a parameter other than `text` and `medication`, a missing, repeated or empty `text`, a repeated `medication` or one that is not a CodeableConcept, or directions over 1,000 characters or a medication with over 20 codings (coded `too-long`). The OperationOutcome names the part by its FHIRPath, never a value sent.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/FhirUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/FhirForbiddenTestKey"
+          },
+          "406": {
+            "$ref": "#/components/responses/FhirNotAcceptable"
+          },
+          "413": {
+            "description": "The request body is over 64 KiB.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "415": {
+            "$ref": "#/components/responses/FhirUnsupportedMediaType"
+          },
+          "429": {
+            "$ref": "#/components/responses/FhirTooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/FhirServerError"
+          },
+          "502": {
+            "description": "The medication carries an RxNorm code, and the terminology store behind RxNorm could not be reached. The directions are not structured without it.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "503": {
+            "description": "The medication carries an RxNorm code, and RxNorm is not configured on this deployment or no release has been published to it. The directions are not structured without it. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOutcome"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Sent when waiting will help: the API key could not be checked just now, or the source behind this service is rate limiting requests. How many seconds to wait before sending the request again.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "X-Correlation-Id": {
+                "$ref": "#/components/headers/XCorrelationId"
+              }
+            }
+          },
+          "504": {
+            "description": "The directions could not be structured in time: the terminology store behind RxNorm did not respond, or the operation passed its 8 seconds.",
             "content": {
               "application/fhir+json": {
                 "schema": {

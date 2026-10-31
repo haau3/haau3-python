@@ -404,6 +404,12 @@ class SearchSlotsQuery(TypedDict, total=False):
     offset: int
 
 
+StructureDosageBody: TypeAlias = fhir.Parameters
+"""The request body of `structure_dosage`."""
+StructureDosageResponse: TypeAlias = fhir.Parameters
+"""What `structure_dosage` answers with."""
+
+
 class ValueSetExpandQuery(TypedDict, total=False):
     """The query parameters of `value_set_expand`, by their Python names, to pass as `**query`."""
 

@@ -20,7 +20,7 @@ from ._components import (
 )
 from ._operation import DeclaredHeader, Operation
 
-SPEC_VERSION: Final[str] = "1.0.0-preview.19"
+SPEC_VERSION: Final[str] = "1.0.0-preview.20"
 """The version of the API's spec this SDK was generated from."""
 
 CHECK_INSURANCE_PLAN_NETWORK: Final[Operation[fhir.Parameters]] = Operation(
@@ -112,6 +112,9 @@ SEARCH_PROVIDER_LOCATIONS: Final[Operation[SearchProviderLocationsResponse]] = O
 )
 SEARCH_QUESTIONNAIRE: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/Questionnaire", ("Bundle",))
 SEARCH_SLOTS: Final[Operation[SearchSlotsResponse]] = Operation("GET", "/v1/scheduling/slots", ())
+STRUCTURE_DOSAGE: Final[Operation[fhir.Parameters]] = Operation(
+    "POST", "/v1/fhir/r4/$structure-dosage", ("Parameters",)
+)
 VALUE_SET_EXPAND: Final[Operation[fhir.ValueSet]] = Operation("GET", "/v1/fhir/r4/ValueSet/$expand", ("ValueSet",))
 VALUE_SET_EXPAND_POST: Final[Operation[fhir.ValueSet]] = Operation(
     "POST", "/v1/fhir/r4/ValueSet/$expand", ("ValueSet",)
