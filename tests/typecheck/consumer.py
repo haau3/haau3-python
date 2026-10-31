@@ -59,6 +59,16 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     assert_type(marked, types.ReconcileMedicationsBody)
     assert_type(client.reconcile_medications(marked), fhir.Bundle)
     haau3.mark_as_test_data("not a resource")  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+    # Structured Sig: the builder gives what structure_dosage takes, and the readers need no client.
+    structured = client.structure_dosage(
+        haau3.structure_dosage_request(
+            "Take 1 tablet daily", medication={"coding": [{"system": haau3.RXNORM_SYSTEM, "code": "197361"}]}
+        )
+    )
+    assert_type(structured, fhir.Parameters)
+    assert_type(haau3.parameter(structured, "dosage"), "fhir.ParametersParameter | None")
+    assert_type(haau3.review_flags({"text": "Take 1 tablet daily"}), haau3.DosageReview)
+    haau3.structure_dosage_request("Take 1 tablet daily", {"coding": []})  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
     # A record written inline is checked as the resource it is: a message's MessageHeader, and
     # MedList's records.
     client.process_message(
