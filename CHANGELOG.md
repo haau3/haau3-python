@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/haau3/haau3-python/compare/v0.3.2...v0.3.3) (2026-10-31)
+
+
+### Features
+
+* parameters(), parameter() and review_flags() read a Parameters answer and a Dosage's review flags ([#40](https://github.com/haau3/haau3-python/issues/40)) ([1fdf749](https://github.com/haau3/haau3-python/commit/1fdf74925fcceae011bb8d863cfa543c3d3d5064))
+* the API's spec at 1.0.0-preview.20 ([#39](https://github.com/haau3/haau3-python/issues/39)) ([effb9e6](https://github.com/haau3/haau3-python/commit/effb9e6f084c3255eb62a8c6c19f0e0bc2be2e22))
+
 ## [0.3.2](https://github.com/haau3/haau3-python/compare/v0.3.1...v0.3.2) (2026-10-29)
 
 
