@@ -45,6 +45,7 @@ from ._operations import (
     SEARCH_PRACTITIONER,
     SEARCH_PRACTITIONER_ROLE,
     SEARCH_QUESTIONNAIRE,
+    STRUCTURE_DOSAGE,
     VALUE_SET_EXPAND,
     VALUE_SET_EXPAND_POST,
     VALUE_SET_VALIDATE_CODE,
@@ -80,6 +81,7 @@ __all__ = [
     "search_practitioner",
     "search_practitioner_role",
     "search_questionnaire",
+    "structure_dosage",
     "value_set_expand",
     "value_set_expand_post",
     "value_set_validate_code",
@@ -621,6 +623,16 @@ def search_questionnaire(*, url: str | None = None, version: str | None = None) 
         ),
         None,
     )
+
+
+def structure_dosage(body: fhir.Parameters, /) -> Call[fhir.Parameters]:
+    """Structure a prescription's directions as a FHIR Dosage, as one entry of a batch. Called as `Haau3.structure_dosage` is.
+
+    `POST /v1/fhir/r4/$structure-dosage`
+    """
+    hidden: Hidden[object] = Hidden(body)
+    del body
+    return make_call(STRUCTURE_DOSAGE, (), (), hidden)
 
 
 def value_set_expand(

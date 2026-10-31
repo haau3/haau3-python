@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.19"
+    "version": "1.0.0-preview.20"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -446,6 +446,18 @@
             "lang": "python",
             "label": "Python",
             "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# request.json holds one patient's medication records, as a Bundle.\nwith open(\"request.json\") as file:\n    body: fhir.Bundle = json.load(file)\nbundle = client.reconcile_medications(body)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/$structure-dosage'].post",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.structure_dosage(\n    {\n        \"resourceType\": \"Parameters\",\n        \"parameter\": [\n            {\"name\": \"text\", \"valueString\": \"Instill 2 drops in the affected ear twice daily\"},\n            {\n                \"valueCodeableConcept\": {\n                    \"coding\": [\n                        {\n                            \"code\": \"1923428\",\n                            \"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\",\n                            \"display\": \"timolol 2.5 MG/ML Ophthalmic Solution\",\n                        }\n                    ]\n                },\n                \"name\": \"medication\",\n            },\n        ],\n    }\n)\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
           }
         ]
       }

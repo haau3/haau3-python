@@ -57,6 +57,7 @@ from ._operations import (
     SEARCH_PROVIDER_LOCATIONS,
     SEARCH_QUESTIONNAIRE,
     SEARCH_SLOTS,
+    STRUCTURE_DOSAGE,
     VALUE_SET_EXPAND,
     VALUE_SET_EXPAND_POST,
     VALUE_SET_VALIDATE_CODE,
@@ -1388,6 +1389,28 @@ class SyncMethods:
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
+        ).data
+
+    def structure_dosage(
+        self,
+        body: fhir.Parameters,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Parameters:
+        """Structure a prescription's directions as a FHIR Dosage
+
+        FHIR system-level operation `$structure-dosage`. POST a Parameters resource with one `text` part, a prescription's directions as written, at most 1,000 characters, and optionally one `medication` part, the medication's codings as a CodeableConcept (RxNorm or NDC). The answer is a Parameters resource with one `dosage` part: a FHIR Dosage conforming to haau3 Structured Dosage, whose `text` is the directions exactly as sent and whose dose and unit, route, method, timing and as-needed elements are coded where the words support them, in SNOMED CT (Global Patient Set concepts only), NCIt and UCUM. Nothing is invented: an element the directions do not support is absent. Anything a person should check is a review flag on the Dosage, an extension with a code from `https://haau3.com/fhir/CodeSystem/structured-sig-review-flag` and, when the flag is about words, those words. Every Dosage names the engine and vocabulary versions it was written under, and the RxNorm release when the medication's code was looked up. With an RxNorm code, the product's dose form checks the dose's unit and the route, and supplies either when the directions name none, each flagged. Send the directions and the medication's codings only, never a patient's name or identifiers. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters, and may be sent inside a batch, one request per entry. The contract is published at https://fhir.haau3.com/OperationDefinition-structure-dosage.html.
+
+        `POST /v1/fhir/r4/$structure-dosage`, https://docs.haau3.com/api-reference/structured-sig/structure-a-prescriptions-directions-as-a-fhir-dosage
+        """
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return self._engine.call(
+            STRUCTURE_DOSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
     def value_set_expand(
@@ -3051,6 +3074,30 @@ class AsyncMethods:
             )
         ).data
 
+    async def structure_dosage(
+        self,
+        body: fhir.Parameters,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Parameters:
+        """Structure a prescription's directions as a FHIR Dosage
+
+        FHIR system-level operation `$structure-dosage`. POST a Parameters resource with one `text` part, a prescription's directions as written, at most 1,000 characters, and optionally one `medication` part, the medication's codings as a CodeableConcept (RxNorm or NDC). The answer is a Parameters resource with one `dosage` part: a FHIR Dosage conforming to haau3 Structured Dosage, whose `text` is the directions exactly as sent and whose dose and unit, route, method, timing and as-needed elements are coded where the words support them, in SNOMED CT (Global Patient Set concepts only), NCIt and UCUM. Nothing is invented: an element the directions do not support is absent. Anything a person should check is a review flag on the Dosage, an extension with a code from `https://haau3.com/fhir/CodeSystem/structured-sig-review-flag` and, when the flag is about words, those words. Every Dosage names the engine and vocabulary versions it was written under, and the RxNorm release when the medication's code was looked up. With an RxNorm code, the product's dose form checks the dose's unit and the route, and supplies either when the directions name none, each flagged. Send the directions and the medication's codings only, never a patient's name or identifiers. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters, and may be sent inside a batch, one request per entry. The contract is published at https://fhir.haau3.com/OperationDefinition-structure-dosage.html.
+
+        `POST /v1/fhir/r4/$structure-dosage`, https://docs.haau3.com/api-reference/structured-sig/structure-a-prescriptions-directions-as-a-fhir-dosage
+        """
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return (
+            await self._engine.call(
+                STRUCTURE_DOSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+            )
+        ).data
+
     async def value_set_expand(
         self,
         *,
@@ -4239,6 +4286,23 @@ class SyncWithResponse:
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
 
+    def structure_dosage(
+        self,
+        body: fhir.Parameters,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Parameters]:
+        """`Haau3.structure_dosage`, returning a `Response` with the request id and timing as well as the answer."""
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return self._engine.call(
+            STRUCTURE_DOSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
     def value_set_expand(
         self,
         *,
@@ -5354,6 +5418,23 @@ class AsyncWithResponse:
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    async def structure_dosage(
+        self,
+        body: fhir.Parameters,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Parameters]:
+        """`AsyncHaau3.structure_dosage`, returning a `Response` with the request id and timing as well as the answer."""
+        hidden: Hidden[object] = Hidden(body)
+        del body
+        return await self._engine.call(
+            STRUCTURE_DOSAGE, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
     async def value_set_expand(

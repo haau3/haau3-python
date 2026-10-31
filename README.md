@@ -93,6 +93,12 @@ checked = client.process_message(message)
 # plan, and mark_as_test_data labels a request and every resource in it. Label only made-up data.
 reconciled = client.reconcile_medications(records)
 
+# Structured Sig: a prescription's free-text directions as a FHIR Dosage, each element coded where the
+# words support it and a review flag on anything to check. Send the directions, never a patient.
+structured = client.structure_dosage(
+    {"resourceType": "Parameters", "parameter": [{"name": "text", "valueString": "Take 1 tablet by mouth twice daily"}]}
+)
+
 # Sandbox: the same pharmacy benefit check at /v1/sandbox/fhir/r4, where a test insurer answers
 # with synthetic data for its test members only (https://docs.haau3.com/sandbox/example-health-plan).
 sandbox_checked = client.sandbox_process_message(sandbox_message)
