@@ -305,13 +305,13 @@ anything a person should check. `review_flags()` reads each flag's code, display
 directions it is about, and the versions the Dosage names:
 
 ```python
-answer = client.structure_dosage(
+structured_answer = client.structure_dosage(
     {
         "resourceType": "Parameters",
         "parameter": [{"name": "text", "valueString": "Instill 2 drops in the affected ear twice daily"}],
     }
 )
-part = client.parameter(answer, "dosage")
+part = client.parameter(structured_answer, "dosage")
 if part and "valueDosage" in part:
     review = client.review_flags(part["valueDosage"])
     for flag in review.flags:
