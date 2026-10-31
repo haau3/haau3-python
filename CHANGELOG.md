@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/haau3/haau3-python/compare/v0.3.3...v0.3.4) (2026-10-31)
+
+
+### Features
+
+* structure_dosage_request() builds a $structure-dosage request, and the readers are plain functions too ([#42](https://github.com/haau3/haau3-python/issues/42)) ([bf29941](https://github.com/haau3/haau3-python/commit/bf29941c3135900decab62e843c9fada90704c55))
+
 ## [0.3.3](https://github.com/haau3/haau3-python/compare/v0.3.2...v0.3.3) (2026-10-31)
 
 
