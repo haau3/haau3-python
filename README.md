@@ -95,9 +95,9 @@ reconciled = client.reconcile_medications(records)
 
 # Structured Sig: a prescription's free-text directions as a FHIR Dosage, each element coded where the
 # words support it and a review flag on anything to check. Send the directions, never a patient.
-structured = client.structure_dosage(
-    {"resourceType": "Parameters", "parameter": [{"name": "text", "valueString": "Take 1 tablet by mouth twice daily"}]}
-)
+from haau3 import structure_dosage_request
+
+structured = client.structure_dosage(structure_dosage_request("Take 1 tablet by mouth twice daily"))
 
 # Sandbox: the same pharmacy benefit check at /v1/sandbox/fhir/r4, where a test insurer answers
 # with synthetic data for its test members only (https://docs.haau3.com/sandbox/example-health-plan).
@@ -300,20 +300,33 @@ display = client.parameter(lookup, "display")
 print(display.get("valueString") if display else None)
 ```
 
-Structured Sig answers with one `dosage` part, a FHIR `Dosage`, and writes on it a review flag for
-anything a person should check. `review_flags()` reads each flag's code, display and the words of the
-directions it is about, and the versions the Dosage names:
+Each is a client method and a plain function of the package, `haau3.parameters()`,
+`haau3.parameter()` and `haau3.review_flags()`, so an answer you stored can be read with no client
+and no key.
+
+## Structured Sig
+
+`structure_dosage_request()` builds the request `$structure-dosage` takes from the directions and,
+optionally, the medication's codings, RxNorm or NDC, as a FHIR CodeableConcept. `RXNORM_SYSTEM` and
+`NDC_SYSTEM` are their code systems. It is a plain function, so it builds a batch entry too
+(`calls.structure_dosage(structure_dosage_request(text))`).
+
+The answer is one `dosage` part, a FHIR `Dosage`, with a review flag on anything a person should
+check. `review_flags()` reads each flag's code, display and the words of the directions it is about,
+and the versions the Dosage names:
 
 ```python
+from haau3 import RXNORM_SYSTEM, review_flags, structure_dosage_request
+
 structured_answer = client.structure_dosage(
-    {
-        "resourceType": "Parameters",
-        "parameter": [{"name": "text", "valueString": "Instill 2 drops in the affected ear twice daily"}],
-    }
+    structure_dosage_request(
+        "Instill 2 drops in the affected ear twice daily",
+        medication={"coding": [{"system": RXNORM_SYSTEM, "code": "1923428"}]},
+    )
 )
 part = client.parameter(structured_answer, "dosage")
 if part and "valueDosage" in part:
-    review = client.review_flags(part["valueDosage"])
+    review = review_flags(part["valueDosage"])
     for flag in review.flags:
         print(flag.code, flag.display, flag.words)
     print(review.engine_version, review.vocabulary_version, review.rxnorm_release)
