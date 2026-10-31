@@ -15,7 +15,10 @@ from ._encode import QueryValue, checked_base_url
 from ._errors import Haau3Error, NoAnswerError
 from ._json import as_dict, as_list
 from ._methods import AsyncMethods, AsyncWithResponse, SyncMethods, SyncWithResponse
-from ._parameters import DosageReview, one_part_named, parts_named, review_of
+from ._parameters import DosageReview
+from ._parameters import parameter as _parameter
+from ._parameters import parameters as _parameters
+from ._parameters import review_flags as _review_flags
 from ._response import Options, RawResponse
 from ._transport import AsyncEngine, Config, SyncEngine
 
@@ -223,7 +226,8 @@ class Haau3(SyncMethods):
 
         FHIR operations answer this way: `$lookup`'s `property` parts, `$structure-dosage`'s `dosage`
         part. Each part holds its value in the `value[x]` its operation names, so read `valueDosage`,
-        `valueString` and so on from it. Empty when there is none.
+        `valueString` and so on from it. Empty when there is none. The plain function
+        `haau3.parameters()` does the same with no client.
 
         ```python
         answer = client.code_system_lookup(system="http://loinc.org", code="2345-7", property=["COMPONENT"])
@@ -231,13 +235,14 @@ class Haau3(SyncMethods):
             print(part.get("part"))
         ```
         """
-        return parts_named(answer, name)
+        return _parameters(answer, name)
 
     def parameter(self, answer: Parameters, name: str) -> ParametersParameter | None:
         """The one part of a Parameters answer with that name, with no request, or None when there is none.
 
         Raises a `Haau3Error` when there are two, since which one is meant is then ambiguous;
-        `parameters()` reads a name that repeats.
+        `parameters()` reads a name that repeats. The plain function `haau3.parameter()` does the same
+        with no client.
 
         ```python
         answer = client.code_system_lookup(system="http://loinc.org", code="2345-7")
@@ -245,26 +250,26 @@ class Haau3(SyncMethods):
         print(part.get("valueString") if part else None)
         ```
         """
-        return one_part_named(answer, name)
+        return _parameter(answer, name)
 
     def review_flags(self, dosage: Dosage) -> DosageReview:
         """The review flags on a Dosage `$structure-dosage` answered with, and the versions it names.
 
         With no request. Each flag is something a person should check: its code, its display, and the
         words of the directions it is about, when it is about words. The versions say how the
-        directions were read and coded, and which RxNorm release the medication was looked up in.
+        directions were read and coded, and which RxNorm release the medication was looked up in. The
+        plain function `haau3.review_flags()` does the same with no client, so a stored answer can be
+        read where no key is.
 
         ```python
-        answer = client.structure_dosage(
-            {"resourceType": "Parameters", "parameter": [{"name": "text", "valueString": "Take 1 tablet by mouth twice daily"}]}
-        )
+        answer = client.structure_dosage(structure_dosage_request("Take 1 tablet by mouth twice daily"))
         part = client.parameter(answer, "dosage")
         if part and "valueDosage" in part:
             for flag in client.review_flags(part["valueDosage"]).flags:
                 print(flag.code, flag.words)
         ```
         """
-        return review_of(dosage)
+        return _review_flags(dosage)
 
     def _held_pages(self, page: Hidden[object], options: Options) -> Iterator[Hidden[object]]:
         """Each page, held, following `next` links on the client's own host to a page not yet read."""
@@ -411,7 +416,8 @@ class AsyncHaau3(AsyncMethods):
 
         FHIR operations answer this way: `$lookup`'s `property` parts, `$structure-dosage`'s `dosage`
         part. Each part holds its value in the `value[x]` its operation names, so read `valueDosage`,
-        `valueString` and so on from it. Empty when there is none.
+        `valueString` and so on from it. Empty when there is none. The plain function
+        `haau3.parameters()` does the same with no client.
 
         ```python
         answer = await client.code_system_lookup(system="http://loinc.org", code="2345-7", property=["COMPONENT"])
@@ -419,13 +425,14 @@ class AsyncHaau3(AsyncMethods):
             print(part.get("part"))
         ```
         """
-        return parts_named(answer, name)
+        return _parameters(answer, name)
 
     def parameter(self, answer: Parameters, name: str) -> ParametersParameter | None:
         """The one part of a Parameters answer with that name, with no request, or None when there is none.
 
         Raises a `Haau3Error` when there are two, since which one is meant is then ambiguous;
-        `parameters()` reads a name that repeats.
+        `parameters()` reads a name that repeats. The plain function `haau3.parameter()` does the same
+        with no client.
 
         ```python
         answer = await client.code_system_lookup(system="http://loinc.org", code="2345-7")
@@ -433,26 +440,26 @@ class AsyncHaau3(AsyncMethods):
         print(part.get("valueString") if part else None)
         ```
         """
-        return one_part_named(answer, name)
+        return _parameter(answer, name)
 
     def review_flags(self, dosage: Dosage) -> DosageReview:
         """The review flags on a Dosage `$structure-dosage` answered with, and the versions it names.
 
         With no request. Each flag is something a person should check: its code, its display, and the
         words of the directions it is about, when it is about words. The versions say how the
-        directions were read and coded, and which RxNorm release the medication was looked up in.
+        directions were read and coded, and which RxNorm release the medication was looked up in. The
+        plain function `haau3.review_flags()` does the same with no client, so a stored answer can be
+        read where no key is.
 
         ```python
-        answer = await client.structure_dosage(
-            {"resourceType": "Parameters", "parameter": [{"name": "text", "valueString": "Take 1 tablet by mouth twice daily"}]}
-        )
+        answer = await client.structure_dosage(structure_dosage_request("Take 1 tablet by mouth twice daily"))
         part = client.parameter(answer, "dosage")
         if part and "valueDosage" in part:
             for flag in client.review_flags(part["valueDosage"]).flags:
                 print(flag.code, flag.words)
         ```
         """
-        return review_of(dosage)
+        return _review_flags(dosage)
 
     async def _held_pages(self, page: Hidden[object], options: Options) -> AsyncIterator[Hidden[object]]:
         """Each page, held, as `Haau3._held_pages` gives them."""

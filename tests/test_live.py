@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 
+import haau3
 from haau3 import AsyncHaau3, BatchError, BatchOk, ForbiddenError, Haau3, RefusedError, calls, mark_as_test_data
 
 from .helpers import example_body, spec_operation
@@ -82,6 +83,15 @@ def test_every_kind_of_call_against_production() -> None:
         assert plan["resourceType"] == "InsurancePlan"
         glucose = client.code_system_lookup(system="http://loinc.org", code="2345-7")
         assert glucose["resourceType"] == "Parameters"
+        text = "Instill 2 drops in the affected ear twice daily"
+        structured = client.structure_dosage(
+            haau3.structure_dosage_request(
+                text, medication={"coding": [{"system": haau3.RXNORM_SYSTEM, "code": "1923428"}]}
+            )
+        )
+        part = haau3.parameter(structured, "dosage")
+        assert part is not None and part["valueDosage"]["text"] == text
+        assert [flag.code for flag in haau3.review_flags(part["valueDosage"]).flags] == ["route-form-mismatch"]
         first = client.search_insurance_plan(coverage_area_state="NC", count=2)
         pages = []
         for page in client.pages(first):
