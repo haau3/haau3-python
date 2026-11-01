@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.20",
+    "version": "1.0.0-preview.21",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -20551,15 +20551,15 @@
                     "parameter": [
                       {
                         "name": "text",
-                        "valueString": "Instill 2 drops in the affected ear twice daily"
+                        "valueString": "Take 1 tablet by mouth daily"
                       },
                       {
                         "valueCodeableConcept": {
                           "coding": [
                             {
-                              "code": "1923428",
+                              "code": "311354",
                               "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                              "display": "timolol 2.5 MG/ML Ophthalmic Solution"
+                              "display": "lisinopril 5 MG Oral Tablet"
                             }
                           ]
                         },
@@ -20581,31 +20581,14 @@
                   "$ref": "#/components/schemas/Parameters"
                 },
                 "examples": {
-                  "The directions as a Dosage, with a review flag": {
-                    "summary": "The directions as a Dosage, with a review flag",
+                  "The directions as a coded Dosage": {
+                    "summary": "The directions as a coded Dosage",
                     "value": {
                       "resourceType": "Parameters",
                       "parameter": [
                         {
                           "valueDosage": {
                             "extension": [
-                              {
-                                "extension": [
-                                  {
-                                    "url": "code",
-                                    "valueCoding": {
-                                      "code": "route-form-mismatch",
-                                      "system": "https://haau3.com/fhir/CodeSystem/structured-sig-review-flag",
-                                      "display": "Route and dose form differ"
-                                    }
-                                  },
-                                  {
-                                    "url": "words",
-                                    "valueString": "in the affected ear"
-                                  }
-                                ],
-                                "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-review-flag"
-                              },
                               {
                                 "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-engine-version",
                                 "valueString": "2026-10-30.v2"
@@ -20621,62 +20604,59 @@
                             ],
                             "timing": {
                               "repeat": {
-                                "frequency": 2,
+                                "frequency": 1,
                                 "period": 1,
                                 "periodUnit": "d"
                               },
                               "code": {
                                 "coding": [
                                   {
-                                    "code": "229799001",
+                                    "code": "69620002",
                                     "system": "http://snomed.info/sct",
-                                    "display": "Twice a day"
+                                    "display": "Daily"
                                   },
                                   {
-                                    "code": "BID",
+                                    "code": "QD",
                                     "system": "http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation",
-                                    "display": "BID"
+                                    "display": "QD"
                                   }
                                 ]
                               }
                             },
-                            "site": {
-                              "text": "affected ear"
-                            },
                             "route": {
                               "coding": [
                                 {
-                                  "code": "10547007",
+                                  "code": "26643006",
                                   "system": "http://snomed.info/sct",
-                                  "display": "Otic route"
+                                  "display": "Oral route"
                                 },
                                 {
-                                  "code": "C38192",
+                                  "code": "C38288",
                                   "system": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl",
-                                  "display": "Auricular Route of Administration"
+                                  "display": "Oral Route of Administration"
                                 }
                               ]
                             },
                             "method": {
                               "coding": [
                                 {
-                                  "code": "421538008",
+                                  "code": "419652001",
                                   "system": "http://snomed.info/sct",
-                                  "display": "Instill"
+                                  "display": "Take"
                                 }
                               ]
                             },
                             "doseAndRate": [
                               {
                                 "doseQuantity": {
-                                  "value": 2,
-                                  "unit": "Drop",
+                                  "value": 1,
+                                  "unit": "Tablet",
                                   "system": "http://unitsofmeasure.org",
-                                  "code": "[drp]"
+                                  "code": "{tbl}"
                                 }
                               }
                             ],
-                            "text": "Instill 2 drops in the affected ear twice daily"
+                            "text": "Take 1 tablet by mouth daily"
                           },
                           "name": "dosage"
                         }
