@@ -1,7 +1,8 @@
 """parameters(), parameter() and review_flags(): a Parameters answer's named parts, and the review flags
 on a structured Dosage, with no request, as client methods and as plain functions; and
 structure_dosage_request(), the request $structure-dosage takes. Read from the spec's own examples of
-$structure-dosage's request and answer, so a change to their shape fails here."""
+$structure-dosage's request and answer, so a change to their shape fails here. The example answer
+carries no review flag, so the flag the readers read is written here, as the API writes one."""
 
 from __future__ import annotations
 
@@ -21,6 +22,27 @@ ANSWER: Any = first_example(
     SPEC["paths"]["/v1/fhir/r4/$structure-dosage"]["post"]["responses"]["200"]["content"]["application/fhir+json"]
 )
 
+# A Dosage with one review flag, as the API writes it for ear drops sent with an eye solution's code.
+FLAGGED: Any = {
+    "extension": [
+        {
+            "url": "https://haau3.com/fhir/StructureDefinition/structured-sig-review-flag",
+            "extension": [
+                {
+                    "url": "code",
+                    "valueCoding": {
+                        "system": "https://haau3.com/fhir/CodeSystem/structured-sig-review-flag",
+                        "code": "route-form-mismatch",
+                        "display": "Route and dose form differ",
+                    },
+                },
+                {"url": "words", "valueString": "in the affected ear"},
+            ],
+        }
+    ],
+    "text": "Instill 2 drops in the affected ear twice daily",
+}
+
 
 def _sends_nothing(request: httpx2.Request) -> httpx2.Response:
     raise AssertionError("parameters(), parameter() and review_flags() send nothing")
@@ -35,7 +57,7 @@ def test_parameters_and_parameter_give_the_parts_with_a_name(client: Haau3 | Asy
     assert len(client.parameters(ANSWER, "dosage")) == 1
     part = client.parameter(ANSWER, "dosage")
     assert part is not None
-    assert part["valueDosage"]["text"] == "Instill 2 drops in the affected ear twice daily"
+    assert part["valueDosage"]["text"] == "Take 1 tablet by mouth daily"
 
 
 def test_they_give_nothing_for_a_name_the_answer_does_not_hold(client: Haau3 | AsyncHaau3) -> None:
@@ -54,16 +76,20 @@ def test_parameter_raises_when_two_parts_share_the_name(client: Haau3 | AsyncHaa
     assert [part["valueString"] for part in client.parameters(two, "property")] == ["a", "b"]
 
 
-def test_review_flags_reads_the_examples_flag_with_its_words_and_its_versions(client: Haau3 | AsyncHaau3) -> None:
+def test_review_flags_reads_the_examples_versions_and_no_flag(client: Haau3 | AsyncHaau3) -> None:
     part = client.parameter(ANSWER, "dosage")
     assert part is not None
     review = client.review_flags(part["valueDosage"])
-    assert review.flags == (
-        ReviewFlag(code="route-form-mismatch", display="Route and dose form differ", words="in the affected ear"),
-    )
+    assert review.flags == ()
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}\.v\d+", cast(str, review.engine_version))
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}\.v\d+", cast(str, review.vocabulary_version))
     assert re.fullmatch(r"\d{8}", cast(str, review.rxnorm_release))
+
+
+def test_review_flags_reads_a_flag_with_its_code_display_and_words(client: Haau3 | AsyncHaau3) -> None:
+    assert client.review_flags(FLAGGED).flags == (
+        ReviewFlag(code="route-form-mismatch", display="Route and dose form differ", words="in the affected ear"),
+    )
 
 
 def test_review_flags_gives_none_for_a_dosage_that_carries_none(client: Haau3 | AsyncHaau3) -> None:
@@ -93,6 +119,7 @@ def test_the_plain_functions_read_what_the_clients_methods_read_with_no_client(c
     assert haau3.parameter(ANSWER, "dosage") == client.parameter(ANSWER, "dosage")
     dosage = ANSWER["parameter"][0]["valueDosage"]
     assert haau3.review_flags(dosage) == client.review_flags(dosage)
+    assert haau3.review_flags(FLAGGED) == client.review_flags(FLAGGED)
     two: Any = {"resourceType": "Parameters", "parameter": [{"name": "property"}, {"name": "property"}]}
     with pytest.raises(Haau3Error, match="2 parts named property"):
         haau3.parameter(two, "property")
