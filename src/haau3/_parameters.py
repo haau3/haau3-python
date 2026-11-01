@@ -75,8 +75,8 @@ def structure_dosage_request(text: str, *, medication: CodeableConcept | None = 
     ```python
     answer = client.structure_dosage(
         structure_dosage_request(
-            "Instill 2 drops in the affected ear twice daily",
-            medication={"coding": [{"system": RXNORM_SYSTEM, "code": "1923428"}]},
+            "Take 1 tablet by mouth daily",
+            medication={"coding": [{"system": RXNORM_SYSTEM, "code": "311354"}]},
         )
     )
     ```

@@ -320,8 +320,8 @@ from haau3 import RXNORM_SYSTEM, review_flags, structure_dosage_request
 
 structured_answer = client.structure_dosage(
     structure_dosage_request(
-        "Instill 2 drops in the affected ear twice daily",
-        medication={"coding": [{"system": RXNORM_SYSTEM, "code": "1923428"}]},
+        "Take 1 tablet by mouth daily",
+        medication={"coding": [{"system": RXNORM_SYSTEM, "code": "311354"}]},
     )
 )
 part = client.parameter(structured_answer, "dosage")
