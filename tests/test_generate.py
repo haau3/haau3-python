@@ -170,6 +170,47 @@ def test_a_batchable_mark_outside_the_fhir_base_stops_the_generator() -> None:
         generate.Spec(spec)
 
 
+def _sandbox_metadata_sample(security: object = None) -> str:
+    """The Sandbox metadata's sample, from the pinned spec with the operation given `security`."""
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    if security is not None:
+        spec["paths"]["/v1/sandbox/fhir/r4/metadata"]["get"]["security"] = security
+    built = generate.Spec(spec)
+    return generate._sample(built, next(op for op in built.ops if op.id == "sandboxMetadata"))
+
+
+def test_a_sample_reads_a_live_key_where_its_operation_takes_the_documents_security() -> None:
+    assert "client = Haau3()  # reads HAAU3_API_KEY\n" in _sandbox_metadata_sample()
+
+
+def test_a_sample_reads_a_test_key_where_its_operation_names_test_key_auth() -> None:
+    assert "client = Haau3()  # reads HAAU3_API_KEY, a test key\n" in _sandbox_metadata_sample([{"testKeyAuth": []}])
+
+
+@pytest.mark.parametrize(
+    "security",
+    [
+        [{"apiKeyAuth": []}],
+        [],
+        [{"bearerAuth": []}, {"testKeyAuth": []}],
+        [{"bearerAuth": [], "testKeyAuth": []}],
+    ],
+)
+def test_a_security_the_samples_have_no_words_for_stops_the_generator(security: object) -> None:
+    with pytest.raises(ValueError, match=r"^sandboxMetadata: security .* names no key a sample knows$"):
+        _sandbox_metadata_sample(security)
+
+
+def test_every_committed_sample_says_the_key_its_operations_security_names() -> None:
+    overlay = json.loads((ROOT / "openapi" / "code-samples.json").read_text(encoding="utf-8"))
+    spec = generate.Spec(SPEC)
+    for op in spec.ops:
+        method = op.method.lower()
+        [action] = [a for a in overlay["actions"] if a["target"] == f"$.paths['{op.path}'].{method}"]
+        source = action["update"]["x-codeSamples"][0]["source"]
+        assert generate._client(spec, op, SPEC["paths"][op.path][method]) + "\n" in source, op.id
+
+
 def _mini(parameters: list[dict[str, object]]) -> dict[str, Any]:
     spec: dict[str, Any] = json.loads(json.dumps(SPEC))
     spec["paths"]["/v1/scheduling/publishers"]["get"]["parameters"] = parameters

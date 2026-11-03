@@ -14,10 +14,12 @@ from .helpers import ROOT, SPEC, operations
 README = (ROOT / "README.md").read_text()
 API = (ROOT / "api.md").read_text()
 OPERATIONS = sorted(operations())
+CLIENT = r"\b(?:client|sandbox)\."
+"""One of the README's clients: `client`, or `sandbox`, the Sandbox's own, made with a test key."""
 
 
 def test_every_method_the_readme_calls_exists() -> None:
-    called = set(re.findall(r"\bclient\.(?:with_response\.)?(\w+)\(", README))
+    called = set(re.findall(CLIENT + r"(?:with_response\.)?(\w+)\(", README))
     assert len(called) > 10
     assert called <= {n for n in dir(Haau3) if not n.startswith("_")}
     for name in re.findall(r"\bcalls\.(\w+)\(", README):
@@ -29,7 +31,7 @@ def test_every_method_the_readme_calls_exists() -> None:
 def test_the_readme_calls_one_operation_of_each_service() -> None:
     tags = {op["tags"][0] for _, _, _, op in OPERATIONS} - {"FHIR base"}
     by_method = {naming.method_name(i): op["tags"][0] for i, _, _, op in OPERATIONS}
-    shown = {by_method[m] for m in re.findall(r"\bclient\.(\w+)\(", README) if m in by_method}
+    shown = {by_method[m] for m in re.findall(CLIENT + r"(\w+)\(", README) if m in by_method}
     assert tags <= shown
 
 
