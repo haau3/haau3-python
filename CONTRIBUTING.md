@@ -34,7 +34,8 @@ FHIR R4 (4.0.1), pinned by its sha256. Never edit them by hand:
 - `openapi/code-samples.json`: an [OpenAPI Overlay](https://spec.openapis.org/overlay/latest.html)
   that adds a Python sample to every operation as `x-codeSamples`, for a documentation site to show
   beside it. Each sample is a whole program that sends the operation's example request from the spec
-  and prints one field of the answer. `tests/test_samples.py` runs each one as it is written, with
+  and prints one field of the answer, except the slot search, a quickstart's first call, which prints
+  the first slot it found. `tests/test_samples.py` runs each one as it is written, with
   `HAAU3_BASE_URL` pointing at a stand-in that answers only the example request, and CI type-checks
   them with the README's blocks (`scripts/readme_blocks.py`).
 
