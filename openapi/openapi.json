@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.21",
+    "version": "1.0.0-preview.24",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -416,8 +416,7 @@
             "schema": {
               "type": "string",
               "minLength": 1
-            },
-            "example": "haau3"
+            }
           },
           {
             "name": "serviceTypeCode",
@@ -490,7 +489,8 @@
             "schema": {
               "type": "string",
               "minLength": 1
-            }
+            },
+            "example": "Cambridge"
           },
           {
             "name": "state",
@@ -500,7 +500,8 @@
             "schema": {
               "type": "string",
               "minLength": 1
-            }
+            },
+            "example": "MA"
           },
           {
             "name": "startAfter",
@@ -580,74 +581,90 @@
                   "$ref": "#/components/schemas/SearchSlotsResponse"
                 },
                 "examples": {
-                  "Slots from one publisher": {
-                    "summary": "Slots from one publisher",
+                  "Slots in one city": {
+                    "summary": "Slots in one city",
                     "value": {
-                      "total": 699,
+                      "total": 141,
                       "slots": [
                         {
-                          "id": "slot-haau3-psych-20261018-1700",
+                          "id": "slot-haau3-rad-20261103-0800",
                           "publisher": "haau3",
-                          "scheduleId": "sched-haau3-psych",
+                          "scheduleId": "sched-haau3-radiology",
                           "status": "free",
-                          "start": "2026-10-18T21:00:00.000Z",
-                          "end": "2026-10-18T21:50:00.000Z",
-                          "serviceTypeCode": "124",
-                          "serviceTypeText": "General Practice",
+                          "start": "2026-11-03T13:00:00.000Z",
+                          "end": "2026-11-03T14:00:00.000Z",
+                          "serviceTypeCode": "209",
+                          "serviceTypeText": "Diagnostic Radiology/Xray/CT/Fluoroscopy",
                           "serviceTypes": [
                             {
                               "system": "http://terminology.hl7.org/CodeSystem/service-type",
-                              "code": "124",
-                              "display": "General Practice"
+                              "code": "209",
+                              "display": "Diagnostic Radiology/Xray/CT/Fluoroscopy"
                             }
                           ],
-                          "acceptingPatients": "newpt",
-                          "isVirtual": true,
+                          "acceptingPatients": "existptonly",
+                          "isVirtual": false,
+                          "bookingDeepLink": "https://docs.haau3.com/scheduling/slot-publisher?slot=slot-haau3-rad-20261103-0800",
                           "bookingPhone": "+1-617-555-0100",
                           "location": {
-                            "id": "loc-haau3-telehealth",
+                            "id": "loc-haau3-imaging",
                             "identifier": [
                               {
                                 "system": "https://haau3.com/synthetic/location",
-                                "value": "loc-haau3-telehealth"
+                                "value": "loc-haau3-imaging"
                               }
                             ],
-                            "name": "haau3 Telehealth",
+                            "name": "haau3 Cambridge Imaging Center",
                             "phone": [
-                              "+1-617-555-0199"
+                              "+1-617-555-0188"
                             ],
                             "website": [
-                              "https://haau3.com/telehealth"
+                              "https://haau3.com/locations/imaging"
                             ],
+                            "addressLine": [
+                              "55 Kendall Square"
+                            ],
+                            "city": "Cambridge",
+                            "state": "MA",
+                            "postalCode": "02142",
                             "physicalType": {
-                              "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
-                              "code": "vi"
+                              "system": "http://hl7.org/fhir/uv/smart-scheduling-links/CodeSystem/temporary",
+                              "code": "ph"
+                            },
+                            "description": "Ground floor, with a step-free entrance.",
+                            "position": {
+                              "latitude": 42.362611,
+                              "longitude": -71.0876102
                             }
                           },
                           "provider": {
-                            "id": "prac-haau3-psych",
+                            "id": "prac-haau3-radiology",
                             "identifier": [
                               {
                                 "system": "https://haau3.com/synthetic/practitioner",
-                                "value": "prac-haau3-psych"
+                                "value": "prac-haau3-radiology"
+                              },
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1992700003"
                               }
                             ],
                             "type": "practitioner-role",
-                            "name": "Dr. Sarah Whitefeather",
-                            "specialty": "Psychiatry Physician",
+                            "name": "Dr. Wei Chen",
+                            "specialty": "Diagnostic Radiology Physician",
                             "specialties": [
                               {
                                 "system": "http://nucc.org/provider-taxonomy",
-                                "code": "2084P0800X",
-                                "display": "Psychiatry Physician"
+                                "code": "2085R0202X",
+                                "display": "Diagnostic Radiology Physician"
                               }
                             ]
                           },
                           "source": {
                             "publisher": "haau3",
-                            "resourceId": "slot-haau3-psych-20261018-1700",
-                            "transactionTime": "2026-10-18T00:00:00.000Z",
-                            "syncedAt": "2026-10-18T12:01:36.474Z"
+                            "resourceId": "slot-haau3-rad-20261103-0800",
+                            "transactionTime": "2026-11-02T00:00:00.000Z",
+                            "syncedAt": "2026-11-02T18:02:23.885Z"
                           }
                         }
                       ]
@@ -2571,7 +2588,7 @@
                                   "name": "type",
                                   "definition": "http://hl7.org/fhir/SearchParameter/Organization-type",
                                   "type": "token",
-                                  "documentation": "An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not."
+                                  "documentation": "An organization type from `http://terminology.hl7.org/CodeSystem/organization-type`, bare or with that system: `prov` for healthcare providers, `pay` for payers, `ntwk` for insurance networks. `ntwk` is also accepted under Plan-Net's `http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/OrgTypeCS`. `type=ntwk` and `type=pay` may stand alone, to list every network or every payer; any other type narrows a search. The directory records networks by the text of their type rather than a code; this service searches that text and confirms each answer is a network, and answers 502 rather than serve one that is not. A NUCC provider taxonomy code is refused: the directory's organizations carry none, and pharmacies are searched as `HealthcareService` (`service-category=pharm`)."
                                 },
                                 {
                                   "name": "active",
@@ -2687,6 +2704,10 @@
                                   "code": "search-type"
                                 }
                               ],
+                              "searchInclude": [
+                                "HealthcareService:organization",
+                                "HealthcareService:location"
+                              ],
                               "searchParam": [
                                 {
                                   "name": "location",
@@ -2699,6 +2720,54 @@
                                   "definition": "http://hl7.org/fhir/us/ndh/SearchParameter/healthcareservice-network",
                                   "type": "reference",
                                   "documentation": "The services the directory lists in one insurance network. Cannot be used on its own: send it beside `location`. A search that breaks this rule is refused before the directory is asked. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
+                                },
+                                {
+                                  "name": "service-category",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-service-category",
+                                  "type": "token",
+                                  "documentation": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+                                },
+                                {
+                                  "name": "specialty",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-specialty",
+                                  "type": "token",
+                                  "documentation": "A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+                                },
+                                {
+                                  "name": "location.address-state",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/Location-address-state",
+                                  "type": "string",
+                                  "documentation": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy."
+                                },
+                                {
+                                  "name": "location.address-postalcode",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/Location-address-postalcode",
+                                  "type": "string",
+                                  "documentation": "Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`."
+                                },
+                                {
+                                  "name": "location.address-city",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/Location-address-city",
+                                  "type": "string",
+                                  "documentation": "Narrows a pharmacy search to stores in a city whose name starts with this, so `Miami` also finds Miami Beach. Two or more letters. Send it with `location.address-state`."
+                                },
+                                {
+                                  "name": "name",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-name",
+                                  "type": "string",
+                                  "documentation": "Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone."
+                                },
+                                {
+                                  "name": "organization",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-organization",
+                                  "type": "reference",
+                                  "documentation": "One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
+                                },
+                                {
+                                  "name": "organization.identifier",
+                                  "definition": "http://hl7.org/fhir/SearchParameter/Organization-identifier",
+                                  "type": "token",
+                                  "documentation": "One pharmacy by its NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Organization` accepts. Stands alone on a pharmacy search."
                                 },
                                 {
                                   "name": "active",
@@ -2724,7 +2793,7 @@
                                   "documentation": "Results are paged. `_count` sets the page size (1 to 100); a larger value is refused rather than quietly reduced. Follow `link` with relation `next` to continue. The cursor it carries is opaque and must not be constructed or modified."
                                 }
                               ],
-                              "documentation": "The services the directory lists. Its service records name a network and, for a few, a location; none names an organization. A search needs a location or an id; `network` needs a location beside it."
+                              "documentation": "Two searches. The directory's services: its service records name a network and, for a few, a location; none names an organization. That search needs a location or an id, and `network` needs a location beside it. And pharmacies, modelled as NDH 2.0.0 models them: a pharmacy service (category `pharm`, its NUCC codes as `specialty`) provided by an organization at a store. A pharmacy search starts with `service-category=pharm` or a NUCC pharmacy `specialty`. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Pharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory."
                             },
                             {
                               "type": "Location",
@@ -2952,7 +3021,7 @@
                                   "definition": "https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network"
                                 }
                               ],
-                              "documentation": "Read a plan by its id, or search by identifier, name, state or county. A search needs at least one of these. Every result is the whole plan, sorted by name and then id, and every page states the total. Releases being served. Medicare Advantage: ma-2027-2026-10-01 (plan year 2027); ACA Marketplace: aca-2026-2026-08-10 (plan year 2026)."
+                              "documentation": "Read a plan by its id, or search by identifier, name, state or county. A search needs at least one of these. Every result is the whole plan, sorted by name and then id, and every page states the total. Releases being served. Medicare Advantage: ma-2027-2026-10-01 (plan year 2027); ACA Marketplace: aca-2027-2026-10-30 (plan year 2027)."
                             }
                           ],
                           "operation": [
@@ -18524,7 +18593,7 @@
           "Pharmacy Benefits"
         ],
         "summary": "Check what a medication costs (pharmacy benefit check)",
-        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by price sources: Cost Plus Drugs (its mail order and the Team Cuban Card) and ClixRx. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A member's request the insurer declines under its own rules carries `insurer-declined-request`, and sending it again gives the same answer. An insurer that prices by NDC is asked about the request's NDC, or, for an RxNorm code, an NDC haau3's RxNorm release holds for the code or one of its branded forms, named in the answer's note; with none held it is not asked and the answer carries `ndc-required`, so send the NDC. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
+        "description": "FHIR system-level operation `$process-message`, as the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) specifies. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization, with or without patient details, is refused with `403` `forbidden`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request-non-phi` asks for a medication's price without patient details: a Claim naming the product (an NDC of 11 digits with no dashes, or an RxNorm code) and the quantity, with the patient and the coverage masked, and a pharmacy, up to three ZIP codes, or both. It is answered by the cash-price sources haau3 connects to, each named in the notes on its prices. `rtpbc-request` asks what a medication would cost a member under their coverage: the member's Patient and Coverage, with the payer's identifier in `payor.identifier`, the prescription and its prescriber, and a pharmacy. It is answered by the member's insurer, found by the payer's Payer ID: a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`. An insurer that answers only with the member's own authorization is sent the access token from the member's login with that insurer, in the `Payer-Authorization` header, for that one request; it is never stored, logged or sent anywhere else. No insurer is connected yet. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse that carries either prices and coverage in `item` or the reason there are none in `error`, and for a member's request the request's Patient as it was sent. With prices, `item` is the lowest price at a pharmacy near the ZIP codes or at the pharmacy named, every price is also an `addItem` alternative naming its pharmacy by an Organization in the Bundle and its price source in `programCode`, from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-price-source`, and `processNote` says where each price came from, when, and which free discount card pays it. Each price repeats the request's product coding, which CARIN requires to carry a display: an RxNorm code sent without one is answered with the display haau3's RxNorm release gives it, and an NDC needs its display sent with it. A check no connected source can answer carries `no-responder-for-coverage`, `no-price-source` or `source-not-available-to-caller` from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`, and a member's request to an insurer that needs the member's authorization carries `payer-authorization-required` when none was sent and `payer-authorization-rejected` when the insurer refused it. A member's request the insurer declines under its own rules carries `insurer-declined-request`, and sending it again gives the same answer. An insurer that prices by NDC is asked about the request's NDC, or, for an RxNorm code, an NDC haau3's RxNorm release holds for the code or one of its branded forms, named in the answer's note; with none held it is not asked and the answer carries `ndc-required`, so send the NDC. A price is an estimate; the pharmacy confirms the price. A member's request receives patient data, so send real patient data only under an executed business associate agreement (BAA) on the Team or Scale plan. Without both, send a member's request only as test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`; anything else is refused with `403` `phi-agreement-required`. A request without patient details needs neither. Nothing a request carries is stored or logged, apart from the request's ids, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters and is not offered inside a batch. The contract is published at https://fhir.haau3.com/pharmacy-benefits.html.",
         "operationId": "processMessage",
         "x-haau3-batchable": false,
         "parameters": [
