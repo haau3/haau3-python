@@ -17,6 +17,7 @@
   `x-codeSamples` to the spec, for a documentation site to show beside each operation. Each sample is
   a whole program that sends the operation's example request from the spec and prints one field of
   the answer, except the slot search, a quickstart's first call, which prints the first slot it found.
+  Its client line says which key HAAU3_API_KEY must hold, from the operation's security.
   tests/test_samples.py runs every one as it is written against a stand-in API, and CI type-checks
   them with the README's blocks.
 
@@ -857,6 +858,23 @@ def _batch_call(spec: Spec, request: Json) -> str:
     return f"calls.{op.name}({', '.join(args)})"
 
 
+KEY_COMMENT = {"bearerAuth": "reads HAAU3_API_KEY", "testKeyAuth": "reads HAAU3_API_KEY, a test key"}
+"""What a sample's client line says for each key the spec names: `bearerAuth`, the document's own, is a
+live key, and `testKeyAuth`, which the Sandbox's operations name, a test key."""
+
+
+def _client(spec: Spec, op: Op, raw: Json) -> str:
+    """The client line, saying which key HAAU3_API_KEY must hold, from the operation's security or else
+    the document's. Any other security, none (`[]`) included, stops the generator, so a new scheme
+    gets its own words in KEY_COMMENT before a sample uses it."""
+    security = raw.get("security", spec.spec.get("security"))
+    schemes = list(security[0]) if isinstance(security, list) and len(security) == 1 else []
+    comment = KEY_COMMENT.get(schemes[0]) if len(schemes) == 1 else None
+    if comment is None:
+        raise ValueError(f"{op.id}: security {json.dumps(security)} names no key a sample knows")
+    return f"client = Haau3()  # {comment}"
+
+
 FIRST_CALL = "searchSlots"
 """The operation a quickstart makes its first call with."""
 
@@ -875,7 +893,7 @@ def _first_call_sample(spec: Spec, op: Op, raw: Json) -> str:
         "",
         "from haau3 import Haau3",
         "",
-        "client = Haau3()  # reads HAAU3_API_KEY",
+        _client(spec, op, raw),
         f"# Open appointment slots, here in {city}.",
         f'slots = client.{op.name}({", ".join(_example_args(spec, op, raw))})["slots"]',
         "print(json.dumps(slots[0], indent=2))",
@@ -887,7 +905,7 @@ def _sample(spec: Spec, op: Op) -> str:
     raw = _raw(spec, op)
     if op.id == FIRST_CALL:
         return _first_call_sample(spec, op, raw)
-    client = ["client = Haau3()  # reads HAAU3_API_KEY"]
+    client = [_client(spec, op, raw)]
     if op.id == "fhirBatch":
         bundle = _example(next(iter(raw["requestBody"]["content"].values())))
         entries = [f"    {_batch_call(spec, e['request'])}," for e in bundle["entry"]]

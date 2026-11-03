@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 import httpx2
+import naming
 import pytest
 import readme_blocks
 
@@ -48,6 +49,7 @@ def _arguments() -> dict[str, Any]:
         "records": records,
         "message": message,
         "sandbox_message": sandbox_message,
+        "test_key": KEY,
         "codes": ["2345-7", "2160-0"],
         "job_id": str(uuid.uuid4()),
         "access_token": "eyJhbGciOiJub25lIn0.e30.example",
@@ -65,6 +67,21 @@ def test_the_readme_has_blocks_to_run() -> None:
     assert sum(b.run for b in found) >= 10
     assert any(b.awaits for b in found)
     assert [b.run for b in found].count(False) == 1
+
+
+def test_the_readme_sends_the_sandboxs_operations_through_a_client_made_with_a_test_key() -> None:
+    readme = (ROOT / "README.md").read_text()
+    sandbox = [
+        naming.method_name(op["operationId"])
+        for item in SPEC["paths"].values()
+        for op in item.values()
+        if isinstance(op, dict) and op.get("tags", [""])[0] == "Sandbox"
+    ]
+    assert sandbox
+    assert "sandbox = Haau3(api_key=test_key)" in readme
+    assert "sandbox.sandbox_process_message(" in readme
+    # The client made from HAAU3_API_KEY never sends one: the Sandbox refuses a live key.
+    assert [name for name in sandbox if f"client.{name}(" in readme] == []
 
 
 @pytest.mark.usefixtures("every_client_answers_from_the_spec")
