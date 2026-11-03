@@ -7,8 +7,8 @@
 Blocks are kept in order, so a later one uses what an earlier one made (`client`). A block that
 awaits goes into `readme_async`, the others into `readme_sync`. A block after the line
 `<!-- not run: <why> -->` is type-checked only, in `readme_not_run`. The names the README leaves to
-the reader (`plan_id`, `records`, `message`, `sandbox_message`, `codes`, `job_id`, `access_token`) are
-the functions' parameters.
+the reader (`plan_id`, `records`, `message`, `sandbox_message`, `test_key`, `codes`, `job_id`,
+`access_token`) are the functions' parameters.
 """
 
 from __future__ import annotations
@@ -27,7 +27,8 @@ _AWAITS = re.compile(r"\bawait\b|\basync (for|with)\b")
 
 PARAMETERS = (
     "plan_id: str, records: ReconcileMedicationsBody, message: ProcessMessageBody,"
-    " sandbox_message: SandboxProcessMessageBody, codes: list[str], job_id: str, access_token: str"
+    " sandbox_message: SandboxProcessMessageBody, test_key: str, codes: list[str], job_id: str,"
+    " access_token: str"
 )
 
 
