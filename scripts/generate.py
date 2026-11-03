@@ -16,8 +16,9 @@
 - openapi/code-samples.json: a Python sample for every operation, as an OpenAPI Overlay that adds
   `x-codeSamples` to the spec, for a documentation site to show beside each operation. Each sample is
   a whole program that sends the operation's example request from the spec and prints one field of
-  the answer. tests/test_samples.py runs every one as it is written against a stand-in API, and CI
-  type-checks them with the README's blocks.
+  the answer, except the slot search, a quickstart's first call, which prints the first slot it found.
+  tests/test_samples.py runs every one as it is written against a stand-in API, and CI type-checks
+  them with the README's blocks.
 
     uv run python scripts/generate.py           write them
     uv run python scripts/generate.py --check   fail, listing them, when any differs from what is committed
@@ -856,8 +857,36 @@ def _batch_call(spec: Spec, request: Json) -> str:
     return f"calls.{op.name}({', '.join(args)})"
 
 
+FIRST_CALL = "searchSlots"
+"""The operation a quickstart makes its first call with."""
+
+
+def _first_call_sample(spec: Spec, op: Op, raw: Json) -> str:
+    """The first call: the slot search's example, which names a city, with the first slot it found
+    printed whole as JSON, since one field says nothing of what a slot is."""
+    city = next(
+        (p.get("example") for p in raw.get("parameters", []) if p.get("in") == "query" and p.get("name") == "city"),
+        None,
+    )
+    if not isinstance(city, str):
+        raise ValueError(f"{op.id}: the first call's example names no city")
+    lines = [
+        "import json",
+        "",
+        "from haau3 import Haau3",
+        "",
+        "client = Haau3()  # reads HAAU3_API_KEY",
+        f"# Open appointment slots, here in {city}.",
+        f'slots = client.{op.name}({", ".join(_example_args(spec, op, raw))})["slots"]',
+        "print(json.dumps(slots[0], indent=2))",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def _sample(spec: Spec, op: Op) -> str:
     raw = _raw(spec, op)
+    if op.id == FIRST_CALL:
+        return _first_call_sample(spec, op, raw)
     client = ["client = Haau3()  # reads HAAU3_API_KEY"]
     if op.id == "fhirBatch":
         bundle = _example(next(iter(raw["requestBody"]["content"].values())))

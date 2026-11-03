@@ -80,6 +80,9 @@ def _batch_keys(bundle: dict[str, Any]) -> list[str]:
 def _expected_output(op_id: str, op: dict[str, Any]) -> str:
     """What a sample prints for its example answer, by the rule the generator writes."""
     answer = example_answer(op)
+    # The first call prints its first slot whole, as JSON in the order the API sent it.
+    if op_id == "searchSlots":
+        return json.dumps(answer["slots"][0], indent=2)
     if op_id == "fhirBatch":
         return "\n".join(str(int(re.match(r"\d+", e["response"]["status"]).group())) for e in answer["entry"])  # type: ignore[union-attr]
     if op_id == "fhirMetadata" or answer.get("resourceType") == "CapabilityStatement":
@@ -194,6 +197,13 @@ def test_every_sample_reads_the_key_from_the_environment_and_sets_no_address() -
         source = _sample(method, path)
         assert "client = Haau3()  # reads HAAU3_API_KEY" in source
         assert not re.search(r"api_key|base_url|haau3_sk_", source)
+
+
+def test_the_slot_search_is_the_first_call_the_city_it_searches_then_the_first_slot_it_found() -> None:
+    source = _sample("GET", "/v1/scheduling/slots")
+    assert re.search(r"^# Open appointment slots, here in [A-Z][\w .'-]*\.$", source, re.M)
+    assert 'slots = client.search_slots(city="' in source
+    assert source.rstrip("\n").endswith("print(json.dumps(slots[0], indent=2))")
 
 
 @pytest.mark.parametrize(("op_id", "method", "path", "op"), OPERATIONS, ids=[o[0] for o in OPERATIONS])
