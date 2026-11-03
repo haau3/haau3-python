@@ -117,6 +117,8 @@ def decide(r: Regeneration) -> Decision:
 
     sections = [
         f"The API's spec changed from `{r.from_version}` to `{r.to_version}`, read from {r.spec_url} with ETag `{r.etag}`.",
+        "The changelog at https://docs.haau3.com/changelog says in words what changed for callers, "
+        "under the day it took effect. A version that changed only wording or examples has no entry there.",
         effect,
         "If a check fails, this spec needs a change by hand (a method the README calls is gone, say). "
         "Push the fix to this branch: haau3-bot never overwrites a commit it did not make.",

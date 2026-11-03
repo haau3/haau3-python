@@ -85,6 +85,7 @@ def test_the_body_names_both_versions_the_etag_and_the_source() -> None:
     assert "from `1.0.0-preview.2` to `1.0.0-preview.3`" in body
     assert 'ETag `W/"4l7nD8I7mwiHJI4hZ8QHmqfFP1T"`' in body
     assert "https://api.haau3.com/openapi.json" in body
+    assert "The changelog at https://docs.haau3.com/changelog says in words what changed for callers" in body
 
 
 def test_the_levels_file() -> None:
