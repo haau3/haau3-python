@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.21"
+    "version": "1.0.0-preview.24"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -25,7 +25,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.search_slots(publisher=\"haau3\", limit=1)\nprint(found[\"total\"])\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.search_slots(city=\"Cambridge\", state=\"MA\", limit=1)\nprint(found[\"total\"])\n"
           }
         ]
       }
