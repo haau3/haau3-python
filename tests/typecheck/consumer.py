@@ -69,6 +69,18 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     assert_type(haau3.parameter(structured, "dosage"), "fhir.ParametersParameter | None")
     assert_type(haau3.review_flags({"text": "Take 1 tablet daily"}), haau3.DosageReview)
     haau3.structure_dosage_request("Take 1 tablet daily", {"coding": []})  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+    # Terminology: a lookup and a validation read typed, a property's value narrowed by its type.
+    lookup = haau3.lookup_result(client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1"))
+    assert_type(lookup, haau3.LookupResult)
+    assert_type(haau3.designations(lookup, use=haau3.SYNONYM_USE, language="en"), "list[haau3.Designation]")
+    for prop in lookup.properties:
+        if prop.type == "Coding":
+            assert_type(prop.value, fhir.Coding)
+        elif prop.type == "boolean":
+            assert_type(prop.value, bool)
+    check = haau3.validation_result(client.code_system_validate_code(url="http://loinc.org", code="8867-4"))
+    assert_type(check.result, "bool | None")
+    haau3.designations(lookup, haau3.SYNONYM_USE)  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
     # A record written inline is checked as the resource it is: a message's MessageHeader, and
     # MedList's records.
     client.process_message(
