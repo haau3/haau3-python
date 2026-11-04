@@ -1,7 +1,7 @@
 [project]
 name = "haau3"
 dynamic = ["version"]
-description = "Python SDK for the haau3 platform API: appointment slots from SMART Scheduling Links publishers, Medicare Advantage and ACA Marketplace plan benefits, medication list reconciliation, RxNorm and LOINC terminology, the CMS National Provider Directory and FHIR Questionnaires, as typed calls."
+description = "Python SDK for the haau3 platform API: appointment slots from SMART Scheduling Links publishers, Medicare Advantage and ACA Marketplace plan benefits, medication list reconciliation, RxNorm, LOINC and ICD-10-CM terminology, the CMS National Provider Directory and FHIR Questionnaires, as typed calls."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -19,6 +19,7 @@ keywords = [
   "medication-reconciliation",
   "rxnorm",
   "loinc",
+  "icd-10-cm",
   "terminology",
   "provider-directory",
   "npi",

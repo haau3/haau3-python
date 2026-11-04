@@ -52,7 +52,7 @@ def test_it_allows_what_this_repositorys_own_text_uses() -> None:
         [
             "pip install haau3, from haau3/haau3-python#3, opened by haau3-bot[bot] as haau3-python/0.1.1.",
             "Also for TypeScript: haau3-node at https://github.com/haau3/haau3-node, and haau3-go to come.",
-            "PHQ-9 and UTF-8, the plan H2406-013, pydantic/httpx2#1153 and uv 0.13.1.",
+            "PHQ-9 and UTF-8, ICD-10-CM and ICD-10-PCS, the plan H2406-013, pydantic/httpx2#1153 and uv 0.13.1.",
             "* the API's spec at 1.0.0-preview.4 ([#5](https://github.com/haau3/haau3-python/issues/5))",
             "Write to security@haau3.com. Co-Authored-By: Claude <noreply@anthropic.com>",
             "The version lives in src/haau3/_version.py, and https://proxy.example.test/haau3/v1 is a base URL.",
