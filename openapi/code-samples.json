@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.24"
+    "version": "1.0.0-preview.25"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -469,7 +469,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\ncapability_statement = client.sandbox_metadata()\nprint(capability_statement[\"resourceType\"])\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY, a test key\ncapability_statement = client.sandbox_metadata()\nprint(capability_statement[\"resourceType\"])\n"
           }
         ]
       }
@@ -481,7 +481,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# request.json holds a test member's pharmacy benefit check, as a Bundle.\nwith open(\"request.json\") as file:\n    body: fhir.Bundle = json.load(file)\nbundle = client.sandbox_process_message(body)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "import json\n\nfrom haau3 import Haau3, fhir\n\nclient = Haau3()  # reads HAAU3_API_KEY, a test key\n# request.json holds a test member's pharmacy benefit check, as a Bundle.\nwith open(\"request.json\") as file:\n    body: fhir.Bundle = json.load(file)\nbundle = client.sandbox_process_message(body)\nprint(len(bundle.get(\"entry\", [])))\n"
           }
         ]
       }
