@@ -20,6 +20,10 @@ from ._parameters import parameter as _parameter
 from ._parameters import parameters as _parameters
 from ._parameters import review_flags as _review_flags
 from ._response import Options, RawResponse
+from ._terminology import Designation, DesignationUse, LookupResult, ValidationResult
+from ._terminology import designations as _designations
+from ._terminology import lookup_result as _lookup_result
+from ._terminology import validation_result as _validation_result
 from ._transport import AsyncEngine, Config, SyncEngine
 
 if TYPE_CHECKING:
@@ -271,6 +275,51 @@ class Haau3(SyncMethods):
         """
         return _review_flags(dosage)
 
+    def lookup_result(self, answer: Parameters) -> LookupResult:
+        """A `CodeSystem/$lookup` answer, typed, with no request.
+
+        The code, its system and version, its display, whether it is abstract, every designation and
+        every property. A part this reader does not know stays in `other`. Raises a `Haau3Error` when a
+        part FHIR allows once comes twice. The plain function `haau3.lookup_result()` does the same with
+        no client.
+
+        ```python
+        lookup = client.lookup_result(client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1"))
+        print(lookup.display, lookup.abstract)
+        ```
+        """
+        return _lookup_result(answer)
+
+    def validation_result(self, answer: Parameters) -> ValidationResult:
+        """A `$validate-code` answer, from a code system or a value set, typed, with no request.
+
+        Whether the code is valid, its display, and the server's message. Raises a `Haau3Error` when a
+        part FHIR allows once comes twice. The plain function `haau3.validation_result()` does the same
+        with no client.
+
+        ```python
+        answer = client.code_system_validate_code(url="http://loinc.org", code="8867-4", display="Pulse")
+        check = client.validation_result(answer)
+        ```
+        """
+        return _validation_result(answer)
+
+    def designations(
+        self, lookup: LookupResult, *, use: DesignationUse | None = None, language: str | None = None
+    ) -> list[Designation]:
+        """The designations of a lookup with a use and in a language, in answer order, with no request.
+
+        A use matches by its system and code together; a language as RFC 4647's basic filtering says, so
+        `en` finds `en-US`. A field left out matches every designation. The plain function
+        `haau3.designations()` does the same with no client.
+
+        ```python
+        lookup = client.lookup_result(client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1"))
+        short_title = client.designations(lookup, use=haau3.SYNONYM_USE)
+        ```
+        """
+        return _designations(lookup, use=use, language=language)
+
     def _held_pages(self, page: Hidden[object], options: Options) -> Iterator[Hidden[object]]:
         """Each page, held, following `next` links on the client's own host to a page not yet read."""
         followed: set[str] = set()
@@ -460,6 +509,51 @@ class AsyncHaau3(AsyncMethods):
         ```
         """
         return _review_flags(dosage)
+
+    def lookup_result(self, answer: Parameters) -> LookupResult:
+        """A `CodeSystem/$lookup` answer, typed, with no request.
+
+        The code, its system and version, its display, whether it is abstract, every designation and
+        every property. A part this reader does not know stays in `other`. Raises a `Haau3Error` when a
+        part FHIR allows once comes twice. The plain function `haau3.lookup_result()` does the same with
+        no client.
+
+        ```python
+        lookup = client.lookup_result(await client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1"))
+        print(lookup.display, lookup.abstract)
+        ```
+        """
+        return _lookup_result(answer)
+
+    def validation_result(self, answer: Parameters) -> ValidationResult:
+        """A `$validate-code` answer, from a code system or a value set, typed, with no request.
+
+        Whether the code is valid, its display, and the server's message. Raises a `Haau3Error` when a
+        part FHIR allows once comes twice. The plain function `haau3.validation_result()` does the same
+        with no client.
+
+        ```python
+        answer = await client.code_system_validate_code(url="http://loinc.org", code="8867-4", display="Pulse")
+        check = client.validation_result(answer)
+        ```
+        """
+        return _validation_result(answer)
+
+    def designations(
+        self, lookup: LookupResult, *, use: DesignationUse | None = None, language: str | None = None
+    ) -> list[Designation]:
+        """The designations of a lookup with a use and in a language, in answer order, with no request.
+
+        A use matches by its system and code together; a language as RFC 4647's basic filtering says, so
+        `en` finds `en-US`. A field left out matches every designation. The plain function
+        `haau3.designations()` does the same with no client.
+
+        ```python
+        lookup = client.lookup_result(await client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1"))
+        short_title = client.designations(lookup, use=haau3.SYNONYM_USE)
+        ```
+        """
+        return _designations(lookup, use=use, language=language)
 
     async def _held_pages(self, page: Hidden[object], options: Options) -> AsyncIterator[Hidden[object]]:
         """Each page, held, as `Haau3._held_pages` gives them."""
