@@ -44,7 +44,20 @@ class Finding:
 
 
 # Words for standards and published identifiers that look like ticket numbers.
-STANDARD_IDS = {"UTF-8", "UTF-16", "UTF-32", "PHQ-2", "PHQ-9", "GAD-2", "GAD-7", "SHA-1", "SHA-2", "SHA-3", "TLS-1"}
+STANDARD_IDS = {
+    "UTF-8",
+    "UTF-16",
+    "UTF-32",
+    "PHQ-2",
+    "PHQ-9",
+    "GAD-2",
+    "GAD-7",
+    "SHA-1",
+    "SHA-2",
+    "SHA-3",
+    "TLS-1",
+    "ICD-10",
+}
 
 # Email domains a public commit or file may name.
 EMAIL_DOMAINS = re.compile(
