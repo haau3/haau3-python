@@ -83,6 +83,13 @@ def test_every_kind_of_call_against_production() -> None:
         assert plan["resourceType"] == "InsurancePlan"
         glucose = client.code_system_lookup(system="http://loinc.org", code="2345-7")
         assert glucose["resourceType"] == "Parameters"
+        icd = haau3.lookup_result(
+            client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1")
+        )
+        assert icd.abstract is False
+        assert [d.value for d in haau3.designations(icd, use=haau3.SYNONYM_USE, language="en")] == [
+            "Diab with diabetic macular edema, resolved fol trtmt, r eye"
+        ]
         text = "Instill 2 drops in the affected ear twice daily"
         structured = client.structure_dosage(
             haau3.structure_dosage_request(

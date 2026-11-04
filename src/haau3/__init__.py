@@ -44,6 +44,21 @@ from ._parameters import review_flags as review_flags
 from ._parameters import structure_dosage_request as structure_dosage_request
 from ._response import RawResponse as RawResponse
 from ._response import Response as Response
+from ._terminology import PREFERRED_FOR_LANGUAGE_USE as PREFERRED_FOR_LANGUAGE_USE
+from ._terminology import SYNONYM_USE as SYNONYM_USE
+from ._terminology import BooleanProperty as BooleanProperty
+from ._terminology import CodingProperty as CodingProperty
+from ._terminology import DecimalProperty as DecimalProperty
+from ._terminology import Designation as Designation
+from ._terminology import DesignationUse as DesignationUse
+from ._terminology import IntegerProperty as IntegerProperty
+from ._terminology import LookupResult as LookupResult
+from ._terminology import Property as Property
+from ._terminology import TextProperty as TextProperty
+from ._terminology import ValidationResult as ValidationResult
+from ._terminology import designations as designations
+from ._terminology import lookup_result as lookup_result
+from ._terminology import validation_result as validation_result
 from ._test_data import mark_as_test_data as mark_as_test_data
 from ._version import __version__ as __version__
 
@@ -52,33 +67,48 @@ __all__ = [
     "DEFAULT_MAX_RETRIES",
     "DEFAULT_TIMEOUT",
     "NDC_SYSTEM",
+    "PREFERRED_FOR_LANGUAGE_USE",
     "RXNORM_SYSTEM",
     "SPEC_VERSION",
+    "SYNONYM_USE",
     "AsyncHaau3",
     "AsyncWithResponse",
     "AuthError",
     "BatchError",
     "BatchOk",
     "BatchResult",
+    "BooleanProperty",
     "Call",
+    "CodingProperty",
+    "DecimalProperty",
+    "Designation",
+    "DesignationUse",
     "ErrorDict",
     "ForbiddenError",
     "Haau3",
     "Haau3Error",
+    "IntegerProperty",
+    "LookupResult",
     "NoAnswerError",
     "NoAnswerReason",
+    "Property",
     "QueryValue",
     "RawResponse",
     "RefusedError",
     "Response",
     "SyncWithResponse",
+    "TextProperty",
+    "ValidationResult",
     "__version__",
     "calls",
+    "designations",
     "fhir",
+    "lookup_result",
     "mark_as_test_data",
     "parameter",
     "parameters",
     "review_flags",
     "structure_dosage_request",
     "types",
+    "validation_result",
 ]

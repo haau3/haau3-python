@@ -306,6 +306,46 @@ Each is a client method and a plain function of the package, `haau3.parameters()
 `haau3.parameter()` and `haau3.review_flags()`, so an answer you stored can be read with no client
 and no key.
 
+## Reading a lookup and a validation
+
+`lookup_result()` reads a `$lookup` answer, typed: the code, its system and version, its display,
+whether it is `abstract` (not for use, such as an ICD-10-CM header), every designation and every
+property. A property's `type` names the FHIR type of its `value`, so checking it narrows the value.
+`designations()` finds a code's names by use and language: a use by its system and code together, a
+language as RFC 4647 matches one, so `en` finds `en-US`. ICD-10-CM's short title is its `SYNONYM_USE`
+designation, where it differs from the display, and every code system the API holds names the display
+again with `PREFERRED_FOR_LANGUAGE_USE`.
+
+```python
+from haau3 import SYNONYM_USE, designations
+
+icd_answer = client.code_system_lookup(system="http://hl7.org/fhir/sid/icd-10-cm", code="E08.37X1")
+icd_lookup = client.lookup_result(icd_answer)
+print(icd_lookup.display, icd_lookup.abstract)
+short_titles = designations(icd_lookup, use=SYNONYM_USE, language="en")
+print(short_titles[0].value if short_titles else None)
+for prop in icd_lookup.properties:
+    if prop.type == "boolean":
+        print(prop.code, prop.value)
+```
+
+`validation_result()` reads a `$validate-code` answer, from a code system or a value set: `result`,
+`display` and `message`. A display that does not match answers `result` False with the code's own
+display beside it, which means the code is valid and only the label differs.
+
+```python
+check = client.validation_result(
+    client.code_system_validate_code(url="http://loinc.org", code="2345-7", display="Glucose")
+)
+if not check.result:
+    print(check.message, check.display)
+```
+
+A part either reader does not know is kept, as the answer gave it, in the `other` tuple of the level it
+was found at, and a part FHIR allows once that comes twice raises. Each is a client method and a plain
+function of the package, `haau3.lookup_result()`, `haau3.validation_result()` and
+`haau3.designations()`, so an answer you stored can be read with no client.
+
 ## Structured Sig
 
 `structure_dosage_request()` builds the request `$structure-dosage` takes from the directions and,
