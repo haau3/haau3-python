@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.24",
+    "version": "1.0.0-preview.25",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -20873,7 +20873,7 @@
           "Sandbox"
         ],
         "summary": "The Sandbox's capability statement",
-        "description": "FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving a member's request. It takes no parameters.",
+        "description": "FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving a member's request. It takes no parameters. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`.",
         "operationId": "sandboxMetadata",
         "responses": {
           "200": {
@@ -21017,6 +21017,11 @@
             "$ref": "#/components/responses/FhirUnavailable"
           }
         },
+        "security": [
+          {
+            "testKeyAuth": []
+          }
+        ],
         "parameters": [
           {
             "$ref": "#/components/parameters/XRequestId"
@@ -21030,7 +21035,7 @@
           "Sandbox"
         ],
         "summary": "Check a test member's medication cost with a test insurer",
-        "description": "The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data. Every organization may call it on every plan, and each request counts like any other. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with the event `rtpbc-request`: a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. A request is read by the same rules as Pharmacy Benefits' member's request. The member must be one of the test insurer's test members, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse naming the insurer by its Payer ID, `SANDBOX-EHP`, and the request's Patient as it was sent, a test member's labelled `HTEST`; a process note says which test member and formulary row answered. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan.",
+        "description": "The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data. Every organization may call it on every plan, and each request counts like any other. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with the event `rtpbc-request`: a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. A request is read by the same rules as Pharmacy Benefits' member's request. The member must be one of the test insurer's test members, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse naming the insurer by its Payer ID, `SANDBOX-EHP`, and the request's Patient as it was sent, a test member's labelled `HTEST`; a process note says which test member and formulary row answered. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan.",
         "operationId": "sandboxProcessMessage",
         "requestBody": {
           "required": true,
@@ -21748,6 +21753,11 @@
             "$ref": "#/components/responses/FhirUnavailable"
           }
         },
+        "security": [
+          {
+            "testKeyAuth": []
+          }
+        ],
         "parameters": [
           {
             "$ref": "#/components/parameters/XRequestId"
@@ -22180,7 +22190,14 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Your platform API key, sent as `Authorization: Bearer <key>`: a live key (`haau3_sk_live_…`) for every service, or a test key (`haau3_sk_test_…`) for the Sandbox, the one place a test key works and a live key does not."
+        "bearerFormat": "haau3_sk_live_…",
+        "description": "A live platform API key (`haau3_sk_live_…`), sent as `Authorization: Bearer <key>`. It works for every service outside the Sandbox. Create one on the API keys page at https://platform.haau3.com."
+      },
+      "testKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "haau3_sk_test_…",
+        "description": "A test platform API key (`haau3_sk_test_…`), sent as `Authorization: Bearer <key>`. It works only in the Sandbox (`/v1/sandbox/fhir/r4`), where a live key does not. Create one on the API keys page at https://platform.haau3.com by choosing Test."
       }
     },
     "schemas": {

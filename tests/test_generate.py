@@ -171,10 +171,14 @@ def test_a_batchable_mark_outside_the_fhir_base_stops_the_generator() -> None:
 
 
 def _sandbox_metadata_sample(security: object = None) -> str:
-    """The Sandbox metadata's sample, from the pinned spec with the operation given `security`."""
+    """The Sandbox metadata's sample, from the pinned spec with the operation given `security`, or with
+    no security of its own when that is None, so it takes the document's whichever spec is pinned."""
     spec: dict[str, Any] = json.loads(json.dumps(SPEC))
-    if security is not None:
-        spec["paths"]["/v1/sandbox/fhir/r4/metadata"]["get"]["security"] = security
+    operation = spec["paths"]["/v1/sandbox/fhir/r4/metadata"]["get"]
+    if security is None:
+        operation.pop("security", None)
+    else:
+        operation["security"] = security
     built = generate.Spec(spec)
     return generate._sample(built, next(op for op in built.ops if op.id == "sandboxMetadata"))
 
