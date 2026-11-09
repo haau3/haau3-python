@@ -49,7 +49,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
 ]
-dependencies = ["httpx2>=2.0.0,<3", "anyio>=4.10,<5", "typing-extensions>=4.12,<5"]
+dependencies = ["httpx2>=2.0.0,<3", "anyio>=4.16.0,<5", "typing-extensions>=4.12,<5"]
 
 [project.urls]
 Homepage = "https://platform.haau3.com"
@@ -59,10 +59,10 @@ Issues = "https://github.com/haau3/haau3-python/issues"
 Changelog = "https://github.com/haau3/haau3-python/blob/main/CHANGELOG.md"
 
 [dependency-groups]
-test = ["pytest>=9", "trio>=0.31", "fastapi>=0.115", "django>=5.2", "flask>=3.1"]
-typecheck = ["mypy>=2.4", "pyright>=1.1.414", "ty>=0.0.89", "django-stubs>=5.2"]
-lint = ["ruff>=0.17"]
-generate = ["datamodel-code-generator==0.87.0", "ruff>=0.17"]
+test = ["pytest>=9", "trio>=0.35.0", "fastapi>=0.115", "django>=5.2", "flask>=3.1"]
+typecheck = ["mypy>=2.4", "pyright>=1.1.414", "ty>=0.0.98", "django-stubs>=5.2"]
+lint = ["ruff>=0.17.4"]
+generate = ["datamodel-code-generator==0.90.0", "ruff>=0.17.4"]
 dev = [
   { include-group = "test" },
   { include-group = "typecheck" },
