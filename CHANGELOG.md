@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.8](https://github.com/haau3/haau3-python/compare/v0.3.7...v0.3.8) (2026-11-10)
+
+
+### Features
+
+* lookup_result(), validation_result() and designations() read a terminology answer ([#58](https://github.com/haau3/haau3-python/issues/58)) ([93ece14](https://github.com/haau3/haau3-python/commit/93ece14f44957ebd596197a6d3982503e7681a2e))
+
+
+### Bug Fixes
+
+* the API's spec at 1.0.0-preview.29 ([#56](https://github.com/haau3/haau3-python/issues/56)) ([e95b4c8](https://github.com/haau3/haau3-python/commit/e95b4c865da455664dbf45d029a9f17869e82d68))
+
 ## [0.3.7](https://github.com/haau3/haau3-python/compare/v0.3.6...v0.3.7) (2026-11-04)
 
 
