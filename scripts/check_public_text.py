@@ -64,10 +64,10 @@ EMAIL_DOMAINS = re.compile(
     r"(^|\.)(haau3\.com|users\.noreply\.github\.com|anthropic\.com|example\.(com|org|net))$", re.I | re.A
 )
 
-# The SDKs for other languages are public too, and each README names the others.
-SDK_REPOSITORY = re.compile(r"^haau3/haau3-(node|python|go)(?![\w-])", re.A)
-SDK_URL = re.compile(r"^github\.com[:/]haau3/haau3-(node|python|go)(?![\w-])", re.I | re.A)
-SDK_NAME = re.compile(r"^haau3-(node|python|go|bot|sdk)\b", re.I | re.A)
+# The SDKs for other languages and the command line are public too, and a README may name them.
+SDK_REPOSITORY = re.compile(r"^haau3/haau3-(node|python|go|cli)(?![\w-])", re.A)
+SDK_URL = re.compile(r"^github\.com[:/]haau3/haau3-(node|python|go|cli)(?![\w-])", re.I | re.A)
+SDK_NAME = re.compile(r"^haau3-(node|python|go|cli|bot|sdk)\b", re.I | re.A)
 
 # The haau3- names the published spec carries, which are public by being in it: the guide's profile
 # ids, the demo publishers, the spec's own extensions. openapi/openapi.json is the spec as
