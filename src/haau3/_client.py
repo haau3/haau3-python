@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import httpx2
 
+from ._app_info import AppInfo, user_agent
 from ._body import Hidden, Secret
 from ._encode import QueryValue, checked_base_url
 from ._errors import Haau3Error, NoAnswerError
@@ -47,7 +48,13 @@ def _base_url(given: str | None) -> str:
     return DEFAULT_BASE_URL
 
 
-def _config(api_key: str | None, base_url: str | None, timeout: float | None, max_retries: int | None) -> Config:
+def _config(
+    api_key: str | None,
+    base_url: str | None,
+    timeout: float | None,
+    max_retries: int | None,
+    app_info: AppInfo | None,
+) -> Config:
     if sys.platform == "emscripten":
         raise Haau3Error(
             "haau3 runs on a server only: an API key in a browser is public. Call the API from your server."
@@ -60,6 +67,7 @@ def _config(api_key: str | None, base_url: str | None, timeout: float | None, ma
         base_url=_base_url(base_url),
         timeout=float(timeout) if timeout is not None else DEFAULT_TIMEOUT,
         max_retries=max_retries if max_retries is not None else DEFAULT_MAX_RETRIES,
+        user_agent=user_agent(app_info),
     )
 
 
@@ -125,6 +133,7 @@ class Haau3(SyncMethods):
         timeout: float | None = None,
         max_retries: int | None = None,
         http_client: httpx2.Client | None = None,
+        app_info: AppInfo | None = None,
     ) -> None:
         """Every option has a default.
 
@@ -135,8 +144,11 @@ class Haau3(SyncMethods):
         - `max_retries`: retries after a timeout, a network failure, a 429 or a 5xx. Defaults to 1.
         - `http_client`: an `httpx2.Client` of your own, for a proxy, certificates or limits. The SDK
           never closes a client you pass.
+        - `app_info`: your app's name, version and URL, sent in the User-Agent after the SDK's own:
+          `{"name": "my-plugin", "version": "1.2.0"}`. A value the header cannot carry is refused here,
+          before anything is sent. A `user-agent` in a call's `extra_headers` replaces the whole value.
         """
-        config = _config(api_key, base_url, timeout, max_retries)
+        config = _config(api_key, base_url, timeout, max_retries, app_info)
         _checked_client(http_client, httpx2.Client)
         self._engine = SyncEngine(config, http_client)
         self.with_response: SyncWithResponse = SyncWithResponse(self._engine)
@@ -378,9 +390,10 @@ class AsyncHaau3(AsyncMethods):
         timeout: float | None = None,
         max_retries: int | None = None,
         http_client: httpx2.AsyncClient | None = None,
+        app_info: AppInfo | None = None,
     ) -> None:
         """Every option has a default, as on `Haau3`; `http_client` is an `httpx2.AsyncClient` of your own."""
-        config = _config(api_key, base_url, timeout, max_retries)
+        config = _config(api_key, base_url, timeout, max_retries, app_info)
         _checked_client(http_client, httpx2.AsyncClient)
         self._engine = AsyncEngine(config, http_client)
         self.with_response: AsyncWithResponse = AsyncWithResponse(self._engine)

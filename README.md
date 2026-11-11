@@ -134,6 +134,7 @@ An agent can read the docs directly:
 | `timeout` | `65.0` | Seconds one attempt may take. |
 | `max_retries` | `1` | Retries after a timeout, a network failure, a 429 or a 5xx. |
 | `http_client` | a new `httpx2.Client` (`httpx2.AsyncClient` for `AsyncHaau3`) | Your own, for a proxy, certificates or connection limits. |
+| `app_info` | none | Your app's name, version and URL, sent in the User-Agent after the SDK's own. |
 
 Each call takes `timeout`, `max_retries`, `correlation_id` and `extra_headers` as keywords, for
 that call only:
@@ -167,6 +168,21 @@ proxied = Haau3(http_client=httpx2.Client(proxy="http://proxy.internal:8080"))
 httpx2 checks the API's certificate against your operating system's trust store, or against the
 file `SSL_CERT_FILE` names. In a slim container with no CA certificates, install them, set
 `SSL_CERT_FILE`, or pass `http_client=httpx2.Client(verify=ssl.create_default_context(cafile=...))`.
+
+`app_info` names your app in the User-Agent, after the SDK's own, when you build a library, a plugin
+or a command line on the SDK. It takes a `name`, and a `version` and a `url` if you have them, and
+every request the client sends carries them:
+
+```python
+named = Haau3(app_info={"name": "my-plugin", "version": "1.2.0"})
+# User-Agent: haau3-python/<version> (python 3.13; httpx2 <version>) my-plugin/1.2.0
+```
+
+A name and a version each take letters, digits, `-`, `.`, `_` and the other characters RFC 9110
+allows in a User-Agent product, with no space or slash. A `url` is an http or https URL, sent in
+parentheses after them. Anything else is refused when the client is made, before a request is sent.
+A `user-agent` in a call's `extra_headers` replaces the whole User-Agent, the SDK's part included.
+`AppInfo` types the dict.
 
 A retry waits a short, growing interval, or what the API's `Retry-After` header says when that is
 60 seconds or less. A longer `Retry-After` fails at once, carrying it. Nothing is cached: every call
