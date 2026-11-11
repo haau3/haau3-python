@@ -54,6 +54,8 @@ class Config:
     base_url: str
     timeout: float
     max_retries: int
+    user_agent: str
+    """The SDK's User-Agent, with the caller's `app_info` after it."""
 
 
 @final
@@ -206,7 +208,7 @@ def prepare(
         {
             "accept": FHIR_JSON if fhir else "application/json",
             "authorization": f"Bearer {config.key.reveal()}",
-            "user-agent": USER_AGENT,
+            "user-agent": config.user_agent,
         }
     )
     if content is not None:

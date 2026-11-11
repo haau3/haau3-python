@@ -14,6 +14,7 @@ operation of the API is a method on both, named by its operationId in snake_case
 from . import calls as calls
 from . import fhir as fhir
 from . import types as types
+from ._app_info import AppInfo as AppInfo
 from ._batch import BatchError as BatchError
 from ._batch import BatchOk as BatchOk
 from ._batch import BatchResult as BatchResult
@@ -71,6 +72,7 @@ __all__ = [
     "RXNORM_SYSTEM",
     "SPEC_VERSION",
     "SYNONYM_USE",
+    "AppInfo",
     "AsyncHaau3",
     "AsyncWithResponse",
     "AuthError",
