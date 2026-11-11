@@ -61,6 +61,11 @@ def test_it_allows_what_this_repositorys_own_text_uses() -> None:
     assert found(text) == []
 
 
+def test_it_allows_the_command_lines_repository_and_name_and_still_no_other() -> None:
+    assert found("npx haau3, from https://github.com/haau3/haau3-cli (haau3-cli), sends haau3-cli/0.1.0.") == []
+    assert found("see haau3/haau3-client") == ["haau3/haau3-client", "haau3-client"]
+
+
 def test_a_changelog_link_only_to_this_repository() -> None:
     assert found("([#5](https://github.com/haau3/haau3-python/issues/5))") == []
     assert found("([#5](https://github.com/haau3/haau3-node/issues/5))") == ["#5"]
