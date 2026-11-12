@@ -375,7 +375,7 @@ class _Engine:
     ) -> str:
         return url_on_base(
             self._config.base_url,
-            fill_path(self._path(operation), path_values),
+            fill_path(self._path(operation), path_values, operation.method),
             encode_query(query),
             keyed=self._config.key is not None,
         )

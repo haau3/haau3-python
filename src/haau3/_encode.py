@@ -24,7 +24,7 @@ _QUERY_SAFE = frozenset(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01
 _SURROGATE = re.compile("[\ud800-\udfff]")
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I | re.A)
 _ABSOLUTE = re.compile(r"https?://", re.I | re.A)
-_PLACEHOLDER = re.compile(r"\{(\w+)\}")
+_PLACEHOLDER = re.compile(r"\{([^{}]+)\}")
 
 FHIR_BASE = "/v1/fhir/r4"
 
@@ -71,8 +71,13 @@ def path_names(template: str) -> list[str]:
     return _PLACEHOLDER.findall(template)
 
 
-def fill_path(template: str, values: Sequence[object]) -> str:
-    """The operation's path with each `{name}` replaced by its value, encoded, in order."""
+def fill_path(template: str, values: Sequence[object], method: str = "") -> str:
+    """The operation's path with each `{name}` replaced by its value, encoded, in order.
+
+    A value that is empty, `.` or `..` is refused before anything is sent: a URL reads those as
+    another path, so the request would go elsewhere while its message named the template. The
+    message names the placeholder, never the value.
+    """
     names = _PLACEHOLDER.findall(template)
     if len(names) != len(values):
         raise TypeError(f"{template} takes {len(names)} path values, not {len(values)}")
@@ -80,6 +85,12 @@ def fill_path(template: str, values: Sequence[object]) -> str:
     for name, value in zip(names, values, strict=True):
         if not isinstance(value, str):
             raise TypeError(f"the path value {name} is a str, not a {type(value).__name__}")
+        if value in ("", ".", ".."):
+            named = f"{method} {template}" if method else template
+            raise Haau3Error(
+                f'{named} was not sent: the value for {{{name}}} is empty, "." or "..", '
+                "which would send the request to another path."
+            )
         path = path.replace("{" + name + "}", encode_path_value(value), 1)
     return path
 
