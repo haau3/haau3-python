@@ -247,3 +247,36 @@ async def test_a_whole_url_on_another_host_is_refused_before_sending(kind: str) 
     error = await Client(kind, recorder).raises("get", "https://elsewhere.example/v1/fhir/r4/metadata")
     assert isinstance(error, Haau3Error)
     assert recorder.requests == []
+
+
+# --- a path value never changes the path -------------------------------------------------------
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("value", ["", ".", ".."])
+async def test_a_value_that_would_change_the_path_is_refused_everywhere(kind: str, value: str) -> None:
+    recorder = Recorder(answer(200, {"resourceType": "Practitioner"}))
+    client = Client(kind, recorder)
+    for error in [
+        await client.raises("get", PRACTITIONER, path_params={"id": value}),
+        await client.raises("read_practitioner", value),
+    ]:
+        assert isinstance(error, Haau3Error)
+        assert re.search(
+            r'the value for \{id\} is empty, "\." or "\.\.", which would send the request to another path\.', str(error)
+        )
+    assert recorder.requests == []
+
+
+@pytest.mark.anyio
+async def test_dots_inside_a_value_twice_written_names_and_dashed_names(kind: str) -> None:
+    recorder = Recorder(answer(200, {}, fhir=False))
+    client = Client(kind, recorder)
+    await client("get", PRACTITIONER, path_params={"id": "a..b"})
+    await client("get", "/v1/a/{id}/b/{id}", path_params={"id": "x"})
+    await client("get", "/v1/a/{my-id}", path_params={"my-id": "y"})
+    assert [r.url.raw_path.decode() for r in recorder.requests] == [
+        "/v1/fhir/r4/Practitioner/a..b",
+        "/v1/a/x/b/x",
+        "/v1/a/y",
+    ]
