@@ -332,3 +332,58 @@ async def test_no_reason_phrase_when_no_answer_came(kind: str) -> None:
     assert error.status is None
     assert error.reason_phrase is None
     assert "reason_phrase" not in error.to_dict()
+
+
+# --- a refusal's code ---------------------------------------------------------------------------
+
+NOT_THE_EXAMPLE = {
+    "resourceType": "OperationOutcome",
+    "issue": [
+        {
+            "severity": "error",
+            "code": "business-rule",
+            "details": {
+                "coding": [{"system": "https://haau3.com/fhir/CodeSystem/sandbox-error", "code": "not-the-example"}],
+                "text": "Not the example.",
+            },
+        }
+    ],
+}
+
+
+@pytest.mark.anyio
+async def test_a_refusal_carries_the_sandboxs_not_the_example(kind: str) -> None:
+    error = await Client(kind, Recorder(answer(400, NOT_THE_EXAMPLE))).raises("read_insurance_plan", "H1")
+    assert isinstance(error, RefusedError)
+    assert error.code == "not-the-example"
+    assert error.to_dict()["code"] == "not-the-example"
+    assert pickle.loads(pickle.dumps(error)).code == "not-the-example"
+
+
+@pytest.mark.anyio
+async def test_a_refusal_carries_a_problems_code(kind: str) -> None:
+    problem = {**PROBLEM, "code": "not-the-example"}
+    error = await Client(kind, Recorder(answer(400, problem, fhir=False))).raises("list_publishers")
+    assert isinstance(error, RefusedError)
+    assert error.code == "not-the-example"
+
+
+# Negative control: no code named, or one in a system that is not haau3's, is no code.
+@pytest.mark.anyio
+async def test_a_refusal_without_a_code_of_haau3s_has_none(kind: str) -> None:
+    plain = await Client(kind, Recorder(answer(404, OUTCOME))).raises("read_insurance_plan", "H1")
+    assert isinstance(plain, RefusedError)
+    assert plain.code is None
+    other = {
+        "resourceType": "OperationOutcome",
+        "issue": [
+            {
+                "severity": "error",
+                "code": "invalid",
+                "details": {"coding": [{"system": "https://example.org/c", "code": "x"}]},
+            }
+        ],
+    }
+    foreign = await Client(kind, Recorder(answer(400, other))).raises("read_insurance_plan", "H1")
+    assert isinstance(foreign, RefusedError)
+    assert foreign.code is None
