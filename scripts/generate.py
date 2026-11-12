@@ -120,6 +120,8 @@ class Op:
     expects: list[str]
     headers: list[Header] = field(default_factory=list)
     batchable: bool = False
+    deprecated: str | None = None
+    """What to call instead, when the spec marks the operation deprecated (`deprecation`)."""
     name: str = field(init=False)
     const: str = field(init=False)
 
@@ -336,6 +338,14 @@ class Spec:
             op.batchable = op.path.startswith("/v1/fhir/r4/") and mark is not False
         if not any(op.path == "/v1/fhir/r4" and op.method == "POST" for op in ops):
             raise ValueError("The spec has no batch at POST /v1/fhir/r4")
+        ids = {op.id for op in ops}
+        raw = {op.id: self.spec["paths"][op.path][op.method.lower()] for op in ops}
+        deprecated_ids = {op_id for op_id, item in raw.items() if item.get("deprecated") is True}
+        for op in ops:
+            found = deprecation(raw[op.id], ids, deprecated_ids)
+            if found is not None:
+                # The passage goes in the deprecation, so the docstring keeps the rest.
+                op.description, op.deprecated = found
         return sorted(ops, key=lambda o: o.id)
 
     def not_in_a_batch(self) -> list[str]:
@@ -373,6 +383,46 @@ def _call_arguments(op: Op, body_name: str, prefix: str = "") -> str:
     path = "(" + "".join(f"{name}, " for name in op.path_params) + ")"
     query = "(" + "".join(f"({p.wire!r}, {p.python}), " for p in op.query) + ")"
     return f"{prefix}{op.const}, {path}, {query}, {body_name if op.body else 'None'}"
+
+
+DEPRECATED_MARK = "Deprecated:"
+
+
+def deprecation(operation: Json, ids: set[str], deprecated: set[str]) -> tuple[str, str] | None:
+    """What a deprecated operation's method says, or None when it is not deprecated: its description
+    without the passage, and the passage.
+
+    OpenAPI's own `deprecated: true`, and the passage of the operation's description from
+    "Deprecated:" to its end, which names what to call instead by its operationId in backticks. Each
+    operationId in it is written as this SDK's method name. The method carries `typing_extensions.
+    deprecated` with the words (the marker type checkers read) and warns with them itself when called.
+    The spec defines the field only as `true` (or `false`), and a deprecated operation's description
+    names a replacement that exists and is not itself deprecated, so anything else stops the generator
+    rather than being guessed at.
+    """
+    op_id = operation["operationId"]
+    if "deprecated" not in operation or operation["deprecated"] is False:
+        return None
+    mark = operation["deprecated"]
+    if mark is not True:
+        raise ValueError(f"{op_id} carries deprecated: {json.dumps(mark)}, where the spec defines only true or false")
+    parts = (operation.get("description") or "").split(DEPRECATED_MARK)
+    if len(parts) != 2:
+        raise ValueError(
+            f'{op_id} is deprecated, and its description needs exactly one passage from "{DEPRECATED_MARK}" naming what to call instead'
+        )
+    words = " ".join(parts[1].split())
+    replacements = ids - deprecated - {op_id}
+    named = [word for word in re.findall(r"`([A-Za-z][A-Za-z0-9]*)`", words) if word in replacements]
+    if not named:
+        raise ValueError(
+            f'{op_id} is deprecated, and its "{DEPRECATED_MARK}" passage names no operation of the spec to call '
+            "instead that is not deprecated"
+        )
+    words = re.sub(
+        r"`([A-Za-z][A-Za-z0-9]*)`", lambda m: f"`{naming.method_name(m[1])}`" if m[1] in ids else m[0], words
+    )
+    return parts[0].rstrip(), words[:1].upper() + words[1:]
 
 
 def _method_doc(op: Op) -> str:
@@ -446,6 +496,13 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
     for op in ops:
         returns = f"Response[{op.response}]" if with_response else op.response
         prefix = "async def" if asynchronous else "def"
+        # PEP 702's marker for type checkers, with no wrapper (category=None): before Python 3.12 the
+        # wrapper hides that an async method is a coroutine function. The method warns itself, at its
+        # caller's line (a task asyncio runs is its own caller), and only once the body and any declared
+        # header are held, so a warning that warning filters turn into an error leaves neither in a
+        # frame's local variables.
+        if op.deprecated is not None:
+            lines.append(f"    @deprecated({op.deprecated!r}, category=None)")
         lines.append(f"    {prefix} {op.name}({_signature(op)}) -> {returns}:")
         if with_response:
             lines.append(
@@ -458,6 +515,8 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
             lines.append(docstring(_method_doc(op), "        "))
         lines += _hide_body(op, "        ")
         lines += _hide_headers(op, "        ")
+        if op.deprecated is not None:
+            lines.append(f"        warnings.warn({op.deprecated!r}, DeprecationWarning, stacklevel=2)")
         call = f"self._engine.call({_call_arguments(op, 'hidden')}, {_options(op)})"
         if asynchronous:
             call = f"(await {call})"
@@ -534,6 +593,8 @@ def methods_module(spec: Spec) -> str:
         "from __future__ import annotations\n",
         "from collections.abc import Mapping, Sequence",
         "from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, overload\n",
+        "import warnings",
+        "from typing_extensions import deprecated\n",
         "from . import fhir",
         "from ._batch import BatchResult, Call",
         "from ._body import HeldHeaders, Hidden",
@@ -688,7 +749,9 @@ def api_md(spec: Spec) -> str:
     sections = []
     for tag in sorted(by_tag, key=lambda t: tags.index(t) if t in tags else 99):
         rows = [
-            f"| [`{_readable_signature(o)}`]({o.docs}) | `{o.method} {o.path}` | {o.summary} |" for o in by_tag[tag]
+            f"| [`{_readable_signature(o)}`]({o.docs}) | `{o.method} {o.path}` | "
+            f"{'' if o.deprecated is None else 'Deprecated. '}{o.summary} |"
+            for o in by_tag[tag]
         ]
         sections.append(
             "\n".join(

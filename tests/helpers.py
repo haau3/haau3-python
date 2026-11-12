@@ -13,7 +13,10 @@ import httpx2
 from haau3 import AsyncHaau3, Haau3
 
 ROOT = Path(__file__).resolve().parent.parent
-KEY = "haau3_sk_test_key_that_must_never_be_printed"
+KEY = "haau3_sk_live_key_that_must_never_be_printed"
+"""A live key, which goes to production: the planted marker every test checks is never printed."""
+TEST_KEY = "haau3_sk_test_key_that_must_never_be_printed"
+"""A test key, which goes to the Sandbox: the same marker in the other mode."""
 REQUEST_ID = "6b1f3c2e-4d5a-4e6f-8a9b-0c1d2e3f4a5b"
 SPEC: dict[str, Any] = json.loads((ROOT / "openapi" / "openapi.json").read_text(encoding="utf-8"))
 

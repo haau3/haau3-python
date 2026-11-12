@@ -47,15 +47,25 @@ def _elapsed_ms(started: float) -> int:
     return round((time.monotonic() - started) * 1000)
 
 
+FIRST_ADDRESS = "/v1/sandbox/fhir/r4"
+"""The Sandbox's first address, which its own host does not serve: there, an operation of the first
+address goes to the same operation at production's path, which answers it the same way."""
+
+
 @final
 @dataclass(frozen=True)
 class Config:
-    key: Secret
+    key: Secret | None
+    """None only in the Sandbox, which answers with no key."""
     base_url: str
     timeout: float
     max_retries: int
     user_agent: str
     """The SDK's User-Agent, with the caller's `app_info` after it."""
+    environment: Literal["production", "sandbox"] = "production"
+    """The environment the client calls: the one named, else the key's mode."""
+    on_the_sandbox_host: bool = False
+    """Whether requests go to the Sandbox's own host, which does not serve its first address."""
 
 
 @final
@@ -124,7 +134,7 @@ class Sent:
     def __repr__(self) -> str:
         return f"<answer {self.status}>"
 
-    def context(self, missing: str, expects: Sequence[str] = ()) -> Context:
+    def context(self, missing: str, expects: Sequence[str] = (), *, no_key: bool = False) -> Context:
         return Context(
             request_id=self.headers.get("x-request-id"),
             correlation_id=self.headers.get("x-correlation-id"),
@@ -134,6 +144,7 @@ class Sent:
             missing=missing,
             expects=expects,
             reason_phrase=self.reason_phrase,
+            no_key=no_key,
         )
 
     def response(self, data: T) -> Response[T]:
@@ -170,19 +181,19 @@ def _problem(header: DeclaredHeader, declared: HeldHeaders) -> str | None:
     return None
 
 
-def declared_headers(operation: Operation[Any], options: Options) -> HeldHeaders | None:
+def declared_headers(operation: Operation[Any], options: Options, label: str) -> HeldHeaders | None:
     """The headers `operation` declares, from the call's own keywords, by header name and lower-cased.
 
     Each value set is checked against the spec's schema for it, and one the API would refuse is refused
     here, before anything is sent, in a message that names the keyword, never the value: a header such
-    as `Payer-Authorization` carries a credential.
+    as `Payer-Authorization` carries a credential. `label` names the request as it would be sent.
     """
     if options.declared is None or not operation.headers:
         return None
     for header in operation.headers:
         problem = _problem(header, options.declared)
         if problem is not None:
-            raise Haau3Error(f"{operation.label} was not sent: {header.option} {problem}")
+            raise Haau3Error(f"{label} was not sent: {header.option} {problem}")
     values = options.declared.reveal()
     return HeldHeaders(
         {h.wire.lower(): values[h.option] for h in operation.headers if values.get(h.option) is not None}
@@ -207,10 +218,11 @@ def prepare(
     headers = httpx2.Headers(
         {
             "accept": FHIR_JSON if fhir else "application/json",
-            "authorization": f"Bearer {config.key.reveal()}",
             "user-agent": config.user_agent,
         }
     )
+    if config.key is not None:
+        headers["authorization"] = f"Bearer {config.key.reveal()}"
     if content is not None:
         headers["content-type"] = FHIR_JSON if fhir else "application/json"
     for header, value in (options.extra_headers or {}).items():
@@ -253,13 +265,14 @@ def raw_content(body: object) -> Hidden[bytes] | None:
     return body_bytes(Hidden(body))
 
 
-def answer_of(name: str, expects: Sequence[str], sent: Sent) -> Hidden[object]:
-    """The answer of a sent request, held, or the error it is, raised."""
+def answer_of(name: str, expects: Sequence[str], sent: Sent, *, no_key: bool = False) -> Hidden[object]:
+    """The answer of a sent request, held, or the error it is, raised. `no_key` is whether the request
+    went with no key, which a 401 then says."""
     verdict = judge(
         name,
         sent.status,
         parse_body(sent.content, sent.headers.get("content-type")),
-        sent.context("a body that is not JSON", expects),
+        sent.context("a body that is not JSON", expects, no_key=no_key),
     )
     if isinstance(verdict, Hidden):
         return verdict
@@ -304,13 +317,35 @@ class _Engine:
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self._config.base_url}>"
 
+    def _path(self, operation: Operation[Any]) -> str:
+        """The path an operation is sent to: its own, or on the Sandbox's own host, which does not serve
+        the first address, the same operation's at production's path."""
+        path = operation.path
+        if self._config.on_the_sandbox_host and path.startswith(f"{FIRST_ADDRESS}/"):
+            return f"/v1/fhir/r4{path[len(FIRST_ADDRESS) :]}"
+        return path
+
+    def label(self, operation: Operation[Any]) -> str:
+        """How a message names the operation: its method and the path it is sent to, `{id}` left in."""
+        return f"{operation.method} {self._path(operation)}"
+
+    @property
+    def no_key(self) -> bool:
+        """Whether the client sends no key: in the Sandbox, which answers without one."""
+        return self._config.key is None
+
     def operation_url(
         self, operation: Operation[Any], path_values: Sequence[str], query: Iterable[tuple[str, QueryValue]]
     ) -> str:
-        return url_on_base(self._config.base_url, fill_path(operation.path, path_values), encode_query(query))
+        return url_on_base(
+            self._config.base_url,
+            fill_path(self._path(operation), path_values),
+            encode_query(query),
+            keyed=self._config.key is not None,
+        )
 
     def resolve(self, path_or_url: str, query: Iterable[tuple[str, QueryValue]] = ()) -> str:
-        return url_on_base(self._config.base_url, path_or_url, encode_query(query))
+        return url_on_base(self._config.base_url, path_or_url, encode_query(query), keyed=self._config.key is not None)
 
     def name(self, method: Method, url: str) -> str:
         return f"{method} {path_of(self._config.base_url, url)}"
@@ -338,19 +373,20 @@ class SyncEngine(_Engine):
         options: Options,
     ) -> Response[T]:
         url = self.operation_url(operation, path_values, query)
-        declared = declared_headers(operation, options)
-        sent = self.send(operation.method, url, body_bytes(body), options, operation.label, declared)
-        return sent.response(cast("T", answer_of(operation.label, operation.expects, sent).reveal()))
+        label = self.label(operation)
+        declared = declared_headers(operation, options, label)
+        sent = self.send(operation.method, url, body_bytes(body), options, label, declared)
+        return sent.response(cast("T", answer_of(label, operation.expects, sent, no_key=self.no_key).reveal()))
 
     def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
         checked, bundle = batch_bundle(calls)
         sent = self.send("POST", self.resolve(FHIR_BASE), body_bytes(bundle), options, "POST /v1/fhir/r4")
-        answer = answer_of("POST /v1/fhir/r4", ("Bundle",), sent)
+        answer = answer_of("POST /v1/fhir/r4", ("Bundle",), sent, no_key=self.no_key)
         return sent.response(read_batch(checked, answer, status=sent.status, context=sent.context("no resource")))
 
     def next_page(self, url: str, options: Options) -> Hidden[object]:
         name = self.name("GET", url)
-        return answer_of(name, ("Bundle",), self.send("GET", url, None, options, name))
+        return answer_of(name, ("Bundle",), self.send("GET", url, None, options, name), no_key=self.no_key)
 
     def request(
         self, method: Method, path: str, query: Iterable[tuple[str, QueryValue]], body: object, options: Options
@@ -445,19 +481,20 @@ class AsyncEngine(_Engine):
         options: Options,
     ) -> Response[T]:
         url = self.operation_url(operation, path_values, query)
-        declared = declared_headers(operation, options)
-        sent = await self.send(operation.method, url, body_bytes(body), options, operation.label, declared)
-        return sent.response(cast("T", answer_of(operation.label, operation.expects, sent).reveal()))
+        label = self.label(operation)
+        declared = declared_headers(operation, options, label)
+        sent = await self.send(operation.method, url, body_bytes(body), options, label, declared)
+        return sent.response(cast("T", answer_of(label, operation.expects, sent, no_key=self.no_key).reveal()))
 
     async def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
         checked, bundle = batch_bundle(calls)
         sent = await self.send("POST", self.resolve(FHIR_BASE), body_bytes(bundle), options, "POST /v1/fhir/r4")
-        answer = answer_of("POST /v1/fhir/r4", ("Bundle",), sent)
+        answer = answer_of("POST /v1/fhir/r4", ("Bundle",), sent, no_key=self.no_key)
         return sent.response(read_batch(checked, answer, status=sent.status, context=sent.context("no resource")))
 
     async def next_page(self, url: str, options: Options) -> Hidden[object]:
         name = self.name("GET", url)
-        return answer_of(name, ("Bundle",), await self.send("GET", url, None, options, name))
+        return answer_of(name, ("Bundle",), await self.send("GET", url, None, options, name), no_key=self.no_key)
 
     async def request(
         self, method: Method, path: str, query: Iterable[tuple[str, QueryValue]], body: object, options: Options

@@ -11,6 +11,9 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, overload
 
+import warnings
+from typing_extensions import deprecated
+
 from . import fhir
 from ._batch import BatchResult, Call
 from ._body import HeldHeaders, Hidden
@@ -620,6 +623,10 @@ class SyncMethods:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     def sandbox_metadata(
         self,
         *,
@@ -634,10 +641,19 @@ class SyncMethods:
 
         `GET /v1/sandbox/fhir/r4/metadata`, https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement
         """
+        warnings.warn(
+            "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._engine.call(
             SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -663,6 +679,11 @@ class SyncMethods:
         del body
         declared = HeldHeaders({"payer_authorization": payer_authorization})
         del payer_authorization
+        warnings.warn(
+            "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._engine.call(
             SANDBOX_PROCESS_MESSAGE,
             (),
@@ -2288,6 +2309,10 @@ class AsyncMethods:
             )
         ).data
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     async def sandbox_metadata(
         self,
         *,
@@ -2302,12 +2327,21 @@ class AsyncMethods:
 
         `GET /v1/sandbox/fhir/r4/metadata`, https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement
         """
+        warnings.warn(
+            "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return (
             await self._engine.call(
                 SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
             )
         ).data
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     async def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -2333,6 +2367,11 @@ class AsyncMethods:
         del body
         declared = HeldHeaders({"payer_authorization": payer_authorization})
         del payer_authorization
+        warnings.warn(
+            "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return (
             await self._engine.call(
                 SANDBOX_PROCESS_MESSAGE,
@@ -3796,6 +3835,10 @@ class SyncWithResponse:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     def sandbox_metadata(
         self,
         *,
@@ -3805,10 +3848,19 @@ class SyncWithResponse:
         extra_headers: Mapping[str, str] | None = None,
     ) -> Response[fhir.CapabilityStatement]:
         """`Haau3.sandbox_metadata`, returning a `Response` with the request id and timing as well as the answer."""
+        warnings.warn(
+            "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._engine.call(
             SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -3825,6 +3877,11 @@ class SyncWithResponse:
         del body
         declared = HeldHeaders({"payer_authorization": payer_authorization})
         del payer_authorization
+        warnings.warn(
+            "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._engine.call(
             SANDBOX_PROCESS_MESSAGE,
             (),
@@ -4937,6 +4994,10 @@ class AsyncWithResponse:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     async def sandbox_metadata(
         self,
         *,
@@ -4946,10 +5007,19 @@ class AsyncWithResponse:
         extra_headers: Mapping[str, str] | None = None,
     ) -> Response[fhir.CapabilityStatement]:
         """`AsyncHaau3.sandbox_metadata`, returning a `Response` with the request id and timing as well as the answer."""
+        warnings.warn(
+            "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return await self._engine.call(
             SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+        category=None,
+    )
     async def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -4966,6 +5036,11 @@ class AsyncWithResponse:
         del body
         declared = HeldHeaders({"payer_authorization": payer_authorization})
         del payer_authorization
+        warnings.warn(
+            "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return await self._engine.call(
             SANDBOX_PROCESS_MESSAGE,
             (),

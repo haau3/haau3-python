@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import inspect
 import json
 import re
@@ -63,7 +64,8 @@ async def test_each_operation_sends_its_example_and_returns_its_answer(
     path_values, kwargs, sent = _case(op)
     body = [example_body(op)] if "requestBody" in op else []
 
-    result = await client(naming.method_name(operation_id), *path_values, *body, **kwargs)
+    with _warns_if_deprecated(op):
+        result = await client(naming.method_name(operation_id), *path_values, *body, **kwargs)
     assert result == expected
     assert len(recorder.requests) == 1
     request = recorder.last
@@ -84,11 +86,19 @@ async def test_each_operation_sends_its_example_and_returns_its_answer(
         assert "content-type" not in request.headers
         assert request.content == b""
 
-    response = await client.with_response(naming.method_name(operation_id), *path_values, *body, **kwargs)
+    with _warns_if_deprecated(op):
+        response = await client.with_response(naming.method_name(operation_id), *path_values, *body, **kwargs)
     assert response.data == expected
     assert response.status == 200
     assert response.request_id == REQUEST_ID
     assert response.attempts == 1
+
+
+def _warns_if_deprecated(op: dict[str, Any]) -> contextlib.AbstractContextManager[object]:
+    """A deprecated operation's method warns, naming what to call instead; any other warns nothing."""
+    if op.get("deprecated") is True:
+        return pytest.warns(DeprecationWarning, match=r"^Call `[a-z_]+` on the Sandbox's own host")
+    return contextlib.nullcontext()
 
 
 def _public(cls: type) -> set[str]:
@@ -111,6 +121,7 @@ def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -
         "designations",
         "request",
         "close",
+        "environment",
         "base_url",
         "timeout",
         "max_retries",

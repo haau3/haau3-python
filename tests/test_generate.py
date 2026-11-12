@@ -280,3 +280,40 @@ def test_the_generator_refuses_a_spec_without_the_batch() -> None:
     del spec["paths"]["/v1/fhir/r4"]
     with pytest.raises(ValueError, match="no batch at POST /v1/fhir/r4"):
         generate.Spec(spec)
+
+
+# --- deprecation ---------------------------------------------------------------------------------
+
+_IDS = {"oldThing", "newThing", "otherOldThing"}
+_DEPRECATED = {"oldThing", "otherOldThing"}
+
+
+def _op(**fields: object) -> dict[str, Any]:
+    return {"operationId": "oldThing", "description": "Does a thing.", **fields}
+
+
+def test_a_deprecated_operations_words_name_its_replacement_as_a_python_method() -> None:
+    assert generate.deprecation(_op(), _IDS, _DEPRECATED) is None
+    assert generate.deprecation(_op(deprecated=False), _IDS, _DEPRECATED) is None
+    found = generate.deprecation(
+        _op(deprecated=True, description="Does a thing. Deprecated: call `newThing`\ninstead."), _IDS, _DEPRECATED
+    )
+    assert found == ("Does a thing.", "Call `new_thing` instead.")
+
+
+@pytest.mark.parametrize(
+    ("fields", "message"),
+    [
+        ({"deprecated": "yes"}, "where the spec defines only true or false"),
+        ({"deprecated": None}, "where the spec defines only true or false"),
+        ({"deprecated": True}, "needs exactly one passage"),
+        ({"deprecated": True, "description": "Deprecated: a. Deprecated: `newThing`."}, "needs exactly one passage"),
+        ({"deprecated": True, "description": "Deprecated: call `somethingElse`."}, "that is not deprecated"),
+        ({"deprecated": True, "description": "Deprecated: call `oldThing`."}, "that is not deprecated"),
+        ({"deprecated": True, "description": "Deprecated: call `otherOldThing`."}, "that is not deprecated"),
+    ],
+    ids=["a-string", "null", "no-passage", "two-passages", "unknown", "itself", "another-deprecated"],
+)
+def test_anything_else_stops_the_generator(fields: dict[str, object], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        generate.deprecation(_op(**fields), _IDS, _DEPRECATED)

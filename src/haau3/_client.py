@@ -12,7 +12,7 @@ import httpx2
 
 from ._app_info import AppInfo, user_agent
 from ._body import Hidden, Secret
-from ._encode import QueryValue, checked_base_url
+from ._encode import QueryValue, checked_base_url, origin
 from ._errors import Haau3Error, NoAnswerError
 from ._json import as_dict, as_list
 from ._methods import AsyncMethods, AsyncWithResponse, SyncMethods, SyncWithResponse
@@ -32,43 +32,196 @@ if TYPE_CHECKING:
 
     from .fhir import Bundle, Dosage, Parameters, ParametersParameter, Resource
 
-DEFAULT_BASE_URL = "https://api.haau3.com"
+Environment = Literal["production", "sandbox"]
+"""The API's two environments: `production` at https://api.haau3.com, and `sandbox` at
+https://sandbox.haau3.com, which serves production's paths with fixed answers and synthetic data, to
+build and test against."""
+
+ENVIRONMENTS: dict[Environment, str] = {
+    "production": "https://api.haau3.com",
+    "sandbox": "https://sandbox.haau3.com",
+}
+"""Where each environment is."""
+
+DEFAULT_BASE_URL = ENVIRONMENTS["production"]
 DEFAULT_TIMEOUT = 65.0
 """Seconds one attempt may take. The API gives a batch 60 seconds, so this is a little longer."""
 DEFAULT_MAX_RETRIES = 1
 
+NO_KEY = (
+    "No API key. Set HAAU3_API_KEY, or pass it as api_key. Create a free key at "
+    "https://platform.haau3.com (see https://docs.haau3.com/authentication). To call the Sandbox with no "
+    'key, set HAAU3_ENVIRONMENT=sandbox, or pass environment="sandbox".'
+)
+"""What a client with no key says: both ways to give one, where one comes from, and the Sandbox's way
+to call with none."""
 
-def _base_url(given: str | None) -> str:
-    """The option's base URL, else HAAU3_BASE_URL's, else the API's, each checked by its own name."""
+KeyMode = Literal["live", "test", "older"]
+
+
+def _key_mode(key: str) -> KeyMode:
+    """A key's mode, from its prefix alone: the API checks the rest."""
+    if key.startswith("haau3_sk_test_"):
+        return "test"
+    if key.startswith("haau3_sk_live_"):
+        return "live"
+    return "older"
+
+
+def _checked_environment(value: object, source: str) -> Environment:
+    """An environment, refused unless it is one of the two. The variable is read trimmed and in any
+    case, as a shell or an env file may write it; the keyword is typed and taken as it is. The value is
+    never repeated, since a variable set by mistake can hold anything."""
+    read = value.strip().lower() if source == "HAAU3_ENVIRONMENT" and isinstance(value, str) else value
+    if read == "production":
+        return "production"
+    if read == "sandbox":
+        return "sandbox"
+    raise Haau3Error(f'{source} takes "production" or "sandbox", and this is neither.')
+
+
+def _held_key(api_key: object) -> tuple[Secret | None, str]:
+    """The key, trimmed and held where nothing prints it, from the keyword or else HAAU3_API_KEY, with
+    where it came from; None when there is none.
+
+    A value that is not a string, or that carries anything before its `haau3_sk_` prefix (quotes an env
+    file kept, or "Bearer "), is refused, naming only where it came from. Every plain copy is gone
+    before anything is raised, so a traceback that shows each frame's local variables shows none.
+    """
+    source = "api_key" if api_key is not None else "HAAU3_API_KEY"
+    raw = api_key if api_key is not None else os.environ.get("HAAU3_API_KEY")
+    del api_key
+    if raw is not None and not isinstance(raw, str):
+        del raw
+        raise Haau3Error(f"{source} takes a string.")
+    text = (raw or "").strip()
+    del raw
+    before_prefix = text.find("haau3_sk_") > 0
+    held = Secret(text) if text else None
+    del text
+    if before_prefix:
+        raise Haau3Error(
+            f'The key in {source} has something before its haau3_sk_ prefix, such as quotes or "Bearer ". '
+            "Set the key alone."
+        )
+    return held, source
+
+
+def _environment_at(base_url: str) -> Environment | None:
+    """The environment whose own address a base URL is, by its origin, or None for any other host."""
+    there = origin(base_url)
+    for name, address in ENVIRONMENTS.items():
+        if origin(address) == there:
+            return name
+    return None
+
+
+_ADDRESS_OF: dict[Environment, str] = {
+    "production": "production's address, https://api.haau3.com",
+    "sandbox": "the Sandbox's address, https://sandbox.haau3.com",
+}
+_NAMED: dict[Environment, str] = {"production": "production", "sandbox": "the Sandbox"}
+
+
+def _mismatch(mode: KeyMode, key_from: str, environment: Environment, named_in: str) -> str | None:
+    """Why a key and a named environment cannot go together, or None when they can. The key is named
+    by where it came from and its kind, never by its value, and the way to call with no key is the one
+    its source needs."""
+    with_no_key = (
+        "unset HAAU3_API_KEY to call it with no key"
+        if key_from == "HAAU3_API_KEY"
+        else "pass no key to call it with none"
+    )
+    if environment == "production" and mode == "test":
+        return (
+            f"The key in {key_from} is a test key (haau3_sk_test_…), which works only in the Sandbox, and "
+            f"{named_in} names production. Use a live key there, or name the Sandbox."
+        )
+    if environment == "sandbox" and mode == "live":
+        return (
+            f"The key in {key_from} is a live key (haau3_sk_live_…), which does not work in the Sandbox, and "
+            f"{named_in} names the Sandbox. Use a test key there, or {with_no_key}."
+        )
+    if environment == "sandbox" and mode == "older":
+        return (
+            f"The key in {key_from} was made before test and live keys, so it does not work in the Sandbox, and "
+            f"{named_in} names the Sandbox. Create a test key at https://platform.haau3.com, or {with_no_key}."
+        )
+    return None
+
+
+def _base_url(given: str | None, environment: Environment) -> tuple[str, str]:
+    """The option's base URL, else HAAU3_BASE_URL's, else the environment's, each checked by its own
+    name, with where it came from."""
     if given is not None:
-        return checked_base_url(given, "base_url")
+        return checked_base_url(given, "base_url"), "base_url"
     from_env = os.environ.get("HAAU3_BASE_URL") or None
     if from_env is not None:
-        return checked_base_url(from_env, "HAAU3_BASE_URL")
-    return DEFAULT_BASE_URL
+        return checked_base_url(from_env, "HAAU3_BASE_URL"), "HAAU3_BASE_URL"
+    return ENVIRONMENTS[environment], "base_url"
 
 
 def _config(
-    api_key: str | None,
+    key: Secret | None,
+    key_from: str,
+    environment: Environment | None,
     base_url: str | None,
     timeout: float | None,
     max_retries: int | None,
     app_info: AppInfo | None,
 ) -> Config:
+    """The client's settings. `key` is already held, so no frame here holds a plain copy of it."""
+    # The variable is read only when no keyword names the environment, so a stray one never stops a
+    # client that says what it calls.
+    source = "environment" if environment is not None else "HAAU3_ENVIRONMENT"
+    from_env = os.environ.get("HAAU3_ENVIRONMENT") or None if environment is None else None
+    named = (
+        _checked_environment(environment, "environment")
+        if environment is not None
+        else (_checked_environment(from_env, "HAAU3_ENVIRONMENT") if from_env is not None else None)
+    )
+    if key is None and named != "sandbox":
+        raise Haau3Error(NO_KEY)
+    mode = _key_mode(key.reveal()) if key is not None else None
+    refused = _mismatch(mode, key_from, named, source) if mode is not None and named is not None else None
+    if refused is not None:
+        raise Haau3Error(refused)
+    chosen: Environment = named if named is not None else ("sandbox" if mode == "test" else "production")
+    where, base_from = _base_url(base_url, chosen)
+    # A base URL that is one environment's own address is that environment. A named environment must
+    # agree with it, and the Sandbox's address takes test keys only. Production's still takes a test
+    # key, at the Sandbox's first address, until that address goes.
+    at = _environment_at(where)
+    if at is not None and named is not None and named != at:
+        raise Haau3Error(
+            f"{source} names {_NAMED[named]}, and {base_from} is {_ADDRESS_OF[at]}. "
+            "Name one environment, or a base URL that is neither's."
+        )
+    if at == "sandbox" and mode is not None and mode != "test":
+        kind = "is a live key (haau3_sk_live_…)" if mode == "live" else "was made before test and live keys"
+        raise Haau3Error(
+            f"The key in {key_from} {kind}, and {base_from} is {_ADDRESS_OF['sandbox']}, which takes test keys "
+            "only. Use a test key there."
+        )
+    return Config(
+        key=key,
+        base_url=where,
+        timeout=float(timeout) if timeout is not None else DEFAULT_TIMEOUT,
+        max_retries=max_retries if max_retries is not None else DEFAULT_MAX_RETRIES,
+        user_agent=user_agent(app_info),
+        environment=at if at is not None else chosen,
+        # The Sandbox's own host, which does not serve its first address: its address, or a stand-in
+        # named with the Sandbox as the environment.
+        on_the_sandbox_host=at == "sandbox" or (at is None and named == "sandbox"),
+    )
+
+
+def _server_only() -> None:
+    """Refuses a browser (Pyodide), where a key would be public."""
     if sys.platform == "emscripten":
         raise Haau3Error(
             "haau3 runs on a server only: an API key in a browser is public. Call the API from your server."
         )
-    key = api_key if api_key is not None else (os.environ.get("HAAU3_API_KEY") or None)
-    if not key:
-        raise Haau3Error("No API key: pass api_key, or set HAAU3_API_KEY.")
-    return Config(
-        key=Secret(key),
-        base_url=_base_url(base_url),
-        timeout=float(timeout) if timeout is not None else DEFAULT_TIMEOUT,
-        max_retries=max_retries if max_retries is not None else DEFAULT_MAX_RETRIES,
-        user_agent=user_agent(app_info),
-    )
 
 
 def _next_link(page: Hidden[object]) -> str | None:
@@ -129,6 +282,7 @@ class Haau3(SyncMethods):
         self,
         *,
         api_key: str | None = None,
+        environment: Environment | None = None,
         base_url: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
@@ -137,9 +291,16 @@ class Haau3(SyncMethods):
     ) -> None:
         """Every option has a default.
 
-        - `api_key`: your platform API key. Defaults to `os.environ["HAAU3_API_KEY"]`.
-        - `base_url`: where the API is. Defaults to `os.environ["HAAU3_BASE_URL"]`, then
-          `https://api.haau3.com`. The API key is sent there only.
+        - `api_key`: your platform API key. Defaults to `os.environ["HAAU3_API_KEY"]`. Its mode picks
+          the environment: a test key (`haau3_sk_test_…`) sends every call to the Sandbox, and a live
+          key (`haau3_sk_live_…`), or one made before test and live keys, to production.
+        - `environment`: `"production"` or `"sandbox"`. Defaults to `os.environ["HAAU3_ENVIRONMENT"]`,
+          then the key's mode. Name `"sandbox"` to call the Sandbox with no key. A key of the other
+          mode is refused here, before anything is sent.
+        - `base_url`: where the API is, for a stand-in or a proxy. Defaults to
+          `os.environ["HAAU3_BASE_URL"]`, then the environment's address: `https://api.haau3.com` or
+          `https://sandbox.haau3.com`. The API key is sent there only, and the environment's rules for
+          the key still hold.
         - `timeout`: seconds one attempt may take. Defaults to 65.
         - `max_retries`: retries after a timeout, a network failure, a 429 or a 5xx. Defaults to 1.
         - `http_client`: an `httpx2.Client` of your own, for a proxy, certificates or limits. The SDK
@@ -148,14 +309,23 @@ class Haau3(SyncMethods):
           `{"name": "my-plugin", "version": "1.2.0"}`. A value the header cannot carry is refused here,
           before anything is sent. A `user-agent` in a call's `extra_headers` replaces the whole value.
         """
-        config = _config(api_key, base_url, timeout, max_retries, app_info)
+        _server_only()
+        key, key_from = _held_key(api_key)
+        del api_key  # held from here on, so no refusal below has a plain copy in this frame
+        config = _config(key, key_from, environment, base_url, timeout, max_retries, app_info)
         _checked_client(http_client, httpx2.Client)
         self._engine = SyncEngine(config, http_client)
         self.with_response: SyncWithResponse = SyncWithResponse(self._engine)
         """Every method again, each returning a `Response` with the request id and timing as well as the answer."""
 
     @property
+    def environment(self) -> Environment:
+        """The environment the client calls: the one named, else the key's mode."""
+        return self._engine.config.environment
+
+    @property
     def base_url(self) -> str:
+        """Where requests go."""
         return self._engine.config.base_url
 
     @property
@@ -167,6 +337,10 @@ class Haau3(SyncMethods):
         return self._engine.config.max_retries
 
     def __repr__(self) -> str:
+        # A client its constructor refused has no engine, and a traceback that shows each frame's
+        # local variables prints it all the same (Python 3.10 does not catch a repr that raises).
+        if "_engine" not in vars(self):
+            return "Haau3(not made)"
         return f"Haau3(base_url={self.base_url!r})"
 
     def close(self) -> None:
@@ -386,6 +560,7 @@ class AsyncHaau3(AsyncMethods):
         self,
         *,
         api_key: str | None = None,
+        environment: Environment | None = None,
         base_url: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
@@ -393,14 +568,23 @@ class AsyncHaau3(AsyncMethods):
         app_info: AppInfo | None = None,
     ) -> None:
         """Every option has a default, as on `Haau3`; `http_client` is an `httpx2.AsyncClient` of your own."""
-        config = _config(api_key, base_url, timeout, max_retries, app_info)
+        _server_only()
+        key, key_from = _held_key(api_key)
+        del api_key  # held from here on, so no refusal below has a plain copy in this frame
+        config = _config(key, key_from, environment, base_url, timeout, max_retries, app_info)
         _checked_client(http_client, httpx2.AsyncClient)
         self._engine = AsyncEngine(config, http_client)
         self.with_response: AsyncWithResponse = AsyncWithResponse(self._engine)
         """Every method again, each returning a `Response` with the request id and timing as well as the answer."""
 
     @property
+    def environment(self) -> Environment:
+        """The environment the client calls: the one named, else the key's mode."""
+        return self._engine.config.environment
+
+    @property
     def base_url(self) -> str:
+        """Where requests go."""
         return self._engine.config.base_url
 
     @property
@@ -412,6 +596,9 @@ class AsyncHaau3(AsyncMethods):
         return self._engine.config.max_retries
 
     def __repr__(self) -> str:
+        # As Haau3's: a client its constructor refused has no engine.
+        if "_engine" not in vars(self):
+            return "AsyncHaau3(not made)"
         return f"AsyncHaau3(base_url={self.base_url!r})"
 
     async def close(self) -> None:

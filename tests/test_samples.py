@@ -213,7 +213,15 @@ def test_each_sample_sends_its_example_request_and_prints_what_came_back(
     source = _sample(method, path)
     files = {"request.json": json.dumps(example_body(op))} if 'open("request.json")' in source else None
     result = _run(source, stand_in, files)
-    assert result.stderr == ""
+    # A deprecated operation's sample still runs, and Python prints its warning, naming what to call
+    # instead, once; nothing else is printed.
+    warning = re.escape("DeprecationWarning: Call `") if op.get("deprecated") is True else None
+    if warning is None:
+        assert result.stderr == ""
+    else:
+        assert re.search(warning, result.stderr)
+        assert result.stderr.count("DeprecationWarning") == 1
+        assert "Traceback" not in result.stderr
     assert result.returncode == 0
     assert result.stdout.rstrip("\n") == _expected_output(op_id, op)
 
@@ -238,8 +246,10 @@ KEY_MODE = (
 def _on_this_key(op_id: str, path: str) -> tuple[str, str | None] | None:
     """What a sample must do on this key: ("answers", None), or ("refused", its code or None); None when not run."""
     sandbox = path.startswith("/v1/sandbox/")
-    if KEY_MODE == "test" and not sandbox:
-        return ("refused", "test-key-outside-sandbox")
+    # A test key sends every sample to the Sandbox's own host, which answers each example request with
+    # its fixed answer, and the first address's two at the same operations there.
+    if KEY_MODE == "test":
+        return ("answers", None)
     if KEY_MODE == "live" and sandbox:
         return ("refused", "live-key-in-sandbox")
     if op_id == "processMessage":
@@ -248,9 +258,9 @@ def _on_this_key(op_id: str, path: str) -> tuple[str, str | None] | None:
 
 
 @pytest.mark.live
-@pytest.mark.skipif(not LIVE, reason="set HAAU3_LIVE_TEST=1 and HAAU3_API_KEY to call the production API")
+@pytest.mark.skipif(not LIVE, reason="set HAAU3_LIVE_TEST=1 and HAAU3_API_KEY to call the API the key picks")
 @pytest.mark.parametrize(("op_id", "method", "path", "op"), OPERATIONS, ids=[o[0] for o in OPERATIONS])
-def test_each_sample_against_production(op_id: str, method: str, path: str, op: dict[str, Any]) -> None:
+def test_each_sample_against_the_api_its_key_picks(op_id: str, method: str, path: str, op: dict[str, Any]) -> None:
     from haau3._judge import _FORBIDDEN_GENERAL, _FORBIDDEN_REASONS
 
     expected = _on_this_key(op_id, path)
@@ -261,7 +271,11 @@ def test_each_sample_against_production(op_id: str, method: str, path: str, op: 
     result = _run(source, None, files, LIVE_KEY)
     outcome, code = expected
     if outcome == "answers":
-        assert result.stderr == ""
+        # A deprecated operation's sample prints its warning once, and nothing else.
+        if op.get("deprecated") is True:
+            assert result.stderr.count("DeprecationWarning") == 1
+        else:
+            assert result.stderr == ""
         assert result.returncode == 0
         assert result.stdout.strip() != ""
         # A search that finds nothing still answers: its example found something, so this must too.
