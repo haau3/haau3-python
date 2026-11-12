@@ -59,7 +59,7 @@ def make_call(
     body: Hidden[object] | None,
 ) -> Call[T]:
     """The entry for one operation: the same path and query a direct call sends, relative to the FHIR base."""
-    path = fill_path(operation.path, path_values)
+    path = fill_path(operation.path, path_values, operation.method)
     relative = path[len(FHIR_BASE) + 1 :]
     q = encode_query(query)
     return Call(operation, f"{relative}?{q}" if q else relative, body)

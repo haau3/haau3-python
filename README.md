@@ -245,6 +245,7 @@ try:
     client.read_insurance_plan(plan_id)
 except RefusedError as error:
     print(error.status)  # 400, 404, 410 and so on
+    print(error.code)  # why, when the API names it: "not-the-example" from the Sandbox
     print(error.outcome)  # the OperationOutcome; Scheduling's errors carry `problem`
 except NoAnswerError as error:
     print(error.reason)  # "timeout", "network", "rate-limited", "unavailable", "server-error" or "unreadable"
@@ -252,7 +253,7 @@ except NoAnswerError as error:
     print(error.detail)  # for a timeout or a network failure: what failed, such as "ConnectError: Connection refused"
 except ForbiddenError as error:
     # 403: the key was accepted, and it may not make this request. Why, when the API names it:
-    # "test-key-outside-sandbox", "live-key-in-sandbox" or "phi-agreement-required"
+    # "test-key-outside-sandbox", "live-key-in-sandbox", "phi-agreement-required" or "not-open-to-customers"
     print(error.code)
 except AuthError:
     pass  # 401: the key was missing, unknown or revoked
@@ -265,8 +266,12 @@ work there (`live-key-in-sandbox`: send a test key). The client sends each key t
 environment, so you meet these with a `base_url` of your own, or by calling the deprecated
 `sandbox_…` methods with a live key. `phi-agreement-required` means the organization
 may not send patient data, and not every resource in the request is labelled as test data:
-`mark_as_test_data` labels made-up data. Without a code, the body says what the organization may not
-do.
+`mark_as_test_data` labels made-up data. `not-open-to-customers` means the operation is not yet
+open to customers: an expected answer, not a fault in the request. Without a code, the body says what
+the organization may not do.
+
+A `RefusedError`'s `code` names the API's reason when it gives one: `not-the-example` from the
+Sandbox, which answers each operation's documented example only and refuses any other request.
 
 A client that cannot be made raises a `Haau3Error` before anything is sent, with a `code` to branch on,
 which the `ClientErrorCode` type lists. The message says the same for a person and names where the
@@ -493,6 +498,27 @@ the spec marks `x-haau3-batchable: false`.
 
 To send a batch `Bundle` you built yourself, `fhir_batch()` takes it and returns the
 `batch-response` as it is.
+
+## Any operation by its path
+
+`get()` and `post()` call an operation by its path: one this version of the SDK has no method for
+yet, or one a tool found in the spec. Each takes the path as the spec writes it, a value for each
+`{name}` in `path_params`, the `query`, the `body` (for `post()`) and the FHIR types the answer may
+be in `expects`, beside every per-call option. They raise the same errors as every operation's own
+method, and `with_response.get()` and `with_response.post()` return the request id and timing too:
+
+```python
+practitioner = client.get(
+    "/v1/fhir/r4/Practitioner/{id}",
+    path_params={"id": "Practitioner-1093209884"},
+    expects=["Practitioner"],
+)
+metadata = client.with_response.get("/v1/fhir/r4/metadata", expects=["CapabilityStatement"])
+print(metadata.request_id)
+```
+
+Each value is encoded into the path, and an error's message names the path as you wrote it, never a
+value. A `{name}` with no value, or a value with no `{name}`, is refused before anything is sent.
 
 ## Any request
 

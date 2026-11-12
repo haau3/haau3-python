@@ -120,6 +120,8 @@ def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -
         "validation_result",
         "designations",
         "request",
+        "get",
+        "post",
         "close",
         "environment",
         "base_url",
