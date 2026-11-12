@@ -275,5 +275,126 @@ async def test_request_is_sent_as_it_is_given(kind: str) -> None:
 def test_a_client_with_no_key_prints_and_pickles_no_key(cls: type) -> None:
     client = cls(environment="sandbox")
     assert repr(client) == f"{cls.__name__}(base_url='{SANDBOX}')"
-    assert client._engine.config.key is None  # pyright: ignore[reportPrivateUsage]
-    assert b"haau3_sk_" not in pickle.dumps(client._engine.config.environment)  # pyright: ignore[reportPrivateUsage]
+    config = client._engine.config  # pyright: ignore[reportPrivateUsage]
+    assert config.key is None
+    assert b"haau3_sk_" not in pickle.dumps(config)
+    # The control: a keyed client's settings refuse to be pickled at all, since they hold the key.
+    with pytest.raises(TypeError):
+        pickle.dumps(cls(api_key=TEST_KEY)._engine.config)  # pyright: ignore[reportPrivateUsage]
+
+
+@pytest.mark.anyio
+async def test_a_client_with_no_key_says_a_request_and_that_no_key_was_sent(kind: str) -> None:
+    client = Client(
+        kind,
+        Recorder(answer(401, {"resourceType": "OperationOutcome", "issue": []})),
+        api_key=None,
+        environment="sandbox",
+    )
+    error = await client.raises("fhir_metadata")
+    assert str(error) == "GET /v1/fhir/r4/metadata was refused: it was sent with no API key (401)."
+    refused = await client.raises("request", "GET", "https://api.haau3.com/v1/fhir/r4/metadata")
+    assert str(refused) == f"Refusing to send a request to {PRODUCTION}: the client's base_url is {SANDBOX}."
+
+
+# --- a key as the environment holds it ----------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_a_key_is_trimmed_and_sent_trimmed(kind: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HAAU3_API_KEY", f"  {TEST_KEY}\n")
+    recorder = Recorder(answer(200, CAPABILITY))
+    client = Client(kind, recorder, api_key=None)
+    assert client.inner.base_url == SANDBOX
+    await client("fhir_metadata")
+    assert recorder.last.headers["authorization"] == f"Bearer {TEST_KEY}"
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+@pytest.mark.parametrize(
+    "held", [f'"{TEST_KEY}"', f"'{KEY}'", f"Bearer {TEST_KEY}"], ids=["double", "single", "bearer"]
+)
+def test_a_key_with_anything_before_its_prefix_is_refused(
+    monkeypatch: pytest.MonkeyPatch, cls: type, held: str
+) -> None:
+    monkeypatch.setenv("HAAU3_API_KEY", held)
+    assert str(_refused(cls)) == (
+        'The key in HAAU3_API_KEY has something before its haau3_sk_ prefix, such as quotes or "Bearer ". '
+        "Set the key alone."
+    )
+    assert str(_refused(cls, api_key=held)).startswith("The key in api_key has something before")
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+def test_a_key_that_is_not_a_string_gets_the_sdks_own_error(cls: type) -> None:
+    assert str(_refused(cls, api_key=123)) == "api_key takes a string."
+    assert str(_refused(cls, api_key=TEST_KEY.encode())) == "api_key takes a string."
+
+
+# --- HAAU3_ENVIRONMENT --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+@pytest.mark.parametrize("written", ["Sandbox", " sandbox ", "SANDBOX\n"])
+def test_haau3_environment_is_read_trimmed_and_in_any_case(
+    monkeypatch: pytest.MonkeyPatch, cls: type, written: str
+) -> None:
+    monkeypatch.setenv("HAAU3_ENVIRONMENT", written)
+    assert cls().environment == "sandbox"
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+def test_haau3_environment_is_not_read_when_the_keyword_names_one(monkeypatch: pytest.MonkeyPatch, cls: type) -> None:
+    monkeypatch.setenv("HAAU3_ENVIRONMENT", "staging")
+    assert cls(api_key=KEY, environment="production").environment == "production"
+    assert str(_refused(cls, api_key=KEY)) == 'HAAU3_ENVIRONMENT takes "production" or "sandbox", and this is neither.'
+
+
+# --- a base URL that is one environment's own address -------------------------------------------
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+def test_a_base_url_on_one_environments_address_must_agree_with_the_named_environment(
+    monkeypatch: pytest.MonkeyPatch, cls: type
+) -> None:
+    assert str(_refused(cls, environment="sandbox", base_url=PRODUCTION)) == (
+        "environment names the Sandbox, and base_url is production's address, https://api.haau3.com. "
+        "Name one environment, or a base URL that is neither's."
+    )
+    monkeypatch.setenv("HAAU3_BASE_URL", SANDBOX)
+    assert str(_refused(cls, api_key=KEY, environment="production")) == (
+        "environment names production, and HAAU3_BASE_URL is the Sandbox's address, https://sandbox.haau3.com. "
+        "Name one environment, or a base URL that is neither's."
+    )
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+@pytest.mark.parametrize("base_url", [SANDBOX, "https://SANDBOX.haau3.com", "https://sandbox.haau3.com:443"])
+def test_the_sandboxs_address_takes_test_keys_only_by_its_origin(cls: type, base_url: str) -> None:
+    assert str(_refused(cls, api_key=KEY, base_url=base_url)) == (
+        "The key in api_key is a live key (haau3_sk_live_…), and base_url is the Sandbox's address, "
+        "https://sandbox.haau3.com, which takes test keys only. Use a test key there."
+    )
+    assert str(_refused(cls, api_key=OLDER_KEY, base_url=base_url)).startswith(
+        "The key in api_key was made before test and live keys, and base_url is the Sandbox's address"
+    )
+    assert cls(api_key=TEST_KEY, base_url=base_url).environment == "sandbox"
+
+
+@pytest.mark.anyio
+async def test_productions_address_still_takes_a_test_key_at_the_first_address(kind: str) -> None:
+    recorder = Recorder(answer(200, MESSAGE))
+    client = Client(kind, recorder, api_key=TEST_KEY, base_url=PRODUCTION)
+    assert client.inner.environment == "production"
+    with pytest.warns(DeprecationWarning, match=r"^Call `process_message` on the Sandbox's own host"):
+        await client("sandbox_process_message", MESSAGE)
+    assert str(recorder.last.url) == f"{PRODUCTION}/v1/sandbox/fhir/r4/$process-message"
+
+
+@pytest.mark.anyio
+async def test_the_sandboxs_address_however_it_is_written_rewrites_the_deprecated_methods(kind: str) -> None:
+    recorder = Recorder(answer(200, MESSAGE))
+    client = Client(kind, recorder, api_key=TEST_KEY, base_url="https://Sandbox.haau3.com:443")
+    with pytest.warns(DeprecationWarning, match=r"^Call `process_message` on the Sandbox's own host"):
+        await client("sandbox_process_message", MESSAGE)
+    assert recorder.last.url.path == "/v1/fhir/r4/$process-message"

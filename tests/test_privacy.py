@@ -280,6 +280,73 @@ def test_the_key_never_shows_and_is_never_pickled() -> None:
 # --- controls: the check above would catch a leak -------------------------------------------------
 
 
+TEST_SHAPED = KEY.replace("haau3_sk_live_", "haau3_sk_test_")
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+@pytest.mark.parametrize(
+    ("from_env", "options"),
+    [
+        (KEY, {"environment": "sandbox"}),
+        (TEST_SHAPED, {"environment": "production"}),
+        (KEY, {"base_url": "https://sandbox.haau3.com"}),
+        (f'"{KEY}"', {}),
+        (KEY, {"environment": "sandbox", "base_url": "https://api.haau3.com"}),
+    ],
+    ids=["live-in-sandbox", "test-in-production", "live-at-sandbox-address", "quoted", "conflict"],
+)
+def test_a_client_refused_when_made_shows_no_key_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch, cls: type, from_env: str, options: dict[str, str]
+) -> None:
+    monkeypatch.setenv("HAAU3_API_KEY", from_env)
+    with pytest.raises(Haau3Error) as caught:
+        cls(**options)
+    # The test's own frame holds the key it set; every frame of the SDK's must not.
+    sdk_frames = _sdk_frames(caught.value)
+    assert sdk_frames
+    for frame in sdk_frames:
+        assert KEY not in repr(frame.locals)
+        assert TEST_SHAPED not in repr(frame.locals)
+    assert KEY not in str(caught.value)
+    assert KEY not in json.dumps(caught.value.to_dict())
+
+
+def _sdk_frames(error: BaseException) -> list[traceback.FrameSummary]:
+    """The traceback's frames in the SDK's own source, each with its local variables."""
+    frames = traceback.TracebackException.from_exception(error, capture_locals=True).stack
+    return [frame for frame in frames if "/src/haau3/" in frame.filename]
+
+
+@pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
+def test_a_client_refused_when_made_shows_no_key_it_was_passed(cls: type) -> None:
+    """The constructor drops its own copy before anything can refuse, so only the caller's frame has it."""
+    with pytest.raises(Haau3Error) as caught:
+        cls(api_key=KEY, environment="sandbox")
+    sdk_frames = _sdk_frames(caught.value)
+    assert sdk_frames
+    assert all(KEY not in repr(frame.locals) for frame in sdk_frames)
+
+
+@pytest.mark.anyio
+async def test_a_deprecated_method_warned_into_an_error_shows_no_body_or_header(kind: str) -> None:
+    """With warnings as errors, the warning is raised once the body and the header are held."""
+    import warnings
+
+    from .helpers import Client
+
+    client = Client(kind, Recorder(answer(200, {"resourceType": "Bundle", "type": "message"})), api_key=KEY)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        with pytest.raises(DeprecationWarning) as caught:
+            await client("sandbox_process_message", records(), payer_authorization=f"Bearer {KEY}")
+    # The test's own helper holds what it was handed; every frame of the SDK's must not.
+    sdk_frames = _sdk_frames(caught.value)
+    assert "sandbox_process_message" in [frame.name for frame in sdk_frames]  # the control: the method's frame
+    for frame in sdk_frames:
+        assert "PHI-MARKER" not in repr(frame.locals)
+        assert KEY not in repr(frame.locals)
+
+
 def test_control_a_careless_frame_is_caught() -> None:
     def careless(text: str) -> None:
         parsed = json.loads(text)

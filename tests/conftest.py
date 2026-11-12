@@ -32,9 +32,13 @@ def anyio_backend() -> str:
 
 @pytest.fixture(autouse=True)
 def no_key_in_the_environment(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    # Every test passes the key it means to; only the live tests read the real one.
+    # Every test passes the key it means to; only the live tests read the real one. A shell's own
+    # HAAU3_ENVIRONMENT or HAAU3_BASE_URL would change which host a client calls, so no test sees one
+    # it did not set.
     if request.node.get_closest_marker("live") is None:
         monkeypatch.delenv("HAAU3_API_KEY", raising=False)
+        monkeypatch.delenv("HAAU3_ENVIRONMENT", raising=False)
+        monkeypatch.delenv("HAAU3_BASE_URL", raising=False)
     yield
 
 
