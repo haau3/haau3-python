@@ -84,15 +84,29 @@ def main(argv: list[str]) -> int:
     out = Path(argv[0])
     out.mkdir(parents=True, exist_ok=True)
     (out / "readme_snippets.py").write_text(module_source((ROOT / "README.md").read_text(encoding="utf-8")))
-    for number, source in enumerate(samples(), start=1):
-        (out / f"code_sample_{number:02}.py").write_text(source)
+    for number, (source, deprecated) in enumerate(samples(), start=1):
+        # A deprecated operation's sample calls its deprecated method, as its page shows it: checked for
+        # its types like every other, and expected to be deprecated.
+        allowed = "# pyright: reportDeprecated=false\n" if deprecated else ""
+        (out / f"code_sample_{number:02}.py").write_text(allowed + source)
     return 0
 
 
-def samples() -> list[str]:
-    """The code samples in openapi/code-samples.json, one whole program per operation."""
+def samples() -> list[tuple[str, bool]]:
+    """The code samples in openapi/code-samples.json, one whole program per operation, each with
+    whether the spec marks its operation deprecated."""
     overlay = json.loads((ROOT / "openapi" / "code-samples.json").read_text(encoding="utf-8"))
-    return [action["update"]["x-codeSamples"][0]["source"] for action in overlay["actions"]]
+    spec = json.loads((ROOT / "openapi" / "openapi.json").read_text(encoding="utf-8"))
+    found: list[tuple[str, bool]] = []
+    for action in overlay["actions"]:
+        target = re.fullmatch(r"\$\.paths\['(.+)'\]\.(get|post)", action["target"])
+        if target is None:
+            raise ValueError(f"an overlay action targets {action['target']!r}, which is no operation")
+        path, method = target.groups()
+        found.append(
+            (action["update"]["x-codeSamples"][0]["source"], spec["paths"][path][method].get("deprecated") is True)
+        )
+    return found
 
 
 if __name__ == "__main__":

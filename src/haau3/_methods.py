@@ -11,6 +11,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, overload
 
+from typing_extensions import deprecated
+
 from . import fhir
 from ._batch import BatchResult, Call
 from ._body import HeldHeaders, Hidden
@@ -620,6 +622,9 @@ class SyncMethods:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     def sandbox_metadata(
         self,
         *,
@@ -630,7 +635,7 @@ class SyncMethods:
     ) -> fhir.CapabilityStatement:
         """The Sandbox's capability statement
 
-        FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving both of its request messages. It takes no parameters. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`.
+        FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving both of its request messages. It takes no parameters. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. Deprecated: call `fhirMetadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.
 
         `GET /v1/sandbox/fhir/r4/metadata`, https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement
         """
@@ -638,6 +643,9 @@ class SyncMethods:
             SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -651,7 +659,7 @@ class SyncMethods:
     ) -> fhir.Bundle:
         """Check a test member's medication cost with a test insurer
 
-        The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, reading, routing and answering a request as it does, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data, and nothing real answers. Every organization may call it on every plan, with no business associate agreement and no `HTEST` label, since only its test insurer can answer; production needs both for a member's request. A test key's requests count toward its organization's requests a minute, apart from its production requests, and never toward the plan's month. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request` is a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. It is routed by the payer's Payer ID, a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`, as production routes it: `SANDBOX-EHP`, or the guide's example payer `EXAMPLE-PAYER`, reaches Example Health Plan, and any other Payer ID, or a payer named without one, is answered `no-responder-for-coverage` and no one is asked. Example Health Plan answers its test members only, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. `rtpbc-request-non-phi` is the request without patient details, read as production reads it and answered `no-price-source`, since no price source is connected; it and `no-responder-for-coverage` are coded from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse and, for a member's request, the request's Patient as it was sent; the test insurer's answer names it by its Payer ID, `SANDBOX-EHP`, and its process notes say which test member and formulary row answered, and when. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan.
+        The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, reading, routing and answering a request as it does, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data, and nothing real answers. Every organization may call it on every plan, with no business associate agreement and no `HTEST` label, since only its test insurer can answer; production needs both for a member's request. A test key's requests count toward its organization's requests a minute, apart from its production requests, and never toward the plan's month. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request` is a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. It is routed by the payer's Payer ID, a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`, as production routes it: `SANDBOX-EHP`, or the guide's example payer `EXAMPLE-PAYER`, reaches Example Health Plan, and any other Payer ID, or a payer named without one, is answered `no-responder-for-coverage` and no one is asked. Example Health Plan answers its test members only, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. `rtpbc-request-non-phi` is the request without patient details, read as production reads it and answered `no-price-source`, since no price source is connected; it and `no-responder-for-coverage` are coded from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse and, for a member's request, the request's Patient as it was sent; the test insurer's answer names it by its Payer ID, `SANDBOX-EHP`, and its process notes say which test member and formulary row answered, and when. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan. Deprecated: call `processMessage` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.
 
         `POST /v1/sandbox/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/sandbox/check-a-test-members-medication-cost-with-a-test-insurer
 
@@ -2288,6 +2296,9 @@ class AsyncMethods:
             )
         ).data
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     async def sandbox_metadata(
         self,
         *,
@@ -2298,7 +2309,7 @@ class AsyncMethods:
     ) -> fhir.CapabilityStatement:
         """The Sandbox's capability statement
 
-        FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving both of its request messages. It takes no parameters. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`.
+        FHIR `[base]/metadata` at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`. Returns the Sandbox's own `CapabilityStatement`, which says what the Sandbox serves: today the pharmacy benefit check, `$process-message`, as CARIN's responder (STU2 ballot, `2.0.0-ballot`), receiving both of its request messages. It takes no parameters. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. Deprecated: call `fhirMetadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.
 
         `GET /v1/sandbox/fhir/r4/metadata`, https://docs.haau3.com/api-reference/sandbox/the-sandboxs-capability-statement
         """
@@ -2308,6 +2319,9 @@ class AsyncMethods:
             )
         ).data
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     async def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -2321,7 +2335,7 @@ class AsyncMethods:
     ) -> fhir.Bundle:
         """Check a test member's medication cost with a test insurer
 
-        The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, reading, routing and answering a request as it does, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data, and nothing real answers. Every organization may call it on every plan, with no business associate agreement and no `HTEST` label, since only its test insurer can answer; production needs both for a member's request. A test key's requests count toward its organization's requests a minute, apart from its production requests, and never toward the plan's month. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request` is a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. It is routed by the payer's Payer ID, a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`, as production routes it: `SANDBOX-EHP`, or the guide's example payer `EXAMPLE-PAYER`, reaches Example Health Plan, and any other Payer ID, or a payer named without one, is answered `no-responder-for-coverage` and no one is asked. Example Health Plan answers its test members only, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. `rtpbc-request-non-phi` is the request without patient details, read as production reads it and answered `no-price-source`, since no price source is connected; it and `no-responder-for-coverage` are coded from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse and, for a member's request, the request's Patient as it was sent; the test insurer's answer names it by its Payer ID, `SANDBOX-EHP`, and its process notes say which test member and formulary row answered, and when. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan.
+        The Sandbox's pharmacy benefit check: the same operation as `/v1/fhir/r4/$process-message`, reading, routing and answering a request as it does, at the Sandbox's FHIR base, `/v1/sandbox/fhir/r4`, where Example Health Plan, a test insurer, answers the CARIN Consumer Real-Time Pharmacy Benefit Check (STU2 ballot, `2.0.0-ballot`) as a payer would, with synthetic data, and nothing real answers. Every organization may call it on every plan, with no business associate agreement and no `HTEST` label, since only its test insurer can answer; production needs both for a member's request. A test key's requests count toward its organization's requests a minute, apart from its production requests, and never toward the plan's month. Send a test key (`haau3_sk_test_…`): a live key is refused with `live-key-in-sandbox`. POST a FHIR `Bundle` of type `message` whose first entry is a MessageHeader with one of two events. `rtpbc-request` is a member's request, with the member's Patient and Coverage, the prescription and its prescriber, and a pharmacy. It is routed by the payer's Payer ID, a `payor.identifier` whose `type` is `payerid` from `http://hl7.org/fhir/us/carin-bb/CodeSystem/C4BBIdentifierType`, as production routes it: `SANDBOX-EHP`, or the guide's example payer `EXAMPLE-PAYER`, reaches Example Health Plan, and any other Payer ID, or a payer named without one, is answered `no-responder-for-coverage` and no one is asked. Example Health Plan answers its test members only, named by member ID in `Coverage.subscriberId`, the Coverage's `rxid` class, or a Patient identifier whose system is `https://example-health-plan.test/member-id`; a request for anyone else is answered the error `no-test-member` and nothing else. Send test members only, never a real person. Each medication in the test insurer's formulary table always gets the same answer, by its RxNorm code or NDC: priced with a copay, covered at $0 with an alternative, not covered with an alternative, prior authorization required, or a quantity limit. Any other medication gets a default priced answer, and one test member's requests are always declined, `insurer-declined`. Both errors are coded from `https://haau3.com/fhir/CodeSystem/sandbox-error` in `ClaimResponse.error`. `rtpbc-request-non-phi` is the request without patient details, read as production reads it and answered `no-price-source`, since no price source is connected; it and `no-responder-for-coverage` are coded from `https://haau3.com/fhir/CodeSystem/pharmacy-benefits-processing-code`. The answer is a `message` Bundle whose MessageHeader answers the request's, with one ClaimResponse and, for a member's request, the request's Patient as it was sent; the test insurer's answer names it by its Payer ID, `SANDBOX-EHP`, and its process notes say which test member and formulary row answered, and when. Amounts are fixed, whatever the quantity. Nothing a request carries is stored or logged, and every answer is sent with `Cache-Control: no-store`. The operation takes no query parameters. The test members and the formulary table are at https://docs.haau3.com/sandbox/example-health-plan. Deprecated: call `processMessage` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day.
 
         `POST /v1/sandbox/fhir/r4/$process-message`, https://docs.haau3.com/api-reference/sandbox/check-a-test-members-medication-cost-with-a-test-insurer
 
@@ -3796,6 +3810,9 @@ class SyncWithResponse:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     def sandbox_metadata(
         self,
         *,
@@ -3809,6 +3826,9 @@ class SyncWithResponse:
             SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     def sandbox_process_message(
         self,
         body: fhir.Bundle,
@@ -4937,6 +4957,9 @@ class AsyncWithResponse:
             RECONCILE_MEDICATIONS, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `fhir_metadata` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. Its CapabilityStatement lists every service the Sandbox answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     async def sandbox_metadata(
         self,
         *,
@@ -4950,6 +4973,9 @@ class AsyncWithResponse:
             SANDBOX_METADATA, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    @deprecated(
+        "Call `process_message` on the Sandbox's own host, `https://sandbox.haau3.com`, with a test key or none. It takes the same request and gives the same answers. This address is removed once it has gone 14 days without a call, with a changelog entry that day."
+    )
     async def sandbox_process_message(
         self,
         body: fhir.Bundle,

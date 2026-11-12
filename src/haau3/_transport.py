@@ -47,15 +47,25 @@ def _elapsed_ms(started: float) -> int:
     return round((time.monotonic() - started) * 1000)
 
 
+FIRST_ADDRESS = "/v1/sandbox/fhir/r4"
+"""The Sandbox's first address, which its own host does not serve: there, an operation of the first
+address goes to the same operation at production's path, which answers it the same way."""
+
+
 @final
 @dataclass(frozen=True)
 class Config:
-    key: Secret
+    key: Secret | None
+    """None only in the Sandbox, which answers with no key."""
     base_url: str
     timeout: float
     max_retries: int
     user_agent: str
     """The SDK's User-Agent, with the caller's `app_info` after it."""
+    environment: Literal["production", "sandbox"] = "production"
+    """The environment the client calls: the one named, else the key's mode."""
+    on_the_sandbox_host: bool = False
+    """Whether requests go to the Sandbox's own host, which does not serve its first address."""
 
 
 @final
@@ -207,10 +217,11 @@ def prepare(
     headers = httpx2.Headers(
         {
             "accept": FHIR_JSON if fhir else "application/json",
-            "authorization": f"Bearer {config.key.reveal()}",
             "user-agent": config.user_agent,
         }
     )
+    if config.key is not None:
+        headers["authorization"] = f"Bearer {config.key.reveal()}"
     if content is not None:
         headers["content-type"] = FHIR_JSON if fhir else "application/json"
     for header, value in (options.extra_headers or {}).items():
@@ -304,10 +315,22 @@ class _Engine:
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self._config.base_url}>"
 
+    def _path(self, operation: Operation[Any]) -> str:
+        """The path an operation is sent to: its own, or on the Sandbox's own host, which does not serve
+        the first address, the same operation's at production's path."""
+        path = operation.path
+        if self._config.on_the_sandbox_host and path.startswith(f"{FIRST_ADDRESS}/"):
+            return f"/v1/fhir/r4{path[len(FIRST_ADDRESS) :]}"
+        return path
+
+    def label(self, operation: Operation[Any]) -> str:
+        """How a message names the operation: its method and the path it is sent to, `{id}` left in."""
+        return f"{operation.method} {self._path(operation)}"
+
     def operation_url(
         self, operation: Operation[Any], path_values: Sequence[str], query: Iterable[tuple[str, QueryValue]]
     ) -> str:
-        return url_on_base(self._config.base_url, fill_path(operation.path, path_values), encode_query(query))
+        return url_on_base(self._config.base_url, fill_path(self._path(operation), path_values), encode_query(query))
 
     def resolve(self, path_or_url: str, query: Iterable[tuple[str, QueryValue]] = ()) -> str:
         return url_on_base(self._config.base_url, path_or_url, encode_query(query))
@@ -339,8 +362,9 @@ class SyncEngine(_Engine):
     ) -> Response[T]:
         url = self.operation_url(operation, path_values, query)
         declared = declared_headers(operation, options)
-        sent = self.send(operation.method, url, body_bytes(body), options, operation.label, declared)
-        return sent.response(cast("T", answer_of(operation.label, operation.expects, sent).reveal()))
+        label = self.label(operation)
+        sent = self.send(operation.method, url, body_bytes(body), options, label, declared)
+        return sent.response(cast("T", answer_of(label, operation.expects, sent).reveal()))
 
     def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
         checked, bundle = batch_bundle(calls)
@@ -446,8 +470,9 @@ class AsyncEngine(_Engine):
     ) -> Response[T]:
         url = self.operation_url(operation, path_values, query)
         declared = declared_headers(operation, options)
-        sent = await self.send(operation.method, url, body_bytes(body), options, operation.label, declared)
-        return sent.response(cast("T", answer_of(operation.label, operation.expects, sent).reveal()))
+        label = self.label(operation)
+        sent = await self.send(operation.method, url, body_bytes(body), options, label, declared)
+        return sent.response(cast("T", answer_of(label, operation.expects, sent).reveal()))
 
     async def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
         checked, bundle = batch_bundle(calls)

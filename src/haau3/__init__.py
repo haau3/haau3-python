@@ -23,6 +23,7 @@ from ._client import DEFAULT_BASE_URL as DEFAULT_BASE_URL
 from ._client import DEFAULT_MAX_RETRIES as DEFAULT_MAX_RETRIES
 from ._client import DEFAULT_TIMEOUT as DEFAULT_TIMEOUT
 from ._client import AsyncHaau3 as AsyncHaau3
+from ._client import Environment as Environment
 from ._client import Haau3 as Haau3
 from ._encode import QueryValue as QueryValue
 from ._errors import AuthError as AuthError
@@ -85,6 +86,7 @@ __all__ = [
     "DecimalProperty",
     "Designation",
     "DesignationUse",
+    "Environment",
     "ErrorDict",
     "ForbiddenError",
     "Haau3",
