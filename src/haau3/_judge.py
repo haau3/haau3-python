@@ -19,7 +19,15 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, TypeAlias, Union, cast
 
 from ._body import Hidden
-from ._errors import API_ERROR_SYSTEM, AuthError, ForbiddenError, NoAnswerError, NoAnswerReason, RefusedError
+from ._errors import (
+    API_ERROR_SYSTEM,
+    SANDBOX_ERROR_SYSTEM,
+    AuthError,
+    ForbiddenError,
+    NoAnswerError,
+    NoAnswerReason,
+    RefusedError,
+)
 from ._json import as_dict, as_list
 
 if TYPE_CHECKING:
@@ -56,11 +64,15 @@ def standard_phrase(status: int) -> str:
         return ""
 
 
-def api_error_code(outcome: Hidden[OperationOutcome] | None, problem: Hidden[Problem] | None) -> str | None:
+def api_error_code(
+    outcome: Hidden[OperationOutcome] | None,
+    problem: Hidden[Problem] | None,
+    systems: tuple[str, ...] = (API_ERROR_SYSTEM,),
+) -> str | None:
     """The API's own code for why it refused a request, when it names one.
 
-    The `api-error` coding of an OperationOutcome's first issue that has one, or a problem's `code`.
-    A code, never words, so it is safe to log.
+    A coding from one of `systems` (`api-error` by default) on an OperationOutcome's first issue that
+    has one, or a problem's `code`. A code, never words, so it is safe to log.
     """
     if problem is not None:
         value = as_dict(problem.reveal())
@@ -75,7 +87,7 @@ def api_error_code(outcome: Hidden[OperationOutcome] | None, problem: Hidden[Pro
         for coding in (as_list(details.get("coding")) if details is not None else None) or []:
             c = as_dict(coding)
             code = c.get("code") if c is not None else None
-            if c is not None and c.get("system") == API_ERROR_SYSTEM and isinstance(code, str):
+            if c is not None and c.get("system") in systems and isinstance(code, str):
                 return code
     return None
 
@@ -281,13 +293,21 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
             problem=problem,
             code=code,
         )
-    kind = AuthError if status == 401 and not c.entry else RefusedError
-    unaccepted = "it was sent with no API key" if c.no_key else "the API key was not accepted"
-    message = (
-        f"{name} was refused: {unaccepted} ({status})." if kind is AuthError else f"{name} was refused ({status})."
-    )
-    return kind(
-        message,
+    if status == 401 and not c.entry:
+        unaccepted = "it was sent with no API key" if c.no_key else "the API key was not accepted"
+        return AuthError(
+            f"{name} was refused: {unaccepted} ({status}).",
+            status=status,
+            reason_phrase=phrase,
+            attempts=c.attempts,
+            duration_ms=c.duration_ms,
+            request_id=c.request_id,
+            correlation_id=c.correlation_id,
+            outcome=outcome,
+            problem=problem,
+        )
+    return RefusedError(
+        f"{name} was refused ({status}).",
         status=status,
         reason_phrase=phrase,
         attempts=c.attempts,
@@ -296,4 +316,5 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
         correlation_id=c.correlation_id,
         outcome=outcome,
         problem=problem,
+        code=api_error_code(outcome, problem, (API_ERROR_SYSTEM, SANDBOX_ERROR_SYSTEM)),
     )

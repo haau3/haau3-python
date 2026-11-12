@@ -117,7 +117,7 @@ class Haau3Error(Exception):
     """The `correlation_id` you sent, as the API returned it in `X-Correlation-Id`, when it answered."""
     code: str | None
     """Why, as a code to branch on, when there is one: a `ClientErrorCode` when the client could not be
-    made, or the API's own code on a `ForbiddenError`."""
+    made, or the API's own code on a `ForbiddenError` or a `RefusedError`."""
 
     def __init__(
         self,
@@ -235,6 +235,8 @@ class AuthError(_Answered):
 
 
 API_ERROR_SYSTEM = "https://haau3.com/fhir/CodeSystem/api-error"
+SANDBOX_ERROR_SYSTEM = "https://haau3.com/fhir/CodeSystem/sandbox-error"
+"""The Sandbox's own code system: `not-the-example`, for a request that is not an operation's documented example."""
 """The code system the API names its own reasons in, inside an OperationOutcome's `details.coding`."""
 
 
@@ -294,12 +296,16 @@ class RefusedError(_Answered):
     """The API answered and refused the request.
 
     A parameter it does not take, a record that does not exist (404), a page that no longer exists
-    (410), a body that is too large (413). `status` says which, and the body says why.
+    (410), a body that is too large (413). `status` says which, and the body says why. `code` says
+    why when the API names it: `not-the-example` from the Sandbox, which answers each operation's
+    documented example only and refuses anything else with a 400 naming it.
     """
 
     status: int
     reason_phrase: str
     """The status's text: `"Not Found"`."""
+    code: str | None
+    """The API's code for why, from its `api-error` or `sandbox-error` code system, when it names one."""
 
     def __init__(
         self,
@@ -313,6 +319,7 @@ class RefusedError(_Answered):
         correlation_id: str | None = None,
         outcome: Hidden[OperationOutcome] | None = None,
         problem: Hidden[Problem] | None = None,
+        code: str | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -325,6 +332,7 @@ class RefusedError(_Answered):
         )
         self.status = status
         self.reason_phrase = reason_phrase
+        self.code = code
 
 
 class NoAnswerError(_Answered):

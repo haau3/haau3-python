@@ -245,6 +245,7 @@ try:
     client.read_insurance_plan(plan_id)
 except RefusedError as error:
     print(error.status)  # 400, 404, 410 and so on
+    print(error.code)  # why, when the API names it: "not-the-example" from the Sandbox
     print(error.outcome)  # the OperationOutcome; Scheduling's errors carry `problem`
 except NoAnswerError as error:
     print(error.reason)  # "timeout", "network", "rate-limited", "unavailable", "server-error" or "unreadable"
@@ -252,7 +253,7 @@ except NoAnswerError as error:
     print(error.detail)  # for a timeout or a network failure: what failed, such as "ConnectError: Connection refused"
 except ForbiddenError as error:
     # 403: the key was accepted, and it may not make this request. Why, when the API names it:
-    # "test-key-outside-sandbox", "live-key-in-sandbox" or "phi-agreement-required"
+    # "test-key-outside-sandbox", "live-key-in-sandbox", "phi-agreement-required" or "not-open-to-customers"
     print(error.code)
 except AuthError:
     pass  # 401: the key was missing, unknown or revoked
@@ -265,8 +266,12 @@ work there (`live-key-in-sandbox`: send a test key). The client sends each key t
 environment, so you meet these with a `base_url` of your own, or by calling the deprecated
 `sandbox_…` methods with a live key. `phi-agreement-required` means the organization
 may not send patient data, and not every resource in the request is labelled as test data:
-`mark_as_test_data` labels made-up data. Without a code, the body says what the organization may not
-do.
+`mark_as_test_data` labels made-up data. `not-open-to-customers` means the operation is not yet
+open to customers: an expected answer, not a fault in the request. Without a code, the body says what
+the organization may not do.
+
+A `RefusedError`'s `code` names the API's reason when it gives one: `not-the-example` from the
+Sandbox, which answers each operation's documented example only and refuses any other request.
 
 A client that cannot be made raises a `Haau3Error` before anything is sent, with a `code` to branch on,
 which the `ClientErrorCode` type lists. The message says the same for a person and names where the
