@@ -30,7 +30,9 @@ ClientErrorCode = Literal[
 `Haau3Error` it raises. Branch on the code; the message says the same for a person, and names where the
 value came from (the keyword or the variable).
 
-- `no-api-key`: no key, and the Sandbox is not named as the environment.
+- `no-api-key`: no key, and the Sandbox is not named as the environment. When an env file in the current
+  folder (`.env.local` or `.env`) sets HAAU3_API_KEY but the program never loaded it, the message names
+  that file and how to load it. Only the variable's name is looked for, never its value.
 - `invalid-api-key`: the key is not a string.
 - `api-key-not-alone`: the key has something before its `haau3_sk_` prefix, such as the quotes an env
   file kept, or `Bearer `.

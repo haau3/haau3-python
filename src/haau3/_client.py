@@ -13,6 +13,7 @@ import httpx2
 from ._app_info import AppInfo, user_agent
 from ._body import Hidden, Secret
 from ._encode import QueryValue, checked_base_url, origin
+from ._env_file import unloaded_env_file
 from ._errors import Haau3Error, NoAnswerError
 from ._json import as_dict, as_list
 from ._methods import AsyncMethods, AsyncWithResponse, SyncMethods, SyncWithResponse
@@ -50,11 +51,29 @@ DEFAULT_MAX_RETRIES = 1
 
 NO_KEY = (
     "No API key. Set HAAU3_API_KEY, or pass it as api_key. Create a free key at "
-    "https://platform.haau3.com (see https://docs.haau3.com/authentication). To call the Sandbox with no "
+    "https://platform.haau3.com, or run npx haau3 login, then npx haau3 keys create, which writes one to "
+    "this project's env file (see https://docs.haau3.com/authentication). To call the Sandbox with no "
     'key, set HAAU3_ENVIRONMENT=sandbox, or pass environment="sandbox".'
 )
-"""What a client with no key says: both ways to give one, where one comes from, and the Sandbox's way
-to call with none."""
+"""What a client with no key says: both ways to give one, where one comes from (the dashboard, or the
+command line, which writes it to the project's env file), and the Sandbox's way to call with none."""
+
+
+def _unloaded(file: str) -> str:
+    """What a client with no key says when an env file in the current folder sets one: the program never
+    loaded that file. The file is named; its contents never are."""
+    return (
+        f"No API key. HAAU3_API_KEY is not set, but {file} in this folder sets it, and this program has not "
+        f'loaded that file. Load it first: call load_dotenv("{file}") from python-dotenv before making the '
+        f"client, or run set -a; . ./{file}; set +a in the shell before the program."
+    )
+
+
+def _no_key() -> Haau3Error:
+    """The refusal for no key, naming an env file the program did not load when there is one."""
+    file = unloaded_env_file()
+    return Haau3Error(NO_KEY if file is None else _unloaded(file), code="no-api-key")
+
 
 KeyMode = Literal["live", "test", "older"]
 
@@ -185,7 +204,7 @@ def _config(
         else (_checked_environment(from_env, "HAAU3_ENVIRONMENT") if from_env is not None else None)
     )
     if key is None and named != "sandbox":
-        raise Haau3Error(NO_KEY, code="no-api-key")
+        raise _no_key()
     mode = _key_mode(key.reveal()) if key is not None else None
     refused = _mismatch(mode, key_from, named, source) if mode is not None and named is not None else None
     if refused is not None:

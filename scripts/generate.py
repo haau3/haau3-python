@@ -959,7 +959,7 @@ def _first_call_sample(spec: Spec, op: Op, raw: Json) -> str:
         _client(spec, op, raw),
         f"# Open appointment slots, here in {city}.",
         f'slots = client.{op.name}({", ".join(_example_args(spec, op, raw))})["slots"]',
-        "print(json.dumps(slots[0], indent=2))",
+        'print(json.dumps(slots[0], indent=2) if slots else "No open slots matched.")',
     ]
     return "\n".join(lines) + "\n"
 
