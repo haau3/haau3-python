@@ -276,7 +276,7 @@ value came from, the keyword or the variable:
 from haau3 import Haau3, Haau3Error
 
 try:
-    checked = Haau3()
+    configured = Haau3()
 except Haau3Error as error:
     if error.code == "no-api-key":
         pass  # set HAAU3_API_KEY, or name the Sandbox to call it with no key
