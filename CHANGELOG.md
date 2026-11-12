@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.9](https://github.com/haau3/haau3-python/compare/v0.3.8...v0.3.9) (2026-11-12)
+
+
+### Features
+
+* app_info adds your app's name and version to the User-Agent ([#64](https://github.com/haau3/haau3-python/issues/64)) ([af81515](https://github.com/haau3/haau3-python/commit/af81515d17bfd0cef0e4a6b205e1ffdf361bf7de))
+* the API's spec at 1.0.0-preview.32 ([#66](https://github.com/haau3/haau3-python/issues/66)) ([64b96e7](https://github.com/haau3/haau3-python/commit/64b96e7bbff2865cc110750d97ab9b3dcaf66549))
+
 ## [0.3.8](https://github.com/haau3/haau3-python/compare/v0.3.7...v0.3.8) (2026-11-10)
 
 
