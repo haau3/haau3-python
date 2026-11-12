@@ -1,12 +1,14 @@
-"""Which env file in the current folder sets HAAU3_API_KEY when the program never loaded it.
+"""Which env file in the current folder sets HAAU3_API_KEY when the program's environment has no value
+for it.
 
 The case of a key written to `.env` (by hand, or by `npx haau3 keys create`) and a program that reads
-no env file, since Python loads none by itself. Asked only when a client is refused for having no key,
-so the refusal can name the file and how to load it.
+no env file, since Python loads none by itself. Asked only when a client is refused for having no key
+from HAAU3_API_KEY, so the refusal can name the file and how to load it.
 
-It looks for the variable's name and nothing else. The value is never parsed out, compared, kept or
-shown. Anything unexpected (a file that is not a regular file, a read that fails, a folder that has
-gone) is taken as "no such file", so the refusal is then the one it was before.
+It never keeps or shows the value: the bytes read are dropped from this frame before it returns, so a
+traceback that records local variables does not see them. Anything unexpected (a file that is not a
+regular file, a read that fails, a folder that has gone) is taken as "no such file", so the refusal is
+then the one it was before.
 """
 
 from __future__ import annotations
@@ -21,25 +23,42 @@ ENV_FILES = (".env.local", ".env")
 ENV_FILE_LIMIT = 1024 * 1024
 """The most of a file read: a key is one short line, and a larger file is not an env file to read."""
 
-_SETS_THE_KEY = re.compile(
-    rb"""^[ \t]*(?:export[ \t]+)?HAAU3_API_KEY[ \t]*=[ \t]*(?:"[^"\r\n]|'[^'\r\n]|[^\s#"'])""",
-    re.MULTILINE,
-)
-"""A line that sets HAAU3_API_KEY to something: the name at the start of a line (after spaces and an
-optional `export`), `=`, then a value that is not empty, a comment or an empty pair of quotes."""
+_ASSIGNS_THE_KEY = re.compile(rb"[ \t]*(?:export[ \t]+)?HAAU3_API_KEY[ \t]*=")
+"""A line that assigns HAAU3_API_KEY: the name at the start of the line (after spaces and an optional
+`export`), then `=`."""
+
+_SETS_THE_KEY = re.compile(rb"""[ \t]*(?:export[ \t]+)?HAAU3_API_KEY[ \t]*=[ \t]*(?:"[^"\s]|'[^'\s]|[^\s#"'$])""")
+"""Such a line that sets it to something: a value that is not empty, a comment, quotes holding nothing
+but spaces, or a reference to another variable."""
 
 _BOM = b"\xef\xbb\xbf"
 
 
+def _last_assignment_sets_the_key(data: bytes) -> bool:
+    """Whether the last line assigning HAAU3_API_KEY sets it, since a loader keeps the last."""
+    found = False
+    for line in data.split(b"\n"):
+        if _ASSIGNS_THE_KEY.match(line):
+            found = _SETS_THE_KEY.match(line) is not None
+    return found
+
+
 def _sets_the_key(path: str) -> bool:
-    """Whether a file sets HAAU3_API_KEY, reading at most ENV_FILE_LIMIT bytes, never blocking on a pipe."""
-    # A non-blocking open, so a named pipe called `.env` cannot hold the program; then only a regular file.
+    """Whether a file sets HAAU3_API_KEY, reading at most ENV_FILE_LIMIT bytes.
+
+    The path is asked what it is before it is opened, so a named pipe is never opened: password managers
+    can serve `.env` as one, and an open would count as a read, or ask the person to approve one. The open
+    never blocks, and the open file is asked again, so a pipe swapped in between is not read either."""
+    if not stat.S_ISREG(os.stat(path).st_mode):
+        return False
     flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_BINARY", 0)
     fd = os.open(path, flags)
+    chunk = b""
+    chunks: list[bytes] = []
+    data = b""
     try:
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             return False
-        chunks: list[bytes] = []
         remaining = ENV_FILE_LIMIT
         while remaining > 0:
             chunk = os.read(fd, min(remaining, 65536))
@@ -50,8 +69,10 @@ def _sets_the_key(path: str) -> bool:
         data = b"".join(chunks)
         if data.startswith(_BOM):
             data = data[len(_BOM) :]
-        return _SETS_THE_KEY.search(data) is not None
+        return _last_assignment_sets_the_key(data)
     finally:
+        # The file holds the key and any other secret in it: no copy outlives this frame.
+        del chunk, chunks, data
         os.close(fd)
 
 

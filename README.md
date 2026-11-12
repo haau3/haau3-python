@@ -307,9 +307,9 @@ The codes are `no-api-key`, `invalid-api-key`, `api-key-not-alone`, `test-key-ou
 `environment-conflicts-with-base-url`, `invalid-app-info`, `invalid-http-client` and `in-browser`. The
 two the API also answers with keep the API's names.
 
-When `HAAU3_API_KEY` is not set but `.env.local` or `.env` in the current folder sets it, the
-`no-api-key` message names that file and how to load it. The SDK looks only for the variable's name
-there, never its value, and only when it has no key.
+When `HAAU3_API_KEY` has no value but `.env.local` or `.env` in the current folder sets it, the
+`no-api-key` message names that file and says how to load it. The SDK looks there only when it has no
+key from `HAAU3_API_KEY`, opens only a regular file, and never keeps or shows the value.
 
 No answer is never reported as an empty result, and an empty result is never an error. Every error
 the API answered carries `attempts`, `duration_ms` and `reason_phrase` too.
