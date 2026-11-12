@@ -487,8 +487,11 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
     for op in ops:
         returns = f"Response[{op.response}]" if with_response else op.response
         prefix = "async def" if asynchronous else "def"
+        # PEP 702's marker for type checkers, with no wrapper (category=None): before Python 3.12 the
+        # wrapper hides that an async method is a coroutine function. The method warns itself, so the
+        # warning names the caller's line on every version.
         if op.deprecated is not None:
-            lines.append(f"    @deprecated({op.deprecated!r})")
+            lines.append(f"    @deprecated({op.deprecated!r}, category=None)")
         lines.append(f"    {prefix} {op.name}({_signature(op)}) -> {returns}:")
         if with_response:
             lines.append(
@@ -499,6 +502,8 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
             )
         else:
             lines.append(docstring(_method_doc(op), "        "))
+        if op.deprecated is not None:
+            lines.append(f"        warnings.warn({op.deprecated!r}, DeprecationWarning, stacklevel=2)")
         lines += _hide_body(op, "        ")
         lines += _hide_headers(op, "        ")
         call = f"self._engine.call({_call_arguments(op, 'hidden')}, {_options(op)})"
@@ -577,6 +582,7 @@ def methods_module(spec: Spec) -> str:
         "from __future__ import annotations\n",
         "from collections.abc import Mapping, Sequence",
         "from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, overload\n",
+        "import warnings",
         "from typing_extensions import deprecated\n",
         "from . import fhir",
         "from ._batch import BatchResult, Call",
