@@ -20,7 +20,7 @@ from ._components import (
 )
 from ._operation import DeclaredHeader, Operation
 
-SPEC_VERSION: Final[str] = "1.0.0-preview.29"
+SPEC_VERSION: Final[str] = "1.0.0-preview.32"
 """The version of the API's spec this SDK was generated from."""
 
 CHECK_INSURANCE_PLAN_NETWORK: Final[Operation[fhir.Parameters]] = Operation(
@@ -93,7 +93,14 @@ SANDBOX_METADATA: Final[Operation[fhir.CapabilityStatement]] = Operation(
     "GET", "/v1/sandbox/fhir/r4/metadata", ("CapabilityStatement",)
 )
 SANDBOX_PROCESS_MESSAGE: Final[Operation[fhir.Bundle]] = Operation(
-    "POST", "/v1/sandbox/fhir/r4/$process-message", ("Bundle",)
+    "POST",
+    "/v1/sandbox/fhir/r4/$process-message",
+    ("Bundle",),
+    headers=(
+        DeclaredHeader(
+            "Payer-Authorization", "payer_authorization", 4096, "^[Bb][Ee][Aa][Rr][Ee][Rr] +[A-Za-z0-9\\-._~+/]+=*$"
+        ),
+    ),
 )
 SEARCH_ENDPOINT: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/Endpoint", ("Bundle",))
 SEARCH_HEALTHCARE_SERVICE: Final[Operation[fhir.Bundle]] = Operation(
