@@ -119,11 +119,13 @@ attestations, through PyPI's trusted publishing: no PyPI token exists anywhere.
 ## Tests
 
 The tests run against httpx2's `MockTransport`, and a few against local sockets that refuse, hang or
-answer slowly. `tests/test_live.py` calls the production API, and so does `tests/test_samples.py`,
-which runs every code sample there as a customer would. Both run against production only with
+answer slowly. `tests/test_live.py` calls the production API, and `tests/test_samples.py` runs every
+code sample as a customer would, against the API its key picks. Both run only with
 `HAAU3_LIVE_TEST=1` and a key in `HAAU3_API_KEY`. Run them once with a live key (`haau3_sk_live_…`)
-from an organization with no agreement on file, and once with a test key (`haau3_sk_test_…`): what
-each sample must do follows from the key's mode.
+from an organization with no agreement on file, which calls production, and once with a test key
+(`haau3_sk_test_…`), which calls the Sandbox, where every sample's example gets its fixed answer.
+`tests/test_live_sandbox.py` calls the Sandbox on a test key, or with no key at all when
+`HAAU3_LIVE_TEST=1` is set alone, in three requests.
 
 `tests/test_privacy.py` plants a marker in every body and renders each error every way it is
 commonly printed, including a traceback with each frame's local variables. Keep a body in a

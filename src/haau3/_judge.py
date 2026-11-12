@@ -212,6 +212,8 @@ class Context:
     entry is a refusal of that entry, not of the key."""
     reason_phrase: str = ""
     """The status's text the answer came with; empty means the standard one."""
+    no_key: bool = False
+    """The request carried no key, so a 401 says that rather than that a key was refused."""
 
 
 def _no_answer_reason(status: int) -> NoAnswerReason:
@@ -279,10 +281,9 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
             code=code,
         )
     kind = AuthError if status == 401 and not c.entry else RefusedError
+    unaccepted = "it was sent with no API key" if c.no_key else "the API key was not accepted"
     message = (
-        f"{name} was refused: the API key was not accepted ({status})."
-        if kind is AuthError
-        else f"{name} was refused ({status})."
+        f"{name} was refused: {unaccepted} ({status})." if kind is AuthError else f"{name} was refused ({status})."
     )
     return kind(
         message,

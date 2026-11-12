@@ -339,8 +339,13 @@ class Spec:
         if not any(op.path == "/v1/fhir/r4" and op.method == "POST" for op in ops):
             raise ValueError("The spec has no batch at POST /v1/fhir/r4")
         ids = {op.id for op in ops}
+        raw = {op.id: self.spec["paths"][op.path][op.method.lower()] for op in ops}
+        deprecated_ids = {op_id for op_id, item in raw.items() if item.get("deprecated") is True}
         for op in ops:
-            op.deprecated = deprecation(self.spec["paths"][op.path][op.method.lower()], ids)
+            found = deprecation(raw[op.id], ids, deprecated_ids)
+            if found is not None:
+                # The passage goes in the deprecation, so the docstring keeps the rest.
+                op.description, op.deprecated = found
         return sorted(ops, key=lambda o: o.id)
 
     def not_in_a_batch(self) -> list[str]:
@@ -383,37 +388,41 @@ def _call_arguments(op: Op, body_name: str, prefix: str = "") -> str:
 DEPRECATED_MARK = "Deprecated:"
 
 
-def deprecation(operation: Json, ids: set[str]) -> str | None:
-    """What a deprecated operation's method says, or None when it is not deprecated.
+def deprecation(operation: Json, ids: set[str], deprecated: set[str]) -> tuple[str, str] | None:
+    """What a deprecated operation's method says, or None when it is not deprecated: its description
+    without the passage, and the passage.
 
     OpenAPI's own `deprecated: true`, and the passage of the operation's description from
     "Deprecated:" to its end, which names what to call instead by its operationId in backticks. Each
-    operationId in it is written as this SDK's method name. The method carries the words in
-    `typing_extensions.deprecated`, so a type checker flags a call and Python warns at run time. The
-    spec defines the field only as `true`, and a deprecated operation's description names a
-    replacement that exists, so anything else stops the generator rather than being guessed at.
+    operationId in it is written as this SDK's method name. The method carries `typing_extensions.
+    deprecated` with the words (the marker type checkers read) and warns with them itself when called.
+    The spec defines the field only as `true` (or `false`), and a deprecated operation's description
+    names a replacement that exists and is not itself deprecated, so anything else stops the generator
+    rather than being guessed at.
     """
     op_id = operation["operationId"]
-    mark = operation.get("deprecated")
-    if mark is None or mark is False:
+    if "deprecated" not in operation or operation["deprecated"] is False:
         return None
+    mark = operation["deprecated"]
     if mark is not True:
-        raise ValueError(f"{op_id} carries deprecated: {json.dumps(mark)}, where the spec defines only true")
+        raise ValueError(f"{op_id} carries deprecated: {json.dumps(mark)}, where the spec defines only true or false")
     parts = (operation.get("description") or "").split(DEPRECATED_MARK)
     if len(parts) != 2:
         raise ValueError(
             f'{op_id} is deprecated, and its description needs exactly one passage from "{DEPRECATED_MARK}" naming what to call instead'
         )
     words = " ".join(parts[1].split())
-    named = [word for word in re.findall(r"`([A-Za-z][A-Za-z0-9]*)`", words) if word in ids]
+    replacements = ids - deprecated - {op_id}
+    named = [word for word in re.findall(r"`([A-Za-z][A-Za-z0-9]*)`", words) if word in replacements]
     if not named:
         raise ValueError(
-            f'{op_id} is deprecated, and its "{DEPRECATED_MARK}" passage names no operation of the spec to call instead'
+            f'{op_id} is deprecated, and its "{DEPRECATED_MARK}" passage names no operation of the spec to call '
+            "instead that is not deprecated"
         )
     words = re.sub(
         r"`([A-Za-z][A-Za-z0-9]*)`", lambda m: f"`{naming.method_name(m[1])}`" if m[1] in ids else m[0], words
     )
-    return words[:1].upper() + words[1:]
+    return parts[0].rstrip(), words[:1].upper() + words[1:]
 
 
 def _method_doc(op: Op) -> str:
@@ -488,8 +497,10 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
         returns = f"Response[{op.response}]" if with_response else op.response
         prefix = "async def" if asynchronous else "def"
         # PEP 702's marker for type checkers, with no wrapper (category=None): before Python 3.12 the
-        # wrapper hides that an async method is a coroutine function. The method warns itself, so the
-        # warning names the caller's line on every version.
+        # wrapper hides that an async method is a coroutine function. The method warns itself, at its
+        # caller's line (a task asyncio runs is its own caller), and only once the body and any declared
+        # header are held, so a warning that warning filters turn into an error leaves neither in a
+        # frame's local variables.
         if op.deprecated is not None:
             lines.append(f"    @deprecated({op.deprecated!r}, category=None)")
         lines.append(f"    {prefix} {op.name}({_signature(op)}) -> {returns}:")
@@ -502,10 +513,10 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
             )
         else:
             lines.append(docstring(_method_doc(op), "        "))
-        if op.deprecated is not None:
-            lines.append(f"        warnings.warn({op.deprecated!r}, DeprecationWarning, stacklevel=2)")
         lines += _hide_body(op, "        ")
         lines += _hide_headers(op, "        ")
+        if op.deprecated is not None:
+            lines.append(f"        warnings.warn({op.deprecated!r}, DeprecationWarning, stacklevel=2)")
         call = f"self._engine.call({_call_arguments(op, 'hidden')}, {_options(op)})"
         if asynchronous:
             call = f"(await {call})"

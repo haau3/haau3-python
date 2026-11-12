@@ -110,8 +110,10 @@ def origin(url: str) -> str:
     return f"{scheme}://{host}:{port}"
 
 
-def url_on_base(base_url: str, path_or_url: str, query: str = "") -> str:
-    """A URL on the client's own base, with `query` appended. Any other host is refused, so the key is never sent there."""
+def url_on_base(base_url: str, path_or_url: str, query: str = "", *, keyed: bool = True) -> str:
+    """A URL on the client's own base, with `query` appended. Any other host is refused, so the key is
+    never sent there. `keyed` is whether the client has a key, which the refusal names."""
+    what = "the API key" if keyed else "a request"
     if _ABSOLUTE.match(path_or_url):
         target = path_or_url
     else:
@@ -120,9 +122,9 @@ def url_on_base(base_url: str, path_or_url: str, query: str = "") -> str:
     try:
         there, here = origin(target), origin(base_url)
     except ValueError:
-        raise Haau3Error("Refusing to send the API key to a URL that is not valid.") from None
+        raise Haau3Error(f"Refusing to send {what} to a URL that is not valid.") from None
     if there != here:
-        raise Haau3Error(f"Refusing to send the API key to {there}: the client's base_url is {here}.")
+        raise Haau3Error(f"Refusing to send {what} to {there}: the client's base_url is {here}.")
     if query:
         target += ("&" if urlsplit(target).query else "?") + query
     return target

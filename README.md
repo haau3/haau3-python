@@ -131,13 +131,23 @@ statement = sandbox.fhir_metadata()
 print(sandbox.environment, sandbox.base_url)  # sandbox https://sandbox.haau3.com
 ```
 
-A key of the other mode is refused when the client is made, before anything is sent: a test key with
-`environment="production"`, a live key with `"sandbox"`, or no key without the Sandbox named. The
-error says where the key came from. `environment` and `base_url` on the client say what it resolved.
+A key made before test and live keys goes to production, as a live key does. These are refused when
+the client is made, before anything is sent, and the error says where the key came from:
+
+- a test key with `environment="production"`;
+- a live key, or one made before test and live keys, with `"sandbox"` or with the Sandbox's address
+  as the `base_url`;
+- no key without the Sandbox named;
+- an `environment` that a `base_url` on the other environment's address contradicts;
+- a key with anything before its `haau3_sk_` prefix, such as the quotes an env file kept.
+
+`environment` and `base_url` on the client say what it resolved.
 
 `sandbox_process_message` and `sandbox_metadata`, the Sandbox's first address at
 `/v1/sandbox/fhir/r4`, are deprecated: call `process_message` and `fhir_metadata` instead. Until the
-address goes, a client sending to the Sandbox's own host sends them to those operations there.
+address goes, a client sending to the Sandbox's own host sends them to those operations there. The
+raw `request()` sends a path as it is given, so a first-address path sent on a test key goes to the
+Sandbox's host, which does not serve it.
 
 ## With an AI coding agent
 
@@ -249,7 +259,8 @@ A 403 is a `ForbiddenError`, never an `AuthError`: the key was accepted, so ther
 rotate. Its `code` says why when the API names it, and its message says the same in words. A test
 key works only in the Sandbox (`test-key-outside-sandbox`: send a live key), and a live key does not
 work there (`live-key-in-sandbox`: send a test key). The client sends each key to its own
-environment, so you meet these only with a `base_url` of your own. `phi-agreement-required` means the organization
+environment, so you meet these with a `base_url` of your own, or by calling the deprecated
+`sandbox_…` methods with a live key. `phi-agreement-required` means the organization
 may not send patient data, and not every resource in the request is labelled as test data:
 `mark_as_test_data` labels made-up data. Without a code, the body says what the organization may not
 do.
