@@ -13,6 +13,7 @@ import httpx2
 from ._app_info import AppInfo, user_agent
 from ._body import Hidden, Secret
 from ._encode import QueryValue, checked_base_url, origin
+from ._env_file import unloaded_env_file
 from ._errors import Haau3Error, NoAnswerError
 from ._json import as_dict, as_list
 from ._methods import AsyncMethods, AsyncWithResponse, SyncMethods, SyncWithResponse
@@ -50,11 +51,47 @@ DEFAULT_MAX_RETRIES = 1
 
 NO_KEY = (
     "No API key. Set HAAU3_API_KEY, or pass it as api_key. Create a free key at "
-    "https://platform.haau3.com (see https://docs.haau3.com/authentication). To call the Sandbox with no "
+    "https://platform.haau3.com, or run npx haau3 login, then npx haau3 keys create, which writes one to "
+    "this project's env file (see https://docs.haau3.com/authentication). To call the Sandbox with no "
     'key, set HAAU3_ENVIRONMENT=sandbox, or pass environment="sandbox".'
 )
-"""What a client with no key says: both ways to give one, where one comes from, and the Sandbox's way
-to call with none."""
+"""What a client with no key says: both ways to give one, where one comes from (the dashboard, or the
+command line, which writes it to the project's env file), and the Sandbox's way to call with none."""
+
+
+def _not_in_the_environment(file: str) -> str:
+    """What a client with no key says when an env file in the current folder sets one and the
+    environment has no HAAU3_API_KEY at all. It says only what was seen. The file is named; its contents
+    never are."""
+    return (
+        f"No API key. {file} in this folder sets HAAU3_API_KEY, but this program's environment has no value "
+        f'for it. Load the file before making the client: call load_dotenv("{file}") from python-dotenv.'
+    )
+
+
+def _set_but_empty(file: str) -> str:
+    """What it says when the environment has HAAU3_API_KEY set to nothing and an env file in the current
+    folder sets it: load_dotenv keeps a variable the environment already has, so loading would change
+    nothing."""
+    return (
+        f"No API key. HAAU3_API_KEY is set but empty in this program's environment, and {file} in this folder "
+        "sets it. load_dotenv keeps a variable the environment already has: unset HAAU3_API_KEY where it is "
+        f'set to nothing, or call load_dotenv("{file}", override=True).'
+    )
+
+
+def _no_key(key_from: str) -> Haau3Error:
+    """The refusal for no key. A key given as `api_key`, even an empty one, is the caller's choice, so only
+    a key from HAAU3_API_KEY sends it looking for an env file."""
+    file = unloaded_env_file() if key_from == "HAAU3_API_KEY" else None
+    if file is None:
+        message = NO_KEY
+    elif "HAAU3_API_KEY" in os.environ:
+        message = _set_but_empty(file)
+    else:
+        message = _not_in_the_environment(file)
+    return Haau3Error(message, code="no-api-key")
+
 
 KeyMode = Literal["live", "test", "older"]
 
@@ -185,7 +222,7 @@ def _config(
         else (_checked_environment(from_env, "HAAU3_ENVIRONMENT") if from_env is not None else None)
     )
     if key is None and named != "sandbox":
-        raise Haau3Error(NO_KEY, code="no-api-key")
+        raise _no_key(key_from)
     mode = _key_mode(key.reveal()) if key is not None else None
     refused = _mismatch(mode, key_from, named, source) if mode is not None and named is not None else None
     if refused is not None:
