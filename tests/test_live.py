@@ -1,7 +1,7 @@
 """The production API, on a real key. Runs only with HAAU3_LIVE_TEST=1 and a key in HAAU3_API_KEY.
 
-The calls here are the API's services outside the Sandbox, so they skip on a test key (`haau3_sk_test_`),
-whose calls tests/test_samples.py makes. The patient-data cases need a live key (`haau3_sk_live_`) from
+The calls here are production's, so they skip on a test key (`haau3_sk_test_`), which sends every call
+to the Sandbox: tests/test_live_sandbox.py calls it. The patient-data cases need a live key (`haau3_sk_live_`) from
 an organization with no agreement on file, which is refused real patient data."""
 
 from __future__ import annotations

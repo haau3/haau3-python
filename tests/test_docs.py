@@ -15,7 +15,7 @@ README = (ROOT / "README.md").read_text()
 API = (ROOT / "api.md").read_text()
 OPERATIONS = sorted(operations())
 CLIENT = r"\b(?:client|sandbox)\."
-"""One of the README's clients: `client`, or `sandbox`, the Sandbox's own, made with a test key."""
+"""One of the README's clients: `client`, or `sandbox`, the Sandbox's, made with a test key or none."""
 
 
 def test_every_method_the_readme_calls_exists() -> None:
@@ -29,7 +29,8 @@ def test_every_method_the_readme_calls_exists() -> None:
 
 
 def test_the_readme_calls_one_operation_of_each_service() -> None:
-    tags = {op["tags"][0] for _, _, _, op in OPERATIONS} - {"FHIR base"}
+    # A deprecated operation shows no service: the README calls what replaced it.
+    tags = {op["tags"][0] for _, _, _, op in OPERATIONS if op.get("deprecated") is not True} - {"FHIR base"}
     by_method = {naming.method_name(i): op["tags"][0] for i, _, _, op in OPERATIONS}
     shown = {by_method[m] for m in re.findall(CLIENT + r"(\w+)\(", README) if m in by_method}
     assert tags <= shown

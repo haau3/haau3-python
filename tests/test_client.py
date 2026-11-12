@@ -37,7 +37,7 @@ def test_the_key_comes_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> 
 
 @pytest.mark.parametrize("cls", [Haau3, AsyncHaau3])
 def test_no_key_is_refused(monkeypatch: pytest.MonkeyPatch, cls: type) -> None:
-    with pytest.raises(Haau3Error, match=r"^No API key: pass api_key, or set HAAU3_API_KEY\.$"):
+    with pytest.raises(Haau3Error, match=r"^No API key\. Set HAAU3_API_KEY, or pass it as api_key\. "):
         cls()
     monkeypatch.setenv("HAAU3_API_KEY", "")
     with pytest.raises(Haau3Error):

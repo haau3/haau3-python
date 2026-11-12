@@ -10,7 +10,7 @@ import naming
 import pytest
 import readme_blocks
 
-from .helpers import KEY, ROOT, SPEC, spec_example_handler
+from .helpers import KEY, ROOT, SPEC, TEST_KEY, spec_example_handler
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def _arguments() -> dict[str, Any]:
         "records": records,
         "message": message,
         "sandbox_message": sandbox_message,
-        "test_key": KEY,
+        "test_key": TEST_KEY,
         "codes": ["2345-7", "2160-0"],
         "job_id": str(uuid.uuid4()),
         "access_token": "eyJhbGciOiJub25lIn0.e30.example",
@@ -66,22 +66,23 @@ def test_the_readme_has_blocks_to_run() -> None:
     found = readme_blocks.blocks((ROOT / "README.md").read_text())
     assert sum(b.run for b in found) >= 10
     assert any(b.awaits for b in found)
-    assert [b.run for b in found].count(False) == 1
+    # The proxy's, and the Sandbox with no key, which needs HAAU3_API_KEY unset.
+    assert [b.run for b in found].count(False) == 2
 
 
-def test_the_readme_sends_the_sandboxs_operations_through_a_client_made_with_a_test_key() -> None:
+def test_the_readme_calls_the_sandbox_on_a_test_key_and_with_none_and_no_deprecated_method() -> None:
     readme = (ROOT / "README.md").read_text()
-    sandbox = [
+    assert "sandbox = Haau3(api_key=test_key)" in readme
+    assert "sandbox.process_message(" in readme
+    assert 'sandbox = Haau3(environment="sandbox")' in readme
+    deprecated = [
         naming.method_name(op["operationId"])
         for item in SPEC["paths"].values()
         for op in item.values()
-        if isinstance(op, dict) and op.get("tags", [""])[0] == "Sandbox"
+        if isinstance(op, dict) and op.get("deprecated") is True
     ]
-    assert sandbox
-    assert "sandbox = Haau3(api_key=test_key)" in readme
-    assert "sandbox.sandbox_process_message(" in readme
-    # The client made from HAAU3_API_KEY never sends one: the Sandbox refuses a live key.
-    assert [name for name in sandbox if f"client.{name}(" in readme] == []
+    assert deprecated == ["sandbox_metadata", "sandbox_process_message"]
+    assert [name for name in deprecated if f".{name}(" in readme] == []
 
 
 @pytest.mark.usefixtures("every_client_answers_from_the_spec")

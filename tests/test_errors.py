@@ -208,9 +208,11 @@ async def test_a_403_names_a_test_key_outside_the_sandbox(kind: str) -> None:
 @pytest.mark.anyio
 async def test_a_403_names_a_live_key_in_the_sandbox(kind: str) -> None:
     bundle = {"resourceType": "Bundle", "type": "message", "entry": []}
-    error = await Client(kind, Recorder(answer(403, coded("live-key-in-sandbox")))).raises(
-        "sandbox_process_message", bundle
-    )
+    # The first address's method, deprecated, which a live key still reaches at production's host.
+    with pytest.warns(DeprecationWarning, match=r"^Call `process_message` on the Sandbox's own host"):
+        error = await Client(kind, Recorder(answer(403, coded("live-key-in-sandbox")))).raises(
+            "sandbox_process_message", bundle
+        )
     assert isinstance(error, ForbiddenError)
     assert error.code == "live-key-in-sandbox"
     assert error.message == (
