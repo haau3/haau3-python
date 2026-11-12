@@ -132,14 +132,17 @@ print(sandbox.environment, sandbox.base_url)  # sandbox https://sandbox.haau3.co
 ```
 
 A key made before test and live keys goes to production, as a live key does. These are refused when
-the client is made, before anything is sent, and the error says where the key came from:
+the client is made, before anything is sent. The error says where the key came from, and its `code`
+says which it is:
 
-- a test key with `environment="production"`;
+- a test key with `environment="production"` (`test-key-outside-sandbox`);
 - a live key, or one made before test and live keys, with `"sandbox"` or with the Sandbox's address
-  as the `base_url`;
-- no key without the Sandbox named;
-- an `environment` that a `base_url` on the other environment's address contradicts;
-- a key with anything before its `haau3_sk_` prefix, such as the quotes an env file kept.
+  as the `base_url` (`live-key-in-sandbox`, `older-key-in-sandbox`);
+- no key without the Sandbox named (`no-api-key`);
+- an `environment` that a `base_url` on the other environment's address contradicts
+  (`environment-conflicts-with-base-url`);
+- a key with anything before its `haau3_sk_` prefix, such as the quotes an env file kept
+  (`api-key-not-alone`).
 
 `environment` and `base_url` on the client say what it resolved.
 
@@ -264,6 +267,25 @@ environment, so you meet these with a `base_url` of your own, or by calling the 
 may not send patient data, and not every resource in the request is labelled as test data:
 `mark_as_test_data` labels made-up data. Without a code, the body says what the organization may not
 do.
+
+A client that cannot be made raises a `Haau3Error` before anything is sent, with a `code` to branch on,
+which the `ClientErrorCode` type lists. The message says the same for a person and names where the
+value came from, the keyword or the variable:
+
+```python
+from haau3 import Haau3, Haau3Error
+
+try:
+    configured = Haau3()
+except Haau3Error as error:
+    if error.code == "no-api-key":
+        pass  # set HAAU3_API_KEY, or name the Sandbox to call it with no key
+```
+
+The codes are `no-api-key`, `invalid-api-key`, `api-key-not-alone`, `test-key-outside-sandbox`,
+`live-key-in-sandbox`, `older-key-in-sandbox`, `invalid-environment`, `invalid-base-url`,
+`environment-conflicts-with-base-url`, `invalid-app-info`, `invalid-http-client` and `in-browser`. The
+two the API also answers with keep the API's names.
 
 No answer is never reported as an empty result, and an empty result is never an error. Every error
 the API answered carries `attempts`, `duration_ms` and `reason_phrase` too.
