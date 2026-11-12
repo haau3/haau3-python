@@ -199,11 +199,55 @@ def test_every_sample_reads_the_key_from_the_environment_and_sets_no_address() -
         assert not re.search(r"api_key|base_url|haau3_sk_", source)
 
 
+GUARDED = 'print(json.dumps(slots[0], indent=2) if slots else "No open slots matched.")'
+
+
 def test_the_slot_search_is_the_first_call_the_city_it_searches_then_the_first_slot_it_found() -> None:
     source = _sample("GET", "/v1/scheduling/slots")
     assert re.search(r"^# Open appointment slots, here in [A-Z][\w .'-]*\.$", source, re.M)
     assert 'slots = client.search_slots(city="' in source
-    assert source.rstrip("\n").endswith("print(json.dumps(slots[0], indent=2))")
+    assert source.rstrip("\n").endswith(GUARDED)
+
+
+@pytest.fixture(scope="module")
+def finds_nothing() -> Iterator[str]:
+    """A stand-in API whose every answer is a slot search that found nothing."""
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format: str, *args: Any) -> None:
+            pass
+
+        def do_GET(self) -> None:
+            data = json.dumps({"total": 0, "slots": []}).encode()
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server.shutdown()
+    server.server_close()
+
+
+def test_the_first_call_says_so_when_the_search_finds_no_slot(finds_nothing: str) -> None:
+    result = _run(_sample("GET", "/v1/scheduling/slots"), finds_nothing)
+    assert result.stderr == ""
+    assert result.returncode == 0
+    assert result.stdout == "No open slots matched.\n"
+
+
+def test_the_first_call_before_the_guard_failed_on_no_slot(finds_nothing: str) -> None:
+    """The control: the sample as it was raised IndexError on an empty answer."""
+    source = _sample("GET", "/v1/scheduling/slots")
+    unguarded = source.replace(GUARDED, "print(json.dumps(slots[0], indent=2))")
+    assert unguarded != source
+    result = _run(unguarded, finds_nothing)
+    assert result.returncode != 0
+    assert "IndexError" in result.stderr
 
 
 @pytest.mark.parametrize(("op_id", "method", "path", "op"), OPERATIONS, ids=[o[0] for o in OPERATIONS])
