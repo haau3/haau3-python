@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.33",
+    "version": "1.0.0-preview.34",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -19598,7 +19598,7 @@
             "$ref": "#/components/responses/FhirUnauthorized"
           },
           "403": {
-            "description": "Refused before the operation runs, coded `forbidden`, for one of two reasons. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read. Or a member's request from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan that is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`: coded `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`, and a request labelled only in part names the first resources without the label in `expression`. A test key (`haau3_sk_test_…`) works only in the Sandbox, so one sent here is refused before the request runs: coded `forbidden`, with `test-key-outside-sandbox` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Send a live key.",
+            "description": "Refused before the operation runs, coded `forbidden`, for one of two reasons. Not yet open to customers: while its price sources are being licensed, every request from a customer's organization is refused, with or without patient details, before its body is read: coded `not-open-to-customers` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Or a member's request from an organization without both a business associate agreement (BAA) with haau3 in force and the Team or Scale plan that is not test data marked as such, the request and every resource in it labelled with the `meta.security` coding `HTEST` from `http://terminology.hl7.org/CodeSystem/v3-ActReason`: coded `phi-agreement-required` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`, and a request labelled only in part names the first resources without the label in `expression`. A test key (`haau3_sk_test_…`) works only in the Sandbox, so one sent here is refused before the request runs: coded `forbidden`, with `test-key-outside-sandbox` from `https://haau3.com/fhir/CodeSystem/api-error` in `issue.details.coding`. Send a live key.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -19614,6 +19614,13 @@
                           "severity": "error",
                           "code": "forbidden",
                           "details": {
+                            "coding": [
+                              {
+                                "system": "https://haau3.com/fhir/CodeSystem/api-error",
+                                "code": "not-open-to-customers",
+                                "display": "Not open to customers"
+                              }
+                            ],
                             "text": "Pharmacy Benefits is not yet open to customers."
                           }
                         }
