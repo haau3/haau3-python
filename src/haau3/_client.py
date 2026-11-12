@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import sys
-from collections.abc import AsyncIterator, Iterator, Mapping
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from types import TracebackType
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import httpx2
 
@@ -20,7 +20,7 @@ from ._parameters import DosageReview
 from ._parameters import parameter as _parameter
 from ._parameters import parameters as _parameters
 from ._parameters import review_flags as _review_flags
-from ._response import Options, RawResponse
+from ._response import Options, RawResponse, Response
 from ._terminology import Designation, DesignationUse, LookupResult, ValidationResult
 from ._terminology import designations as _designations
 from ._terminology import lookup_result as _lookup_result
@@ -272,6 +272,84 @@ def _repeated(name: str) -> NoAnswerError:
     )
 
 
+class _SyncWithResponse(SyncWithResponse):
+    """`Haau3.with_response`: every method again, `get` and `post` too, each returning a `Response`."""
+
+    __slots__ = ()
+
+    def get(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[Any]:
+        """`Haau3.get`, returning a `Response` with the request id and timing as well as the answer."""
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return self._engine.call_path("GET", path, path_params, (query or {}).items(), None, expects, options)
+
+    def post(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        body: object = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[Any]:
+        """`Haau3.post`, returning a `Response` with the request id and timing as well as the answer."""
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return self._engine.call_path("POST", path, path_params, (query or {}).items(), body, expects, options)
+
+
+class _AsyncWithResponse(AsyncWithResponse):
+    """`AsyncHaau3.with_response`: every method again, `get` and `post` too, each returning a `Response`."""
+
+    __slots__ = ()
+
+    async def get(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[Any]:
+        """`AsyncHaau3.get`, returning a `Response` with the request id and timing as well as the answer."""
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return await self._engine.call_path("GET", path, path_params, (query or {}).items(), None, expects, options)
+
+    async def post(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        body: object = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[Any]:
+        """`AsyncHaau3.post`, returning a `Response` with the request id and timing as well as the answer."""
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return await self._engine.call_path("POST", path, path_params, (query or {}).items(), body, expects, options)
+
+
 class Haau3(SyncMethods):
     """The haau3 platform API client, for code that calls and waits: Django, Flask, scripts, notebooks.
 
@@ -323,7 +401,7 @@ class Haau3(SyncMethods):
         config = _config(key, key_from, environment, base_url, timeout, max_retries, app_info)
         _checked_client(http_client, httpx2.Client)
         self._engine = SyncEngine(config, http_client)
-        self.with_response: SyncWithResponse = SyncWithResponse(self._engine)
+        self.with_response: _SyncWithResponse = _SyncWithResponse(self._engine)
         """Every method again, each returning a `Response` with the request id and timing as well as the answer."""
 
     @property
@@ -528,6 +606,52 @@ class Haau3(SyncMethods):
             followed.add(url)
             page = self._engine.next_page(url, options)
 
+    def get(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Any:
+        """Sends a GET to a path on the API and returns its answer, or raises the errors every
+        operation's own method raises: `AuthError`, `ForbiddenError`, `RefusedError` or `NoAnswerError`.
+
+        For an operation this version of the SDK has no method for, or one you call by its path.
+        `path` is the path as the spec writes it, such as `/v1/fhir/r4/Practitioner/{id}`, and
+        `path_params` a value for each `{name}` in it, each encoded into the path; a message names the
+        path as written, never a value. A `{name}` with no value, or a value with no `{name}`, is refused
+        before anything is sent. `expects` lists the FHIR resource types the answer may be, as each
+        operation's own method checks them; any other is a `NoAnswerError` with reason `unreadable`.
+        `with_response.get()` returns a `Response` with the request id and timing as well.
+        """
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return self._engine.call_path("GET", path, path_params, (query or {}).items(), None, expects, options).data
+
+    def post(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        body: object = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Any:
+        """Sends a POST to a path on the API, with a body, and returns its answer or raises, as `get()` does.
+
+        A str `body` is sent as it is, anything else as JSON.
+        """
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return self._engine.call_path("POST", path, path_params, (query or {}).items(), body, expects, options).data
+
     def request(
         self,
         method: Literal["GET", "POST"],
@@ -582,7 +706,7 @@ class AsyncHaau3(AsyncMethods):
         config = _config(key, key_from, environment, base_url, timeout, max_retries, app_info)
         _checked_client(http_client, httpx2.AsyncClient)
         self._engine = AsyncEngine(config, http_client)
-        self.with_response: AsyncWithResponse = AsyncWithResponse(self._engine)
+        self.with_response: _AsyncWithResponse = _AsyncWithResponse(self._engine)
         """Every method again, each returning a `Response` with the request id and timing as well as the answer."""
 
     @property
@@ -776,6 +900,43 @@ class AsyncHaau3(AsyncMethods):
                 raise _repeated(self._engine.name("GET", url))
             followed.add(url)
             page = await self._engine.next_page(url, options)
+
+    async def get(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Any:
+        """Sends a GET to a path on the API and returns its answer, or raises, as `Haau3.get` does."""
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return (
+            await self._engine.call_path("GET", path, path_params, (query or {}).items(), None, expects, options)
+        ).data
+
+    async def post(
+        self,
+        path: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        query: Mapping[str, QueryValue] | None = None,
+        body: object = None,
+        expects: Sequence[str] = (),
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Any:
+        """Sends a POST to a path on the API, with a body, and returns its answer or raises, as `Haau3.post` does."""
+        options = Options(timeout, max_retries, correlation_id, extra_headers)
+        return (
+            await self._engine.call_path("POST", path, path_params, (query or {}).items(), body, expects, options)
+        ).data
 
     async def request(
         self,

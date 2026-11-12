@@ -43,6 +43,7 @@ _FORBIDDEN_REASONS = {
     "phi-agreement-required": (
         "its organization may not send patient data, and not every resource in this request is labelled as test data"
     ),
+    "not-open-to-customers": "the operation is not yet open to customers",
 }
 _FORBIDDEN_GENERAL = "the API key was accepted, and its organization may not make this request"
 

@@ -66,6 +66,11 @@ def encode_path_value(value: str) -> str:
     return quote(_SURROGATE.sub("�", value), safe="!*'()")
 
 
+def path_names(template: str) -> list[str]:
+    """The names of a path's `{name}` placeholders, in order."""
+    return _PLACEHOLDER.findall(template)
+
+
 def fill_path(template: str, values: Sequence[object]) -> str:
     """The operation's path with each `{name}` replaced by its value, encoded, in order."""
     names = _PLACEHOLDER.findall(template)

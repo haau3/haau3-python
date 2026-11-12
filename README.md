@@ -494,6 +494,27 @@ the spec marks `x-haau3-batchable: false`.
 To send a batch `Bundle` you built yourself, `fhir_batch()` takes it and returns the
 `batch-response` as it is.
 
+## Any operation by its path
+
+`get()` and `post()` call an operation by its path: one this version of the SDK has no method for
+yet, or one a tool found in the spec. Each takes the path as the spec writes it, a value for each
+`{name}` in `path_params`, the `query`, the `body` (for `post()`) and the FHIR types the answer may
+be in `expects`, beside every per-call option. They raise the same errors as every operation's own
+method, and `with_response.get()` and `with_response.post()` return the request id and timing too:
+
+```python
+practitioner = client.get(
+    "/v1/fhir/r4/Practitioner/{id}",
+    path_params={"id": "Practitioner-1093209884"},
+    expects=["Practitioner"],
+)
+metadata = client.with_response.get("/v1/fhir/r4/metadata", expects=["CapabilityStatement"])
+print(metadata.request_id)
+```
+
+Each value is encoded into the path, and an error's message names the path as you wrote it, never a
+value. A `{name}` with no value, or a value with no `{name}`, is refused before anything is sent.
+
 ## Any request
 
 `request()` sends a request as you give it and returns what the API answered, whatever the status,

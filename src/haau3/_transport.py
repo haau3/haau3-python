@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 import sys
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, TypeVar, cast, final
 
@@ -19,7 +19,18 @@ import httpx2
 
 from ._batch import BatchResult, batch_bundle, read_batch
 from ._body import HeldHeaders, Hidden, Secret
-from ._encode import FHIR_BASE, QueryValue, encode_query, fill_path, is_fhir, is_uuid, json_bytes, path_of, url_on_base
+from ._encode import (
+    FHIR_BASE,
+    QueryValue,
+    encode_query,
+    fill_path,
+    is_fhir,
+    is_uuid,
+    json_bytes,
+    path_names,
+    path_of,
+    url_on_base,
+)
 from ._errors import Haau3Error, NoAnswerError, NoAnswerReason
 from ._judge import Context, detail, judge, parse_body, retry_after_seconds, wait_after_answer, wait_after_failure
 from ._operation import DeclaredHeader, Operation
@@ -279,6 +290,31 @@ def answer_of(name: str, expects: Sequence[str], sent: Sent, *, no_key: bool = F
     raise verdict
 
 
+def path_operation(
+    method: Method, path: str, path_params: Mapping[str, object] | None, expects: Sequence[str]
+) -> tuple[Operation[Any], tuple[str, ...]]:
+    """`get()`'s and `post()`'s path as an operation, and the value for each `{name}` in it, in order.
+
+    A `{name}` with no value, or a value with no `{name}`, is refused before anything is sent: either
+    would send the request to another address than the one meant. The message names the placeholder,
+    never a value.
+    """
+    names = path_names(path)
+    given = dict(path_params or {})
+    not_sent = f"{method} {path} was not sent:"
+    for name in names:
+        if name not in given:
+            raise Haau3Error(f"{not_sent} path_params has no value for {{{name}}}.")
+        if not isinstance(given[name], str):
+            raise Haau3Error(f"{not_sent} the value for {{{name}}} in path_params must be a str.")
+    for name in given:
+        if name not in names:
+            raise Haau3Error(f"{not_sent} the path has no {{{name}}} for path_params' value.")
+    if isinstance(expects, str):
+        raise Haau3Error(f'{not_sent} expects is a list of FHIR resource types, such as ["Bundle"], not a str.')
+    return Operation(method, path, tuple(expects)), tuple(cast("str", given[name]) for name in names)
+
+
 def raw_response(sent: Sent) -> RawResponse:
     parsed = parse_body(sent.content, sent.headers.get("content-type"))
     value = parsed.reveal() if parsed is not None else None
@@ -377,6 +413,23 @@ class SyncEngine(_Engine):
         declared = declared_headers(operation, options, label)
         sent = self.send(operation.method, url, body_bytes(body), options, label, declared)
         return sent.response(cast("T", answer_of(label, operation.expects, sent, no_key=self.no_key).reveal()))
+
+    def call_path(
+        self,
+        method: Method,
+        path: str,
+        path_params: Mapping[str, object] | None,
+        query: Iterable[tuple[str, QueryValue]],
+        body: object,
+        expects: Sequence[str],
+        options: Options,
+    ) -> Response[Any]:
+        """`get()` and `post()`: an operation named by its path, judged as a generated method's is."""
+        operation, values = path_operation(method, path, path_params, expects)
+        url = self.operation_url(operation, values, query)
+        label = self.label(operation)
+        sent = self.send(method, url, raw_content(body), options, label)
+        return sent.response(answer_of(label, operation.expects, sent, no_key=self.no_key).reveal())
 
     def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
         checked, bundle = batch_bundle(calls)
@@ -485,6 +538,23 @@ class AsyncEngine(_Engine):
         declared = declared_headers(operation, options, label)
         sent = await self.send(operation.method, url, body_bytes(body), options, label, declared)
         return sent.response(cast("T", answer_of(label, operation.expects, sent, no_key=self.no_key).reveal()))
+
+    async def call_path(
+        self,
+        method: Method,
+        path: str,
+        path_params: Mapping[str, object] | None,
+        query: Iterable[tuple[str, QueryValue]],
+        body: object,
+        expects: Sequence[str],
+        options: Options,
+    ) -> Response[Any]:
+        """`get()` and `post()`, as `SyncEngine.call_path` does."""
+        operation, values = path_operation(method, path, path_params, expects)
+        url = self.operation_url(operation, values, query)
+        label = self.label(operation)
+        sent = await self.send(method, url, raw_content(body), options, label)
+        return sent.response(answer_of(label, operation.expects, sent, no_key=self.no_key).reveal())
 
     async def batch(self, calls: Sequence[object], options: Options) -> Response[tuple[BatchResult[Any], ...]]:
         checked, bundle = batch_bundle(calls)
