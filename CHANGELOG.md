@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.2](https://github.com/haau3/haau3-python/compare/v0.4.1...v0.4.2) (2026-11-12)
+
+
+### Features
+
+* get() and post() call any operation by its path, with the typed errors ([#71](https://github.com/haau3/haau3-python/issues/71)) ([cfb10bb](https://github.com/haau3/haau3-python/commit/cfb10bb06446dd00c7cb77d25de00868a99400e1))
+
+
+### Bug Fixes
+
+* the API's spec at 1.0.0-preview.34 ([#72](https://github.com/haau3/haau3-python/issues/72)) ([23d9a94](https://github.com/haau3/haau3-python/commit/23d9a948f21fc4fe981344a92ceea4c747e76035))
+
 ## [0.4.1](https://github.com/haau3/haau3-python/compare/v0.4.0...v0.4.1) (2026-11-12)
 
 
