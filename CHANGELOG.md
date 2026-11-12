@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/haau3/haau3-python/compare/v0.3.9...v0.4.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* the key's mode picks the host, and environment calls the Sandbox with no key ([#67](https://github.com/haau3/haau3-python/issues/67))
+
+### Features
+
+* the key's mode picks the host, and environment calls the Sandbox with no key ([#67](https://github.com/haau3/haau3-python/issues/67)) ([e36193c](https://github.com/haau3/haau3-python/commit/e36193c4bdfe1abfcf9ad3f6e060b0a45f665e43))
+
 ## [0.3.9](https://github.com/haau3/haau3-python/compare/v0.3.8...v0.3.9) (2026-11-12)
 
 
