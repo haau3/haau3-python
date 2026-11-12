@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/haau3/haau3-python/compare/v0.4.2...v0.4.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* a missing key names the command line and an env file the program did not load, and the first call says when no slot matched ([#74](https://github.com/haau3/haau3-python/issues/74)) ([555d249](https://github.com/haau3/haau3-python/commit/555d2494a573f0d3d2643bb28eb94ba1fd5485ff))
+
 ## [0.4.2](https://github.com/haau3/haau3-python/compare/v0.4.1...v0.4.2) (2026-11-12)
 
 
