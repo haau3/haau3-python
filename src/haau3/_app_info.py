@@ -61,29 +61,40 @@ def user_agent(app_info: object) -> str:
     if not isinstance(app_info, Mapping):
         raise Haau3Error(
             'app_info must be a dict with a name, such as {"name": "my-plugin", "version": "1.2.0"}: '
-            f"{app_info!r} is not one."
+            f"{app_info!r} is not one.",
+            code="invalid-app-info",
         )
     given: Mapping[object, object] = app_info  # pyright: ignore[reportUnknownVariableType]
     unknown = [key for key in given if key not in _FIELDS]
     if unknown:
         raise Haau3Error(
-            f"app_info takes name, version and url only: {', '.join(repr(key) for key in unknown)} is not one of them."
+            f"app_info takes name, version and url only: {', '.join(repr(key) for key in unknown)} is not one of them.",
+            code="invalid-app-info",
         )
     name, version, url = given.get("name"), given.get("version"), given.get("url")
     if name is None or name == "":
-        raise Haau3Error('app_info["name"] is required: your app\'s name, such as "my-plugin".')
+        raise Haau3Error(
+            'app_info["name"] is required: your app\'s name, such as "my-plugin".', code="invalid-app-info"
+        )
     if not isinstance(name, str) or _TOKEN.fullmatch(name) is None:
-        raise Haau3Error(f'app_info["name"] must be {_TOKEN_MARKS}, such as "my-plugin": {name!r} is not one.')
+        raise Haau3Error(
+            f'app_info["name"] must be {_TOKEN_MARKS}, such as "my-plugin": {name!r} is not one.',
+            code="invalid-app-info",
+        )
     product = name
     if version is not None and version != "":
         if not isinstance(version, str) or _TOKEN.fullmatch(version) is None:
-            raise Haau3Error(f'app_info["version"] must be {_TOKEN_MARKS}, such as "1.2.0": {version!r} is not one.')
+            raise Haau3Error(
+                f'app_info["version"] must be {_TOKEN_MARKS}, such as "1.2.0": {version!r} is not one.',
+                code="invalid-app-info",
+            )
         product += f"/{version}"
     if url is not None and url != "":
         if not isinstance(url, str) or _COMMENT_TEXT.fullmatch(url) is None or not _is_web_url(url):
             raise Haau3Error(
                 'app_info["url"] must be an http or https URL with a host and no space, parenthesis or backslash, '
-                f'such as "https://example.com/my-plugin": {url!r} is not one.'
+                f'such as "https://example.com/my-plugin": {url!r} is not one.',
+                code="invalid-app-info",
             )
         product += f" ({url})"
     return f"{USER_AGENT} {product}"

@@ -27,6 +27,7 @@ from ._client import Environment as Environment
 from ._client import Haau3 as Haau3
 from ._encode import QueryValue as QueryValue
 from ._errors import AuthError as AuthError
+from ._errors import ClientErrorCode as ClientErrorCode
 from ._errors import ErrorDict as ErrorDict
 from ._errors import ForbiddenError as ForbiddenError
 from ._errors import Haau3Error as Haau3Error
@@ -82,6 +83,7 @@ __all__ = [
     "BatchResult",
     "BooleanProperty",
     "Call",
+    "ClientErrorCode",
     "CodingProperty",
     "DecimalProperty",
     "Designation",

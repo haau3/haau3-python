@@ -77,7 +77,7 @@ def _checked_environment(value: object, source: str) -> Environment:
         return "production"
     if read == "sandbox":
         return "sandbox"
-    raise Haau3Error(f'{source} takes "production" or "sandbox", and this is neither.')
+    raise Haau3Error(f'{source} takes "production" or "sandbox", and this is neither.', code="invalid-environment")
 
 
 def _held_key(api_key: object) -> tuple[Secret | None, str]:
@@ -93,7 +93,7 @@ def _held_key(api_key: object) -> tuple[Secret | None, str]:
     del api_key
     if raw is not None and not isinstance(raw, str):
         del raw
-        raise Haau3Error(f"{source} takes a string.")
+        raise Haau3Error(f"{source} takes a string.", code="invalid-api-key")
     text = (raw or "").strip()
     del raw
     before_prefix = text.find("haau3_sk_") > 0
@@ -102,7 +102,8 @@ def _held_key(api_key: object) -> tuple[Secret | None, str]:
     if before_prefix:
         raise Haau3Error(
             f'The key in {source} has something before its haau3_sk_ prefix, such as quotes or "Bearer ". '
-            "Set the key alone."
+            "Set the key alone.",
+            code="api-key-not-alone",
         )
     return held, source
 
@@ -123,7 +124,7 @@ _ADDRESS_OF: dict[Environment, str] = {
 _NAMED: dict[Environment, str] = {"production": "production", "sandbox": "the Sandbox"}
 
 
-def _mismatch(mode: KeyMode, key_from: str, environment: Environment, named_in: str) -> str | None:
+def _mismatch(mode: KeyMode, key_from: str, environment: Environment, named_in: str) -> Haau3Error | None:
     """Why a key and a named environment cannot go together, or None when they can. The key is named
     by where it came from and its kind, never by its value, and the way to call with no key is the one
     its source needs."""
@@ -133,19 +134,22 @@ def _mismatch(mode: KeyMode, key_from: str, environment: Environment, named_in: 
         else "pass no key to call it with none"
     )
     if environment == "production" and mode == "test":
-        return (
+        return Haau3Error(
             f"The key in {key_from} is a test key (haau3_sk_test_…), which works only in the Sandbox, and "
-            f"{named_in} names production. Use a live key there, or name the Sandbox."
+            f"{named_in} names production. Use a live key there, or name the Sandbox.",
+            code="test-key-outside-sandbox",
         )
     if environment == "sandbox" and mode == "live":
-        return (
+        return Haau3Error(
             f"The key in {key_from} is a live key (haau3_sk_live_…), which does not work in the Sandbox, and "
-            f"{named_in} names the Sandbox. Use a test key there, or {with_no_key}."
+            f"{named_in} names the Sandbox. Use a test key there, or {with_no_key}.",
+            code="live-key-in-sandbox",
         )
     if environment == "sandbox" and mode == "older":
-        return (
+        return Haau3Error(
             f"The key in {key_from} was made before test and live keys, so it does not work in the Sandbox, and "
-            f"{named_in} names the Sandbox. Create a test key at https://platform.haau3.com, or {with_no_key}."
+            f"{named_in} names the Sandbox. Create a test key at https://platform.haau3.com, or {with_no_key}.",
+            code="older-key-in-sandbox",
         )
     return None
 
@@ -181,11 +185,11 @@ def _config(
         else (_checked_environment(from_env, "HAAU3_ENVIRONMENT") if from_env is not None else None)
     )
     if key is None and named != "sandbox":
-        raise Haau3Error(NO_KEY)
+        raise Haau3Error(NO_KEY, code="no-api-key")
     mode = _key_mode(key.reveal()) if key is not None else None
     refused = _mismatch(mode, key_from, named, source) if mode is not None and named is not None else None
     if refused is not None:
-        raise Haau3Error(refused)
+        raise refused
     chosen: Environment = named if named is not None else ("sandbox" if mode == "test" else "production")
     where, base_from = _base_url(base_url, chosen)
     # A base URL that is one environment's own address is that environment. A named environment must
@@ -195,13 +199,15 @@ def _config(
     if at is not None and named is not None and named != at:
         raise Haau3Error(
             f"{source} names {_NAMED[named]}, and {base_from} is {_ADDRESS_OF[at]}. "
-            "Name one environment, or a base URL that is neither's."
+            "Name one environment, or a base URL that is neither's.",
+            code="environment-conflicts-with-base-url",
         )
     if at == "sandbox" and mode is not None and mode != "test":
         kind = "is a live key (haau3_sk_live_…)" if mode == "live" else "was made before test and live keys"
         raise Haau3Error(
             f"The key in {key_from} {kind}, and {base_from} is {_ADDRESS_OF['sandbox']}, which takes test keys "
-            "only. Use a test key there."
+            "only. Use a test key there.",
+            code="live-key-in-sandbox" if mode == "live" else "older-key-in-sandbox",
         )
     return Config(
         key=key,
@@ -220,7 +226,8 @@ def _server_only() -> None:
     """Refuses a browser (Pyodide), where a key would be public."""
     if sys.platform == "emscripten":
         raise Haau3Error(
-            "haau3 runs on a server only: an API key in a browser is public. Call the API from your server."
+            "haau3 runs on a server only: an API key in a browser is public. Call the API from your server.",
+            code="in-browser",
         )
 
 
@@ -254,7 +261,8 @@ def _checked_client(given: object, kind: type[httpx2.Client] | type[httpx2.Async
     # The type says which client; this catches one from untyped code, such as the older httpx's.
     if given is not None and not isinstance(given, kind):
         raise Haau3Error(
-            f"http_client is an httpx2.{kind.__name__}, not a {type(given).__module__}.{type(given).__name__}."
+            f"http_client is an httpx2.{kind.__name__}, not a {type(given).__module__}.{type(given).__name__}.",
+            code="invalid-http-client",
         )
 
 
