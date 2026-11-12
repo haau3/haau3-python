@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/haau3/haau3-python/compare/v0.4.0...v0.4.1) (2026-11-12)
+
+
+### Features
+
+* a client that cannot be made says why with a code ([#69](https://github.com/haau3/haau3-python/issues/69)) ([ed0a071](https://github.com/haau3/haau3-python/commit/ed0a071045b52ba509d59ae63e984c49e260bfbf))
+
 ## [0.4.0](https://github.com/haau3/haau3-python/compare/v0.3.9...v0.4.0) (2026-11-12)
 
 
