@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.35",
+    "version": "1.0.0-preview.36",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every error under `/v1/fhir` is a FHIR `OperationOutcome` and every other error an RFC 9457 problem; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -252,18 +252,18 @@
                       "total": 5,
                       "providerLocations": [
                         {
-                          "key": "haau3|loc:idr|https://haau3.com/synthetic/location|loc-haau3-telehealth|prov:idr|https://haau3.com/synthetic/practitioner|prac-haau3-psych",
+                          "key": "haau3|loc:idr|https://haau3.com/synthetic/location|loc-haau3-telehealth|prov:idr|https://haau3.com/synthetic/practitioner|sample-dr-sarah-example",
                           "publisher": "haau3",
                           "provider": {
-                            "id": "prac-haau3-psych",
+                            "id": "sample-dr-sarah-example",
                             "identifier": [
                               {
-                                "value": "prac-haau3-psych",
+                                "value": "sample-dr-sarah-example",
                                 "system": "https://haau3.com/synthetic/practitioner"
                               }
                             ],
                             "type": "practitioner-role",
-                            "name": "Dr. Sarah Whitefeather",
+                            "name": "Dr. Sarah Example",
                             "specialty": "Psychiatry Physician",
                             "specialties": [
                               {
@@ -638,19 +638,19 @@
                             }
                           },
                           "provider": {
-                            "id": "prac-haau3-radiology",
+                            "id": "sample-dr-wei-example",
                             "identifier": [
                               {
                                 "system": "https://haau3.com/synthetic/practitioner",
-                                "value": "prac-haau3-radiology"
+                                "value": "sample-dr-wei-example"
                               },
                               {
                                 "system": "http://hl7.org/fhir/sid/us-npi",
-                                "value": "1992700003"
+                                "value": "2900000227"
                               }
                             ],
                             "type": "practitioner-role",
-                            "name": "Dr. Wei Chen",
+                            "name": "Dr. Wei Example",
                             "specialty": "Diagnostic Radiology Physician",
                             "specialties": [
                               {
