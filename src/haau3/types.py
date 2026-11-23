@@ -147,6 +147,12 @@ ReadPractitionerRoleResponse: TypeAlias = fhir.PractitionerRole
 ReadQuestionnaireResponse: TypeAlias = fhir.Questionnaire
 """What `read_questionnaire` answers with."""
 
+ReadScheduleResponse: TypeAlias = fhir.Schedule
+"""What `read_schedule` answers with."""
+
+ReadSlotResponse: TypeAlias = fhir.Slot
+"""What `read_slot` answers with."""
+
 ReconcileMedicationsBody: TypeAlias = Union[fhir.Bundle, fhir.Parameters]
 """The request body of `reconcile_medications`."""
 ReconcileMedicationsResponse: TypeAlias = fhir.Bundle
@@ -381,6 +387,58 @@ class SearchQuestionnaireQuery(TypedDict, total=False):
 
 SearchQuestionnaireResponse: TypeAlias = fhir.Bundle
 """What `search_questionnaire` answers with."""
+
+
+class SearchScheduleQuery(TypedDict, total=False):
+    """The query parameters of `search_schedule`, by their Python names, to pass as `**query`."""
+
+    service_type: str
+    specialty: str
+    provider_specialty: str
+    provider_identifier: str
+    location_address_city: str
+    location_address_state: str
+    location_physical_type: str
+    source: str
+    source_below: str
+    include: Sequence[Literal["Schedule:actor"]]
+    include_iterate: Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
+    count: int
+    page: str
+
+
+SearchScheduleResponse: TypeAlias = fhir.Bundle
+"""What `search_schedule` answers with."""
+
+
+class SearchSlotQuery(TypedDict, total=False):
+    """The query parameters of `search_slot`, by their Python names, to pass as `**query`."""
+
+    status: str
+    start: Sequence[str]
+    appointment_type: str
+    schedule: str
+    service_type: str
+    schedule_service_type: str
+    specialty: str
+    provider_specialty: str
+    provider_identifier: str
+    patient_type: str
+    location_address_city: str
+    location_address_state: str
+    location_physical_type: str
+    source: str
+    source_below: str
+    include: Sequence[Literal["Slot:schedule"]]
+    include_iterate: Sequence[
+        Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+    ]
+    count: int
+    page: str
+
+
+SearchSlotResponse: TypeAlias = fhir.Bundle
+"""What `search_slot` answers with."""
 
 
 class SearchSlotsQuery(TypedDict, total=False):

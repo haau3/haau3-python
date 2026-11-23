@@ -4069,6 +4069,52 @@ class SampledData(TypedDict, total=False):
     """Extensions for data"""
 
 
+class Schedule(TypedDict, total=False):
+    """A container for slots of time that may be available for booking appointments."""
+    resourceType: Required[Literal['Schedule']]
+    """This is a Schedule resource"""
+    id: str
+    """The logical id of the resource, as used in the URL for the resource."""
+    meta: "Meta"
+    """The metadata about the resource."""
+    implicitRules: str
+    """A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content."""
+    _implicitRules: "Element"
+    """Extensions for implicitRules"""
+    language: str
+    """The base language in which the resource is written."""
+    _language: "Element"
+    """Extensions for language"""
+    text: "Narrative"
+    """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
+    contained: list["Resource"]
+    """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
+    extension: list["Extension"]
+    """May be used to represent additional information that is not part of the basic definition of the resource."""
+    modifierExtension: list["Extension"]
+    """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
+    identifier: list["Identifier"]
+    """External Ids for this item."""
+    active: bool
+    """Whether this schedule record is in active use or should not be used (such as was entered in error)."""
+    _active: "Element"
+    """Extensions for active"""
+    serviceCategory: list["CodeableConcept"]
+    """A broad categorization of the service that is to be performed during this appointment."""
+    serviceType: list["CodeableConcept"]
+    """The specific service that is to be performed during this appointment."""
+    specialty: list["CodeableConcept"]
+    """The specialty of a practitioner that would be required to perform the service requested in this appointment."""
+    actor: Required[list["Reference"]]
+    """Slots that reference this schedule resource provide the availability details to these referenced resource(s)."""
+    planningHorizon: "Period"
+    """The period of time that the slots that reference this Schedule resource cover (even if none exist)."""
+    comment: str
+    """Comments on the availability to describe any extended information."""
+    _comment: "Element"
+    """Extensions for comment"""
+
+
 class Signature(TypedDict, total=False):
     """A signature along with supporting context. The signature may be a digital signature that is cryptographic in nature, or some other signature acceptable to the domain. This other signature may be as simple as a graphical image representing a hand-written signature, or a signature ceremony Different signature approaches have different utilities."""
     id: str
@@ -4097,6 +4143,64 @@ class Signature(TypedDict, total=False):
     """The base64 encoding of the Signature content."""
     _data: "Element"
     """Extensions for data"""
+
+
+class Slot(TypedDict, total=False):
+    """A slot of time on a schedule that may be available for booking appointments."""
+    resourceType: Required[Literal['Slot']]
+    """This is a Slot resource"""
+    id: str
+    """The logical id of the resource, as used in the URL for the resource."""
+    meta: "Meta"
+    """The metadata about the resource."""
+    implicitRules: str
+    """A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content."""
+    _implicitRules: "Element"
+    """Extensions for implicitRules"""
+    language: str
+    """The base language in which the resource is written."""
+    _language: "Element"
+    """Extensions for language"""
+    text: "Narrative"
+    """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
+    contained: list["Resource"]
+    """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
+    extension: list["Extension"]
+    """May be used to represent additional information that is not part of the basic definition of the resource."""
+    modifierExtension: list["Extension"]
+    """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
+    identifier: list["Identifier"]
+    """External Ids for this item."""
+    serviceCategory: list["CodeableConcept"]
+    """A broad categorization of the service that is to be performed during this appointment."""
+    serviceType: list["CodeableConcept"]
+    """The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is at a location, rather than the location itself)."""
+    specialty: list["CodeableConcept"]
+    """The specialty of a practitioner that would be required to perform the service requested in this appointment."""
+    appointmentType: "CodeableConcept"
+    """The style of appointment or patient that may be booked in the slot (not service type)."""
+    schedule: Required["Reference"]
+    """The schedule resource that this slot defines an interval of status information."""
+    status: Literal['busy', 'free', 'busy-unavailable', 'busy-tentative', 'entered-in-error']
+    """busy | free | busy-unavailable | busy-tentative | entered-in-error."""
+    _status: "Element"
+    """Extensions for status"""
+    start: str
+    """Date/Time that the slot is to begin."""
+    _start: "Element"
+    """Extensions for start"""
+    end: str
+    """Date/Time that the slot is to conclude."""
+    _end: "Element"
+    """Extensions for end"""
+    overbooked: bool
+    """This slot has already been overbooked, appointments are unlikely to be accepted for this time."""
+    _overbooked: "Element"
+    """Extensions for overbooked"""
+    comment: str
+    """Comments on the slot to describe any extended information."""
+    _comment: "Element"
+    """Extensions for comment"""
 
 
 class TerminologyCapabilities(TypedDict, total=False):
@@ -4839,7 +4943,7 @@ class ValueSetParameter(TypedDict, total=False):
 
 class OtherResource(TypedDict, total=False):
     """A resource of a type the haau3 platform API neither answers with nor shows in an example request, as it may appear in a Bundle or `contained`."""
-    resourceType: Required[Literal['Account', 'ActivityDefinition', 'AdverseEvent', 'AllergyIntolerance', 'Appointment', 'AppointmentResponse', 'AuditEvent', 'Basic', 'Binary', 'BiologicallyDerivedProduct', 'BodyStructure', 'CarePlan', 'CareTeam', 'CatalogEntry', 'ChargeItem', 'ChargeItemDefinition', 'ClaimResponse', 'ClinicalImpression', 'CodeSystem', 'Communication', 'CommunicationRequest', 'CompartmentDefinition', 'Composition', 'ConceptMap', 'Condition', 'Consent', 'Contract', 'CoverageEligibilityRequest', 'CoverageEligibilityResponse', 'DetectedIssue', 'Device', 'DeviceDefinition', 'DeviceMetric', 'DeviceRequest', 'DeviceUseStatement', 'DiagnosticReport', 'DocumentManifest', 'DocumentReference', 'EffectEvidenceSynthesis', 'Encounter', 'EnrollmentRequest', 'EnrollmentResponse', 'EpisodeOfCare', 'EventDefinition', 'Evidence', 'EvidenceVariable', 'ExampleScenario', 'ExplanationOfBenefit', 'FamilyMemberHistory', 'Flag', 'Goal', 'GraphDefinition', 'Group', 'GuidanceResponse', 'ImagingStudy', 'Immunization', 'ImmunizationEvaluation', 'ImmunizationRecommendation', 'ImplementationGuide', 'Invoice', 'Library', 'Linkage', 'List', 'Measure', 'MeasureReport', 'Media', 'MedicationAdministration', 'MedicationDispense', 'MedicationKnowledge', 'MedicinalProduct', 'MedicinalProductAuthorization', 'MedicinalProductContraindication', 'MedicinalProductIndication', 'MedicinalProductIngredient', 'MedicinalProductInteraction', 'MedicinalProductManufactured', 'MedicinalProductPackaged', 'MedicinalProductPharmaceutical', 'MedicinalProductUndesirableEffect', 'MessageDefinition', 'MolecularSequence', 'NamingSystem', 'NutritionOrder', 'Observation', 'ObservationDefinition', 'OperationDefinition', 'PaymentNotice', 'PaymentReconciliation', 'Person', 'PlanDefinition', 'Procedure', 'Provenance', 'QuestionnaireResponse', 'RelatedPerson', 'RequestGroup', 'ResearchDefinition', 'ResearchElementDefinition', 'ResearchStudy', 'ResearchSubject', 'RiskAssessment', 'RiskEvidenceSynthesis', 'Schedule', 'SearchParameter', 'ServiceRequest', 'Slot', 'Specimen', 'SpecimenDefinition', 'StructureDefinition', 'StructureMap', 'Subscription', 'Substance', 'SubstanceNucleicAcid', 'SubstancePolymer', 'SubstanceProtein', 'SubstanceReferenceInformation', 'SubstanceSourceMaterial', 'SubstanceSpecification', 'SupplyDelivery', 'SupplyRequest', 'Task', 'TestReport', 'TestScript', 'VerificationResult', 'VisionPrescription']]
+    resourceType: Required[Literal['Account', 'ActivityDefinition', 'AdverseEvent', 'AllergyIntolerance', 'Appointment', 'AppointmentResponse', 'AuditEvent', 'Basic', 'Binary', 'BiologicallyDerivedProduct', 'BodyStructure', 'CarePlan', 'CareTeam', 'CatalogEntry', 'ChargeItem', 'ChargeItemDefinition', 'ClaimResponse', 'ClinicalImpression', 'CodeSystem', 'Communication', 'CommunicationRequest', 'CompartmentDefinition', 'Composition', 'ConceptMap', 'Condition', 'Consent', 'Contract', 'CoverageEligibilityRequest', 'CoverageEligibilityResponse', 'DetectedIssue', 'Device', 'DeviceDefinition', 'DeviceMetric', 'DeviceRequest', 'DeviceUseStatement', 'DiagnosticReport', 'DocumentManifest', 'DocumentReference', 'EffectEvidenceSynthesis', 'Encounter', 'EnrollmentRequest', 'EnrollmentResponse', 'EpisodeOfCare', 'EventDefinition', 'Evidence', 'EvidenceVariable', 'ExampleScenario', 'ExplanationOfBenefit', 'FamilyMemberHistory', 'Flag', 'Goal', 'GraphDefinition', 'Group', 'GuidanceResponse', 'ImagingStudy', 'Immunization', 'ImmunizationEvaluation', 'ImmunizationRecommendation', 'ImplementationGuide', 'Invoice', 'Library', 'Linkage', 'List', 'Measure', 'MeasureReport', 'Media', 'MedicationAdministration', 'MedicationDispense', 'MedicationKnowledge', 'MedicinalProduct', 'MedicinalProductAuthorization', 'MedicinalProductContraindication', 'MedicinalProductIndication', 'MedicinalProductIngredient', 'MedicinalProductInteraction', 'MedicinalProductManufactured', 'MedicinalProductPackaged', 'MedicinalProductPharmaceutical', 'MedicinalProductUndesirableEffect', 'MessageDefinition', 'MolecularSequence', 'NamingSystem', 'NutritionOrder', 'Observation', 'ObservationDefinition', 'OperationDefinition', 'PaymentNotice', 'PaymentReconciliation', 'Person', 'PlanDefinition', 'Procedure', 'Provenance', 'QuestionnaireResponse', 'RelatedPerson', 'RequestGroup', 'ResearchDefinition', 'ResearchElementDefinition', 'ResearchStudy', 'ResearchSubject', 'RiskAssessment', 'RiskEvidenceSynthesis', 'SearchParameter', 'ServiceRequest', 'Specimen', 'SpecimenDefinition', 'StructureDefinition', 'StructureMap', 'Subscription', 'Substance', 'SubstanceNucleicAcid', 'SubstancePolymer', 'SubstanceProtein', 'SubstanceReferenceInformation', 'SubstanceSourceMaterial', 'SubstanceSpecification', 'SupplyDelivery', 'SupplyRequest', 'Task', 'TestReport', 'TestScript', 'VerificationResult', 'VisionPrescription']]
     id: str
     meta: "Meta"
     implicitRules: str
@@ -4852,5 +4956,5 @@ class OtherResource(TypedDict, total=False):
     modifierExtension: list["Extension"]
 
 
-Resource: TypeAlias = Union[Bundle, CapabilityStatement, Claim, Coverage, Endpoint, HealthcareService, InsurancePlan, Location, Medication, MedicationRequest, MedicationStatement, MessageHeader, OperationOutcome, Organization, OrganizationAffiliation, Parameters, Patient, Practitioner, PractitionerRole, Questionnaire, TerminologyCapabilities, ValueSet, OtherResource]
+Resource: TypeAlias = Union[Bundle, CapabilityStatement, Claim, Coverage, Endpoint, HealthcareService, InsurancePlan, Location, Medication, MedicationRequest, MedicationStatement, MessageHeader, OperationOutcome, Organization, OrganizationAffiliation, Parameters, Patient, Practitioner, PractitionerRole, Questionnaire, Schedule, Slot, TerminologyCapabilities, ValueSet, OtherResource]
 """Any FHIR resource: one of the types above, told apart by `resourceType`, or `OtherResource`."""

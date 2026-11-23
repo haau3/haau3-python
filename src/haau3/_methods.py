@@ -46,6 +46,8 @@ from ._operations import (
     READ_PRACTITIONER,
     READ_PRACTITIONER_ROLE,
     READ_QUESTIONNAIRE,
+    READ_SCHEDULE,
+    READ_SLOT,
     RECONCILE_MEDICATIONS,
     SANDBOX_METADATA,
     SANDBOX_PROCESS_MESSAGE,
@@ -59,6 +61,8 @@ from ._operations import (
     SEARCH_PRACTITIONER_ROLE,
     SEARCH_PROVIDER_LOCATIONS,
     SEARCH_QUESTIONNAIRE,
+    SEARCH_SCHEDULE,
+    SEARCH_SLOT,
     SEARCH_SLOTS,
     STRUCTURE_DOSAGE,
     VALUE_SET_EXPAND,
@@ -453,6 +457,8 @@ class SyncMethods:
 
         Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.
 
+        A scheduling publisher's HealthcareService is read here too, by its id: `HealthcareService-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
+
         `GET /v1/fhir/r4/HealthcareService/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-healthcareservice
         """
         return self._engine.call(
@@ -492,6 +498,8 @@ class SyncMethods:
         """Read a Location
 
         Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.
+
+        A scheduling publisher's Location is read here too, by its id: `Location-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
         `GET /v1/fhir/r4/Location/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-location
         """
@@ -553,6 +561,8 @@ class SyncMethods:
 
         Read one practitioner by id, as returned by a search on this service.
 
+        A scheduling publisher's Practitioner is read here too, by its id: `Practitioner-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
+
         `GET /v1/fhir/r4/Practitioner/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-practitioner
         """
         return self._engine.call(
@@ -572,6 +582,8 @@ class SyncMethods:
         """Read a PractitionerRole
 
         Read one practitioner role by id, as returned by a search on this service.
+
+        A scheduling publisher's PractitionerRole is read here too, by its id: `PractitionerRole-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
         `GET /v1/fhir/r4/PractitionerRole/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-practitionerrole
         """
@@ -599,6 +611,46 @@ class SyncMethods:
         """
         return self._engine.call(
             READ_QUESTIONNAIRE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        ).data
+
+    def read_schedule(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Schedule:
+        """Read a schedule
+
+        Read one Schedule by its id, as a Slot's `schedule` reference or a Schedule search's `fullUrl` names it: 32 hexadecimal characters. A Schedule is the provider, the place and the service a publisher's Slots belong to; it names its Location and its provider, each read here by id too.
+
+        `GET /v1/fhir/r4/Schedule/{id}`, https://docs.haau3.com/api-reference/scheduling/read-a-schedule
+        """
+        return self._engine.call(
+            READ_SCHEDULE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        ).data
+
+    def read_slot(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Slot:
+        """Read a slot
+
+        Read one Slot by its id, as a search's `fullUrl` names it: 32 hexadecimal characters. A Slot is served while its publisher lists it, whatever its status or start; one marked as not accepting patients is never served.
+
+        `GET /v1/fhir/r4/Slot/{id}`, https://docs.haau3.com/api-reference/scheduling/read-a-slot
+        """
+        return self._engine.call(
+            READ_SLOT, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
 
     def reconcile_medications(
@@ -1344,6 +1396,168 @@ class SyncMethods:
             (
                 ("url", url),
                 ("version", version),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        ).data
+
+    def search_schedule(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """Find schedules
+
+        Search the Schedules of SMART Scheduling Links publishers: each the provider, the place and the service a publisher's Slots belong to. The answer is a FHIR `searchset` Bundle whose matches are Schedules, each as its publisher published it (the guide's Schedule profile), in order of id. Each Schedule's Location and provider come in the same Bundle when asked for: `_include=Schedule:actor`, then `_include:iterate=PractitionerRole:practitioner` and `_include:iterate=HealthcareService:location`. Each included resource comes once, and `total` counts the Schedules only.
+
+        A Schedule search does not reach its Slots: a Schedule matches whether or not it has a free Slot ahead, and nothing here filters by a Slot's time, status or patient type. To find open Slots, search Slots, with `_include=Slot:schedule` for each one's Schedule. Follow the `next` link to continue: its cursor belongs to the one search.
+
+        Every other parameter is refused by name rather than ignored, so a search never quietly answers a different question than the one asked. `_sort`, `_total`, `_summary`, `_elements` and `_revinclude` are not served.
+
+        `GET /v1/fhir/r4/Schedule`, https://docs.haau3.com/api-reference/scheduling/find-schedules
+
+        Query parameters, each with its name in the API:
+
+        - `service_type` (`service-type`): The Schedule's service type, its own `serviceType`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Schedule's own specialty, FHIR's Schedule.specialty. For a specialty the SMART Scheduling Links `schedule-specialty` extension or the provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Schedule states it (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension) or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Schedule's `meta.source`: where the publisher published it, its feed's address followed by `Schedule/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Schedule's `meta.source`: a feed's address, for every Schedule it published. Several separated by commas.
+        - `include` (`_include`): `Schedule:actor` adds each Schedule's Location, PractitionerRole, Practitioner or HealthcareService. What those reach comes with `_include:iterate`.
+        - `include_iterate` (`_include:iterate`): `PractitionerRole:practitioner` adds the Practitioner behind each included role, and `HealthcareService:location` the Location of each included HealthcareService. Each needs `_include=Schedule:actor`, which may be sent here too.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return self._engine.call(
+            SEARCH_SCHEDULE,
+            (),
+            (
+                ("service-type", service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", include),
+                ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        ).data
+
+    def search_slot(
+        self,
+        *,
+        status: str | None = None,
+        start: Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """Find slots
+
+        Search open appointment slots from SMART Scheduling Links publishers. The answer is a FHIR `searchset` Bundle whose matches are Slots, each as its publisher published it (the guide's Slot profile), in order of start and then id. Each Slot's Schedule, and the Schedule's Location and provider, come in the same Bundle when asked for: `_include=Slot:schedule`, then `_include:iterate=Schedule:actor`, `_include:iterate=PractitionerRole:practitioner` and `_include:iterate=HealthcareService:location`. Each included resource comes once, and `total` counts the Slots only.
+
+        With no `status` a search returns `free` Slots, and with no `start` Slots starting from now; the `self` link shows both as applied. A Slot marked as not accepting patients is never served. Follow the `next` link to continue: its cursor belongs to the one search.
+
+        Every other parameter is refused by name rather than ignored, so a search never quietly answers a different question than the one asked. `_sort`, `_total`, `_summary`, `_elements` and `_revinclude` are not served.
+
+        `GET /v1/fhir/r4/Slot`, https://docs.haau3.com/api-reference/scheduling/find-slots
+
+        Query parameters, each with its name in the API:
+
+        - `status`: The Slot's status: `free`, `busy`, `busy-unavailable`, `busy-tentative` or `entered-in-error`, several separated by commas. With no `status`, a search returns `free` Slots, and the `self` link shows it.
+        - `start`: When the Slot starts, with a prefix `ge`, `gt`, `le` or `lt`, or none for that day, hour or minute: `start=ge2026-12-01&start=lt2026-12-08` for one week. Any precision from a year to a second; a value with no time is a day in UTC, and a time needs its offset (`Z` or `-05:00`). Send it twice for a window. With no `start`, a search returns Slots starting from now, and the `self` link shows the moment.
+        - `appointment_type` (`appointment-type`): The Slot's appointment type. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule`: The Slot's Schedule, as `Schedule/{id}`, its id alone, or its address on this base; several separated by commas. Chained once, as `schedule.service-type`.
+        - `service_type` (`service-type`): The Slot's own service type, FHIR's Slot.serviceType. A Slot that names none matches no value: find the Slots of a Schedule offering a service with `schedule.service-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule_service_type` (`schedule.service-type`): The service type of the Slot's Schedule, FHIR's chained `schedule` and the Schedule's `service-type`: every Slot of a Schedule offering it, whether or not the Slot names a service type of its own. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Slot's own specialty, FHIR's Slot.specialty. For a specialty its Schedule or its provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Slot states it, as its Schedule does (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension), or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Slot's Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `patient_type` (`patient-type`): Who the Slot accepts, from the SMART Scheduling Links `patient-type` extension: `newpt`, `existptonly` and the other codes of `http://terminology.hl7.org/CodeSystem/accepting-patients`. A Slot that carries none matches no value. A Slot not accepting patients (`nopt`) is never served. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Slot's `meta.source`: where the publisher published it, its feed's address followed by `Slot/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Slot's `meta.source`: a feed's address, for every Slot it published. Several separated by commas.
+        - `include` (`_include`): `Slot:schedule` adds each Slot's Schedule to the Bundle. The Location and provider it names, and what they reach, come with `_include:iterate`.
+        - `include_iterate` (`_include:iterate`): `Schedule:actor` adds each included Schedule's Location, PractitionerRole, Practitioner or HealthcareService; `PractitionerRole:practitioner` the Practitioner behind each included role; `HealthcareService:location` the Location of each included HealthcareService. Each needs `_include=Slot:schedule`.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return self._engine.call(
+            SEARCH_SLOT,
+            (),
+            (
+                ("status", status),
+                ("start", start),
+                ("appointment-type", appointment_type),
+                ("schedule", schedule),
+                ("service-type", service_type),
+                ("schedule.service-type", schedule_service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("patient-type", patient_type),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", include),
+                ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
@@ -2117,6 +2331,8 @@ class AsyncMethods:
 
         Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.
 
+        A scheduling publisher's HealthcareService is read here too, by its id: `HealthcareService-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
+
         `GET /v1/fhir/r4/HealthcareService/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-healthcareservice
         """
         return (
@@ -2160,6 +2376,8 @@ class AsyncMethods:
         """Read a Location
 
         Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.
+
+        A scheduling publisher's Location is read here too, by its id: `Location-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
         `GET /v1/fhir/r4/Location/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-location
         """
@@ -2231,6 +2449,8 @@ class AsyncMethods:
 
         Read one practitioner by id, as returned by a search on this service.
 
+        A scheduling publisher's Practitioner is read here too, by its id: `Practitioner-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
+
         `GET /v1/fhir/r4/Practitioner/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-practitioner
         """
         return (
@@ -2252,6 +2472,8 @@ class AsyncMethods:
         """Read a PractitionerRole
 
         Read one practitioner role by id, as returned by a search on this service.
+
+        A scheduling publisher's PractitionerRole is read here too, by its id: `PractitionerRole-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
         `GET /v1/fhir/r4/PractitionerRole/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-a-practitionerrole
         """
@@ -2282,6 +2504,50 @@ class AsyncMethods:
         return (
             await self._engine.call(
                 READ_QUESTIONNAIRE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+            )
+        ).data
+
+    async def read_schedule(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Schedule:
+        """Read a schedule
+
+        Read one Schedule by its id, as a Slot's `schedule` reference or a Schedule search's `fullUrl` names it: 32 hexadecimal characters. A Schedule is the provider, the place and the service a publisher's Slots belong to; it names its Location and its provider, each read here by id too.
+
+        `GET /v1/fhir/r4/Schedule/{id}`, https://docs.haau3.com/api-reference/scheduling/read-a-schedule
+        """
+        return (
+            await self._engine.call(
+                READ_SCHEDULE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+            )
+        ).data
+
+    async def read_slot(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Slot:
+        """Read a slot
+
+        Read one Slot by its id, as a search's `fullUrl` names it: 32 hexadecimal characters. A Slot is served while its publisher lists it, whatever its status or start; one marked as not accepting patients is never served.
+
+        `GET /v1/fhir/r4/Slot/{id}`, https://docs.haau3.com/api-reference/scheduling/read-a-slot
+        """
+        return (
+            await self._engine.call(
+                READ_SLOT, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
             )
         ).data
 
@@ -3059,6 +3325,172 @@ class AsyncMethods:
             )
         ).data
 
+    async def search_schedule(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """Find schedules
+
+        Search the Schedules of SMART Scheduling Links publishers: each the provider, the place and the service a publisher's Slots belong to. The answer is a FHIR `searchset` Bundle whose matches are Schedules, each as its publisher published it (the guide's Schedule profile), in order of id. Each Schedule's Location and provider come in the same Bundle when asked for: `_include=Schedule:actor`, then `_include:iterate=PractitionerRole:practitioner` and `_include:iterate=HealthcareService:location`. Each included resource comes once, and `total` counts the Schedules only.
+
+        A Schedule search does not reach its Slots: a Schedule matches whether or not it has a free Slot ahead, and nothing here filters by a Slot's time, status or patient type. To find open Slots, search Slots, with `_include=Slot:schedule` for each one's Schedule. Follow the `next` link to continue: its cursor belongs to the one search.
+
+        Every other parameter is refused by name rather than ignored, so a search never quietly answers a different question than the one asked. `_sort`, `_total`, `_summary`, `_elements` and `_revinclude` are not served.
+
+        `GET /v1/fhir/r4/Schedule`, https://docs.haau3.com/api-reference/scheduling/find-schedules
+
+        Query parameters, each with its name in the API:
+
+        - `service_type` (`service-type`): The Schedule's service type, its own `serviceType`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Schedule's own specialty, FHIR's Schedule.specialty. For a specialty the SMART Scheduling Links `schedule-specialty` extension or the provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Schedule states it (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension) or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Schedule's `meta.source`: where the publisher published it, its feed's address followed by `Schedule/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Schedule's `meta.source`: a feed's address, for every Schedule it published. Several separated by commas.
+        - `include` (`_include`): `Schedule:actor` adds each Schedule's Location, PractitionerRole, Practitioner or HealthcareService. What those reach comes with `_include:iterate`.
+        - `include_iterate` (`_include:iterate`): `PractitionerRole:practitioner` adds the Practitioner behind each included role, and `HealthcareService:location` the Location of each included HealthcareService. Each needs `_include=Schedule:actor`, which may be sent here too.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return (
+            await self._engine.call(
+                SEARCH_SCHEDULE,
+                (),
+                (
+                    ("service-type", service_type),
+                    ("specialty", specialty),
+                    ("provider-specialty", provider_specialty),
+                    ("provider-identifier", provider_identifier),
+                    ("location-address-city", location_address_city),
+                    ("location-address-state", location_address_state),
+                    ("location-physical-type", location_physical_type),
+                    ("_source", source),
+                    ("_source:below", source_below),
+                    ("_include", include),
+                    ("_include:iterate", include_iterate),
+                    ("_count", count),
+                    ("page", page),
+                ),
+                None,
+                Options(timeout, max_retries, correlation_id, extra_headers),
+            )
+        ).data
+
+    async def search_slot(
+        self,
+        *,
+        status: str | None = None,
+        start: Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """Find slots
+
+        Search open appointment slots from SMART Scheduling Links publishers. The answer is a FHIR `searchset` Bundle whose matches are Slots, each as its publisher published it (the guide's Slot profile), in order of start and then id. Each Slot's Schedule, and the Schedule's Location and provider, come in the same Bundle when asked for: `_include=Slot:schedule`, then `_include:iterate=Schedule:actor`, `_include:iterate=PractitionerRole:practitioner` and `_include:iterate=HealthcareService:location`. Each included resource comes once, and `total` counts the Slots only.
+
+        With no `status` a search returns `free` Slots, and with no `start` Slots starting from now; the `self` link shows both as applied. A Slot marked as not accepting patients is never served. Follow the `next` link to continue: its cursor belongs to the one search.
+
+        Every other parameter is refused by name rather than ignored, so a search never quietly answers a different question than the one asked. `_sort`, `_total`, `_summary`, `_elements` and `_revinclude` are not served.
+
+        `GET /v1/fhir/r4/Slot`, https://docs.haau3.com/api-reference/scheduling/find-slots
+
+        Query parameters, each with its name in the API:
+
+        - `status`: The Slot's status: `free`, `busy`, `busy-unavailable`, `busy-tentative` or `entered-in-error`, several separated by commas. With no `status`, a search returns `free` Slots, and the `self` link shows it.
+        - `start`: When the Slot starts, with a prefix `ge`, `gt`, `le` or `lt`, or none for that day, hour or minute: `start=ge2026-12-01&start=lt2026-12-08` for one week. Any precision from a year to a second; a value with no time is a day in UTC, and a time needs its offset (`Z` or `-05:00`). Send it twice for a window. With no `start`, a search returns Slots starting from now, and the `self` link shows the moment.
+        - `appointment_type` (`appointment-type`): The Slot's appointment type. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule`: The Slot's Schedule, as `Schedule/{id}`, its id alone, or its address on this base; several separated by commas. Chained once, as `schedule.service-type`.
+        - `service_type` (`service-type`): The Slot's own service type, FHIR's Slot.serviceType. A Slot that names none matches no value: find the Slots of a Schedule offering a service with `schedule.service-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule_service_type` (`schedule.service-type`): The service type of the Slot's Schedule, FHIR's chained `schedule` and the Schedule's `service-type`: every Slot of a Schedule offering it, whether or not the Slot names a service type of its own. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Slot's own specialty, FHIR's Slot.specialty. For a specialty its Schedule or its provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Slot states it, as its Schedule does (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension), or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Slot's Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `patient_type` (`patient-type`): Who the Slot accepts, from the SMART Scheduling Links `patient-type` extension: `newpt`, `existptonly` and the other codes of `http://terminology.hl7.org/CodeSystem/accepting-patients`. A Slot that carries none matches no value. A Slot not accepting patients (`nopt`) is never served. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Slot's `meta.source`: where the publisher published it, its feed's address followed by `Slot/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Slot's `meta.source`: a feed's address, for every Slot it published. Several separated by commas.
+        - `include` (`_include`): `Slot:schedule` adds each Slot's Schedule to the Bundle. The Location and provider it names, and what they reach, come with `_include:iterate`.
+        - `include_iterate` (`_include:iterate`): `Schedule:actor` adds each included Schedule's Location, PractitionerRole, Practitioner or HealthcareService; `PractitionerRole:practitioner` the Practitioner behind each included role; `HealthcareService:location` the Location of each included HealthcareService. Each needs `_include=Slot:schedule`.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return (
+            await self._engine.call(
+                SEARCH_SLOT,
+                (),
+                (
+                    ("status", status),
+                    ("start", start),
+                    ("appointment-type", appointment_type),
+                    ("schedule", schedule),
+                    ("service-type", service_type),
+                    ("schedule.service-type", schedule_service_type),
+                    ("specialty", specialty),
+                    ("provider-specialty", provider_specialty),
+                    ("provider-identifier", provider_identifier),
+                    ("patient-type", patient_type),
+                    ("location-address-city", location_address_city),
+                    ("location-address-state", location_address_state),
+                    ("location-physical-type", location_physical_type),
+                    ("_source", source),
+                    ("_source:below", source_below),
+                    ("_include", include),
+                    ("_include:iterate", include_iterate),
+                    ("_count", count),
+                    ("page", page),
+                ),
+                None,
+                Options(timeout, max_retries, correlation_id, extra_headers),
+            )
+        ).data
+
     async def search_slots(
         self,
         *,
@@ -3818,6 +4250,36 @@ class SyncWithResponse:
             READ_QUESTIONNAIRE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    def read_schedule(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Schedule]:
+        """`Haau3.read_schedule`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            READ_SCHEDULE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
+    def read_slot(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Slot]:
+        """`Haau3.read_slot`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            READ_SLOT, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
     def reconcile_medications(
         self,
         body: Union[fhir.Bundle, fhir.Parameters],
@@ -4317,6 +4779,112 @@ class SyncWithResponse:
             (
                 ("url", url),
                 ("version", version),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    def search_schedule(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`Haau3.search_schedule`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            SEARCH_SCHEDULE,
+            (),
+            (
+                ("service-type", service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", include),
+                ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    def search_slot(
+        self,
+        *,
+        status: str | None = None,
+        start: Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`Haau3.search_slot`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            SEARCH_SLOT,
+            (),
+            (
+                ("status", status),
+                ("start", start),
+                ("appointment-type", appointment_type),
+                ("schedule", schedule),
+                ("service-type", service_type),
+                ("schedule.service-type", schedule_service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("patient-type", patient_type),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", include),
+                ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
@@ -4977,6 +5545,36 @@ class AsyncWithResponse:
             READ_QUESTIONNAIRE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
         )
 
+    async def read_schedule(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Schedule]:
+        """`AsyncHaau3.read_schedule`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            READ_SCHEDULE, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
+    async def read_slot(
+        self,
+        id: str,
+        /,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Slot]:
+        """`AsyncHaau3.read_slot`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            READ_SLOT, (id,), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
+        )
+
     async def reconcile_medications(
         self,
         body: Union[fhir.Bundle, fhir.Parameters],
@@ -5476,6 +6074,112 @@ class AsyncWithResponse:
             (
                 ("url", url),
                 ("version", version),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    async def search_schedule(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`AsyncHaau3.search_schedule`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            SEARCH_SCHEDULE,
+            (),
+            (
+                ("service-type", service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", include),
+                ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    async def search_slot(
+        self,
+        *,
+        status: str | None = None,
+        start: Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        include: Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Sequence[
+            Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+        | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`AsyncHaau3.search_slot`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            SEARCH_SLOT,
+            (),
+            (
+                ("status", status),
+                ("start", start),
+                ("appointment-type", appointment_type),
+                ("schedule", schedule),
+                ("service-type", service_type),
+                ("schedule.service-type", schedule_service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("patient-type", patient_type),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", include),
+                ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),

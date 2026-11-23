@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.36"
+    "version": "1.0.0-preview.38"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -86,6 +86,54 @@
             "lang": "python",
             "label": "Python",
             "source": "from haau3 import BatchOk, Haau3, calls\n\nclient = Haau3()  # reads HAAU3_API_KEY\nresults = client.batch(\n    calls.code_system_lookup(system=\"http://loinc.org\", code=\"2345-7\", property=\"SHORTNAME\"),\n    calls.code_system_lookup(system=\"http://loinc.org\", code=\"8867-4\", property=\"SHORTNAME\"),\n    calls.list_insurance_plan_counties(state=\"DE\"),\n)\nfor result in results:\n    print(result.status if isinstance(result, BatchOk) else result.error)\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Slot'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_slot(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Slot:schedule\",\n    include_iterate=[\"Schedule:actor\", \"PractitionerRole:practitioner\"],\n    count=1,\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Slot/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nslot = client.read_slot(\"b12a0a00667b5e27ac040aa56d5d7c69\")\nprint(slot.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Schedule'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_schedule(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Schedule:actor\",\n    include_iterate=\"PractitionerRole:practitioner\",\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Schedule/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nschedule = client.read_schedule(\"e859c18cc8cc1a6ab1c9b7b63c5c60a1\")\nprint(schedule.get(\"id\"))\n"
           }
         ]
       }
