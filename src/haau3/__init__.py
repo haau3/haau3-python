@@ -19,6 +19,8 @@ from ._batch import BatchError as BatchError
 from ._batch import BatchOk as BatchOk
 from ._batch import BatchResult as BatchResult
 from ._batch import Call as Call
+from ._bundle_reads import matches as matches
+from ._bundle_reads import resolve as resolve
 from ._client import DEFAULT_BASE_URL as DEFAULT_BASE_URL
 from ._client import DEFAULT_MAX_RETRIES as DEFAULT_MAX_RETRIES
 from ._client import DEFAULT_TIMEOUT as DEFAULT_TIMEOUT
@@ -64,6 +66,11 @@ from ._terminology import lookup_result as lookup_result
 from ._terminology import validation_result as validation_result
 from ._test_data import mark_as_test_data as mark_as_test_data
 from ._version import __version__ as __version__
+from ._views import PatientType as PatientType
+from ._views import ScheduleView as ScheduleView
+from ._views import SlotView as SlotView
+from ._views import schedule_views as schedule_views
+from ._views import slot_views as slot_views
 
 __all__ = [
     "DEFAULT_BASE_URL",
@@ -97,11 +104,14 @@ __all__ = [
     "LookupResult",
     "NoAnswerError",
     "NoAnswerReason",
+    "PatientType",
     "Property",
     "QueryValue",
     "RawResponse",
     "RefusedError",
     "Response",
+    "ScheduleView",
+    "SlotView",
     "SyncWithResponse",
     "TextProperty",
     "ValidationResult",
@@ -111,9 +121,13 @@ __all__ = [
     "fhir",
     "lookup_result",
     "mark_as_test_data",
+    "matches",
     "parameter",
     "parameters",
+    "resolve",
     "review_flags",
+    "schedule_views",
+    "slot_views",
     "structure_dosage_request",
     "types",
     "validation_result",
