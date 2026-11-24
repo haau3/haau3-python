@@ -14,13 +14,14 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, TypeAlias, Union, cast, final
+from typing import Literal, TypeAlias, Union, cast, final
 
 from ._errors import Haau3Error
 from ._json import as_dict
 
-if TYPE_CHECKING:
-    from .fhir import Coding, Parameters, ParametersParameter
+# The FHIR types are imported when the module runs, not only for type checkers, so a framework that
+# reads the results' annotations at runtime (pydantic, and FastAPI through it) can resolve them.
+from .fhir import Coding, Parameters, ParametersParameter
 
 
 @final
