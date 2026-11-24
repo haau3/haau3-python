@@ -364,3 +364,59 @@ def test_the_plain_functions_read_what_the_methods_read_with_no_client(client: H
 def test_the_constants_cannot_be_changed() -> None:
     with pytest.raises(dataclasses.FrozenInstanceError):
         SYNONYM_USE.code = "another"  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+
+
+# --- the results in a framework that reads annotations at runtime --------------------------------------
+
+
+def _exported_dataclasses() -> list[type]:
+    return [
+        value
+        for name in haau3.__all__
+        if isinstance(value := getattr(haau3, name), type) and dataclasses.is_dataclass(value)
+    ]
+
+
+def test_every_dataclass_haau3_exports_has_annotations_that_resolve_at_runtime() -> None:
+    """pydantic, and FastAPI through it, resolves a dataclass's annotations as typing.get_type_hints does:
+    a FHIR type imported for type checkers only fails there, at request time."""
+    import typing
+
+    exported = _exported_dataclasses()
+    names = {cls.__name__ for cls in exported}
+    assert {"LookupResult", "ValidationResult", "Designation", "CodingProperty", "SlotView", "ScheduleView"} <= names
+    for cls in exported:
+        typing.get_type_hints(cls)
+
+
+def test_a_fastapi_route_returning_a_lookup_and_a_validation_serializes_them() -> None:
+    pytest.importorskip("fastapi")
+    from fastapi import FastAPI
+
+    try:
+        from fastapi.testclient import TestClient
+    except RuntimeError:  # An older Starlette's test client needs httpx, which the lowest dependencies lack.
+        pytest.skip("this FastAPI's test client needs httpx")
+
+    looked_up = lookup_result(ICD10CM_LOOKUP)
+    checked = validation_result(_example("/v1/fhir/r4/CodeSystem/$validate-code"))
+    app = FastAPI()
+
+    @app.get("/lookup")
+    def lookup() -> LookupResult:
+        return looked_up
+
+    @app.get("/validate")
+    def validate() -> ValidationResult:
+        return checked
+
+    client = TestClient(app)
+    served = client.get("/lookup")
+    assert served.status_code == 200
+    assert served.json()["display"] == LONG
+    assert [d["value"] for d in served.json()["designations"] if d["use"] and d["use"]["code"] == SYNONYM_USE.code] == [
+        SHORT
+    ]
+    validated = client.get("/validate")
+    assert validated.status_code == 200
+    assert validated.json()["result"] == checked.result

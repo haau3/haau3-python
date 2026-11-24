@@ -51,7 +51,7 @@ with, and no more.
 # ruff: noqa
 # fmt: off
 
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from typing_extensions import Required, TypeAlias, TypedDict
 
@@ -152,7 +152,10 @@ def _type_of(schema: Json, definitions: dict[str, Json], int_patterns: set[str])
     if "enum" in schema:
         return _literal(schema["enum"])
     if schema.get("type") == "array":
-        return f"list[{_type_of(schema['items'], definitions, int_patterns)}]"
+        # typing.List, not list: on Python 3.10 a quoted name inside the builtin list (`list["Coding"]`)
+        # stays a bare string that pydantic, and FastAPI through it, cannot resolve from another module,
+        # where List["Coding"] holds a ForwardRef it can. The two mean the same to a type checker.
+        return f"List[{_type_of(schema['items'], definitions, int_patterns)}]"
     return _inline_type(schema, int_patterns)
 
 

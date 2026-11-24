@@ -27,6 +27,9 @@ from ._terminology import designations as _designations
 from ._terminology import lookup_result as _lookup_result
 from ._terminology import validation_result as _validation_result
 from ._transport import AsyncEngine, Config, SyncEngine
+from ._views import ScheduleView, SlotView
+from ._views import schedule_views as _schedule_views
+from ._views import slot_views as _slot_views
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -629,6 +632,42 @@ class Haau3(SyncMethods):
         """
         return _designations(lookup, use=use, language=language)
 
+    def slot_views(self, page: Bundle) -> list[SlotView]:
+        """Each Slot a search page matched, as a `SlotView`, with no request.
+
+        The Slot, its Schedule, the Locations the Schedule reaches, its PractitionerRoles, Practitioners
+        and HealthcareServices, each the FHIR resource the page holds, and the Slot's booking link,
+        booking phone and patient type, read from its SMART Scheduling Links 1.0.0 extensions. Nothing is
+        replaced in place: each resource stays as the API served it. The plain function
+        `haau3.slot_views()` does the same with no client.
+
+        ```python
+        page = client.search_slot_with_includes(location_address_city="Cambridge")
+        for view in client.slot_views(page):
+            print(view.slot.get("start"), view.virtual, view.booking_link or view.booking_phone)
+        ```
+
+        Every Slot names its Schedule, so a page that does not hold one was searched without its
+        includes, and that raises a `Haau3Error` naming the fix. A Location or provider the page does not
+        hold is left out, and nothing is fetched for it. Paging: call it on each page `pages()` gives.
+        """
+        return _slot_views(page)
+
+    def schedule_views(self, page: Bundle) -> list[ScheduleView]:
+        """Each Schedule a search page matched, as a `ScheduleView`, with no request.
+
+        The Schedule, the Locations it reaches, its PractitionerRoles, Practitioners and
+        HealthcareServices, each the FHIR resource the page holds, and whether the place is virtual. The
+        plain function `haau3.schedule_views()` does the same with no client.
+
+        ```python
+        page = client.search_schedule_with_includes(provider_identifier="http://hl7.org/fhir/sid/us-npi|2900000227")
+        for view in client.schedule_views(page):
+            print([location.get("name") for location in view.locations])
+        ```
+        """
+        return _schedule_views(page)
+
     def _held_pages(self, page: Hidden[object], options: Options) -> Iterator[Hidden[object]]:
         """Each page, held, following `next` links on the client's own host to a page not yet read."""
         followed: set[str] = set()
@@ -923,6 +962,42 @@ class AsyncHaau3(AsyncMethods):
         ```
         """
         return _designations(lookup, use=use, language=language)
+
+    def slot_views(self, page: Bundle) -> list[SlotView]:
+        """Each Slot a search page matched, as a `SlotView`, with no request.
+
+        The Slot, its Schedule, the Locations the Schedule reaches, its PractitionerRoles, Practitioners
+        and HealthcareServices, each the FHIR resource the page holds, and the Slot's booking link,
+        booking phone and patient type, read from its SMART Scheduling Links 1.0.0 extensions. Nothing is
+        replaced in place: each resource stays as the API served it. The plain function
+        `haau3.slot_views()` does the same with no client.
+
+        ```python
+        page = await client.search_slot_with_includes(location_address_city="Cambridge")
+        for view in client.slot_views(page):
+            print(view.slot.get("start"), view.virtual, view.booking_link or view.booking_phone)
+        ```
+
+        Every Slot names its Schedule, so a page that does not hold one was searched without its
+        includes, and that raises a `Haau3Error` naming the fix. A Location or provider the page does not
+        hold is left out, and nothing is fetched for it. Paging: call it on each page `pages()` gives.
+        """
+        return _slot_views(page)
+
+    def schedule_views(self, page: Bundle) -> list[ScheduleView]:
+        """Each Schedule a search page matched, as a `ScheduleView`, with no request.
+
+        The Schedule, the Locations it reaches, its PractitionerRoles, Practitioners and
+        HealthcareServices, each the FHIR resource the page holds, and whether the place is virtual. The
+        plain function `haau3.schedule_views()` does the same with no client.
+
+        ```python
+        page = await client.search_schedule_with_includes(provider_identifier="http://hl7.org/fhir/sid/us-npi|2900000227")
+        for view in client.schedule_views(page):
+            print([location.get("name") for location in view.locations])
+        ```
+        """
+        return _schedule_views(page)
 
     async def _held_pages(self, page: Hidden[object], options: Options) -> AsyncIterator[Hidden[object]]:
         """Each page, held, as `Haau3._held_pages` gives them."""

@@ -51,15 +51,26 @@ Make one client and reuse it: it holds a pool of connections, and is safe to sha
 ```python
 import json
 
-# Open appointment slots of one provider, found by NPI.
-page = client.search_slot(
-    provider_identifier="http://hl7.org/fhir/sid/us-npi|2900000227",
-    include="Slot:schedule",
-    include_iterate=["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"],
-    count=1,
-)
-slot = next(client.resources(page), None)
-print(json.dumps(slot, indent=2) if slot else "No open slots matched.")
+# Open appointment slots of one provider, found by NPI, each with its schedule, location and provider.
+page = client.search_slot_with_includes(provider_identifier="http://hl7.org/fhir/sid/us-npi|2900000227", count=1)
+views = client.slot_views(page)
+if views:
+    view = views[0]
+    names = [name.get("text") for practitioner in view.practitioners for name in practitioner.get("name", [])]
+    places = [location.get("name") for location in view.locations]
+    print(
+        json.dumps(
+            {
+                "start": view.slot.get("start"),
+                "practitioner": names[0] if names else None,
+                "location": places[0] if places else None,
+                "booking_link": view.booking_link,
+            },
+            indent=2,
+        )
+    )
+else:
+    print("No open slots matched.")
 ```
 
 An answer is the JSON the API sent, as plain dicts and lists, so it goes into `json.dumps`, a
@@ -395,6 +406,87 @@ It yields each entry whose search mode is `match`, or says none. A resource an `
 `_revinclude` brought, and a search's own `OperationOutcome`, are not among them; `pages()` gives
 every entry. From async code, `async for page in async_client.pages(first)` and `async for resource
 in async_client.resources(first)`.
+
+`matches()` gives one page's matches of a type, typed, with no request, and `resolve()` finds the
+resource a reference names in that page, such as one an `_include` brought:
+
+```python
+page = client.search_healthcare_service(
+    service_category="pharm",
+    location_address_state="FL",
+    location_address_postalcode="33131",
+    include=["HealthcareService:organization", "HealthcareService:location"],
+)
+
+for pharmacy in client.matches(page, "HealthcareService"):
+    organization = client.resolve(page, pharmacy.get("providedBy"), type="Organization", from_=pharmacy)
+    stores = [client.resolve(page, place, type="Location", from_=pharmacy) for place in pharmacy.get("location", [])]
+    print(pharmacy.get("name"), organization and organization.get("name"), [s.get("name") for s in stores if s])
+```
+
+`resolve()` follows FHIR's rules for references in a Bundle: an absolute reference is the entry with
+that `fullUrl`; a relative one is resolved against the address of the entry holding it when you pass
+that resource as `from_`, and otherwise is the one entry whose address ends in that type and id; `#id`
+is found in `from_`'s `contained`. It is `None` when the page does not hold the resource, and raises a
+`Haau3Error` when two entries could be the one meant, when the resource is not of `type`, for a `#`
+reference with no `from_`, and for a `from_` that is not an entry of the page. `type` is a
+resource type's name and types the result, as `matches()`'s does: `client.matches(page, "Slot")` is a
+`list[fhir.Slot]`. Both are plain functions too, `haau3.resolve()` and `haau3.matches()`.
+
+## Slots and schedules
+
+A Slot search answers a FHIR Bundle whose matches are `Slot`s; each Slot's `Schedule`, and the
+`Location` and provider the Schedule names, come in the same Bundle when the search asks for them
+with `_include`. `search_slot_with_includes()` sends every include the Slot search serves, and
+`slot_views()` hands you each matched Slot with what the page holds for it, side by side, each the
+FHIR resource the API served:
+
+```python
+page = client.search_slot_with_includes(location_address_state="MA", count=10)
+
+for view in client.slot_views(page):
+    who = [name.get("text") for practitioner in view.practitioners for name in practitioner.get("name", [])]
+    where = [location.get("name") for location in view.locations]
+    print(view.slot.get("start"), who[:1], where[:1], view.booking_link or view.booking_phone)
+```
+
+| Field | What it holds |
+|---|---|
+| `slot` | The matched `Slot`. |
+| `schedule` | Its `Schedule`. Every Slot names one. |
+| `locations` | Every `Location` the Schedule reaches: its Location actors, then the Locations of each `HealthcareService` it names. |
+| `practitioner_roles` | The `PractitionerRole`s the Schedule names. |
+| `practitioners` | The `Practitioner`s it names, then the Practitioner behind each role. |
+| `healthcare_services` | The `HealthcareService`s it names. |
+| `booking_link` | The Slot's booking link, from its `booking-deep-link` extension. |
+| `booking_phone` | The number to book it by, from its `booking-phone` extension. |
+| `patient_type` | Whom it accepts, from its `patient-type` extension, as one of HL7's four codes: `newpt`, `existptonly`, `existptfam` or `nopt` (the API never serves a `nopt` Slot). |
+| `virtual` | `True` when a Location's physical type is `vi`, and `False` otherwise: a Location is physical unless it says it is virtual, and a place that is both is two Locations. |
+
+A view is a frozen dataclass, `haau3.SlotView`, that compares by value and cannot be hashed (it
+holds dicts), and each list is a tuple that keeps the order the
+Schedule names them in, holds each resource once, and is empty when there is none: a Schedule may
+name a Location and no provider. The three extensions are read under SMART Scheduling Links 1.0.0's
+own URLs; the Slot itself keeps whatever its publisher sent. Nothing is fetched and nothing is
+replaced in place. A resource the page does not hold is left out, and so is one of another type than
+the reference's element allows; a contained resource is found in the entry that contains it, as FHIR
+says. `resolve()` finds anything else a reference names.
+
+`slot_views()` raises a `Haau3Error` in two cases. A Slot names a Schedule the page does not hold,
+which happens when the page was searched without its includes, so the message says to search with
+`search_slot_with_includes()`. Or, as `resolve()` does, two entries could each be the one a
+reference names.
+
+The helper takes every keyword `search_slot()` takes but `include` and `include_iterate`, which
+Python refuses before anything is sent, and it sends nothing else, so the API's defaults hold: free
+Slots, from now. To send your own includes, call `search_slot()`. A page's `next` link is followed
+with `pages()`, and `slot_views()` reads each page.
+
+`search_schedule_with_includes()` and `schedule_views()` do the same for the Schedule search: each
+matched Schedule as a `haau3.ScheduleView`, with its `locations`, `practitioner_roles`,
+`practitioners`, `healthcare_services` and `virtual`. A `SlotView` is a `ScheduleView` too.
+`slot_views()` and `schedule_views()` are plain functions as well, for a page read elsewhere, and
+from async code the helpers are awaited while the views are not.
 
 ## Reading a Parameters answer
 

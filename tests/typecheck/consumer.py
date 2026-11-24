@@ -46,6 +46,47 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     slot_query: types.SearchSlotQuery = {"include": "Slot:schedule", "start": "ge2026-12-01"}
     client.search_slot(**slot_query)
 
+    # The slot view: each Slot with its Schedule, Locations and provider, typed, with no cast.
+    included = client.search_slot_with_includes(location_address_state="MA", count=10)
+    assert_type(included, fhir.Bundle)
+    for view in client.slot_views(included):
+        assert_type(view, haau3.SlotView)
+        assert_type(view.slot, fhir.Slot)
+        assert_type(view.schedule, fhir.Schedule)
+        assert_type(view.locations, "tuple[fhir.Location, ...]")
+        assert_type(view.practitioner_roles, "tuple[fhir.PractitionerRole, ...]")
+        assert_type(view.practitioners, "tuple[fhir.Practitioner, ...]")
+        assert_type(view.healthcare_services, "tuple[fhir.HealthcareService, ...]")
+        assert_type(view.booking_link, "str | None")
+        assert_type(view.booking_phone, "str | None")
+        assert_type(view.patient_type, "haau3.PatientType | None")
+        assert_type(view.virtual, bool)
+    schedule_page = client.search_schedule_with_includes(
+        provider_identifier="http://hl7.org/fhir/sid/us-npi|2900000227"
+    )
+    assert_type(client.schedule_views(schedule_page), "list[haau3.ScheduleView]")
+    assert_type(haau3.slot_views(included), "list[haau3.SlotView]")
+    # A SlotView is a ScheduleView, so code written for one takes the other.
+    as_schedule: haau3.ScheduleView = client.slot_views(included)[0]
+    helper_query: types.SearchSlotWithIncludesQuery = {"location_address_state": "MA", "count": 10}
+    client.search_slot_with_includes(**helper_query)
+    # ...and the same query suits the plain search.
+    client.search_slot(**helper_query)
+    assert_type(client.with_response.search_slot_with_includes(), Response[fhir.Bundle])
+    accepts: haau3.PatientType = "existptonly"
+
+    # resolve() and matches(), typed by a resource type's name.
+    assert_type(client.matches(included, "Slot"), "list[fhir.Slot]")
+    assert_type(haau3.matches(included, "Device"), "list[fhir.OtherResource]")
+    assert_type(client.matches(included), "list[fhir.Resource]")
+    matched_slot = client.matches(included, "Slot")[0]
+    assert_type(
+        client.resolve(included, matched_slot["schedule"], type="Schedule", from_=matched_slot), "fhir.Schedule | None"
+    )
+    assert_type(haau3.resolve(included, "Location/a", type="Location"), "fhir.Location | None")
+    assert_type(client.resolve(included, "Location/a"), "fhir.Resource | None")
+    _ = (as_schedule, accepts)
+
     response = client.with_response.read_insurance_plan(
         "H2406-013-000", correlation_id="0b6f2d4e-8c1a-4e3b-9f5d-2a7c6e1b4d90"
     )
@@ -174,6 +215,16 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
         assert_type(failure.request_id, "str | None")
 
     # Mistakes a type checker must catch.
+    client.search_slot_with_includes(include="Slot:schedule")  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+    client.search_schedule_with_includes(include_iterate=["Schedule:actor"])  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+    slot_search: types.SearchSlotQuery = {"location_address_state": "MA"}
+    # A Slot search's query may hold an include, so the helper refuses one; its own query type is the one to build.
+    client.search_slot_with_includes(**slot_search)  # type: ignore[misc]  # pyright: ignore[reportCallIssue]
+    not_a_code: haau3.PatientType = "everyone"  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    client.matches(found, "NotAResource")  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
+    _ = not_a_code
+    # A view holds dicts, so it cannot be hashed. pyright alone checks hashability; mypy does not.
+    _ = {client.slot_views(found)[0]}  # pyright: ignore[reportUnhashable]
     _ = calls.reconcile_medications  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]
     client.search_slot(include="Slot:subject")  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
     client.check_insurance_plan_network("H3359-038-000")  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]

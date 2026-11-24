@@ -17,6 +17,7 @@ from typing_extensions import deprecated
 from . import fhir
 from ._batch import BatchResult, Call
 from ._body import HeldHeaders, Hidden
+from ._bundles import matches_in, resolve_in
 from ._operations import (
     CHECK_INSURANCE_PLAN_NETWORK,
     CODE_SYSTEM_LOOKUP,
@@ -1341,6 +1342,75 @@ class SyncMethods:
             Options(timeout, max_retries, correlation_id, extra_headers),
         ).data
 
+    def search_schedule_with_includes(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """The Schedule search, with every include it serves sent for you.
+
+        Each Schedule's Locations and provider, the Practitioner behind a role and the Location behind a HealthcareService come in the same Bundle: `_include` of `Schedule:actor`, then `_include:iterate` of `PractitionerRole:practitioner` and `HealthcareService:location`. It takes every other parameter of `search_schedule` and sends nothing else. `schedule_views()` reads the page with no request; `pages()` follows its `next` link.
+
+        ```python
+        page = client.search_schedule_with_includes(location_address_city="Boston")
+        for view in client.schedule_views(page):
+            print([location.get("name") for location in view.locations])
+        ```
+
+        It takes no `include` or `include_iterate`, and Python refuses either before anything is sent: to send your own, call `search_schedule`.
+
+        `GET /v1/fhir/r4/Schedule`, https://docs.haau3.com/api-reference/scheduling/find-schedules
+
+        Query parameters, each with its name in the API:
+
+        - `service_type` (`service-type`): The Schedule's service type, its own `serviceType`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Schedule's own specialty, FHIR's Schedule.specialty. For a specialty the SMART Scheduling Links `schedule-specialty` extension or the provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Schedule states it (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension) or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Schedule's `meta.source`: where the publisher published it, its feed's address followed by `Schedule/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Schedule's `meta.source`: a feed's address, for every Schedule it published. Several separated by commas.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return self._engine.call(
+            SEARCH_SCHEDULE,
+            (),
+            (
+                ("service-type", service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", ("Schedule:actor",)),
+                ("_include:iterate", ("PractitionerRole:practitioner", "HealthcareService:location")),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        ).data
+
     def search_slot(
         self,
         *,
@@ -1427,6 +1497,93 @@ class SyncMethods:
                 ("_source:below", source_below),
                 ("_include", include),
                 ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        ).data
+
+    def search_slot_with_includes(
+        self,
+        *,
+        status: str | None = None,
+        start: str | Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """The Slot search, with every include it serves sent for you.
+
+        Each Slot's Schedule, the Locations and provider the Schedule names, the Practitioner behind a role and the Location behind a HealthcareService come in the same Bundle: `_include` of `Slot:schedule`, then `_include:iterate` of `Schedule:actor`, `PractitionerRole:practitioner` and `HealthcareService:location`. It takes every other parameter of `search_slot` and sends nothing else, so the API's own defaults hold: free Slots, from now. `slot_views()` reads the page with no request; `pages()` follows its `next` link.
+
+        ```python
+        page = client.search_slot_with_includes(location_address_state="MA")
+        for view in client.slot_views(page):
+            print(view.slot.get("start"), view.booking_link)
+        ```
+
+        It takes no `include` or `include_iterate`, and Python refuses either before anything is sent: to send your own, call `search_slot`.
+
+        `GET /v1/fhir/r4/Slot`, https://docs.haau3.com/api-reference/scheduling/find-slots
+
+        Query parameters, each with its name in the API:
+
+        - `status`: The Slot's status: `free`, `busy`, `busy-unavailable`, `busy-tentative` or `entered-in-error`, several separated by commas. With no `status`, a search returns `free` Slots, and the `self` link shows it.
+        - `start`: When the Slot starts, with a prefix `ge`, `gt`, `le` or `lt`, or none for that day, hour or minute: `start=ge2026-12-01&start=lt2026-12-08` for one week. Any precision from a year to a second; a value with no time is a day in UTC, and a time needs its offset (`Z` or `-05:00`). Send it twice for a window. With no `start`, a search returns Slots starting from now, and the `self` link shows the moment.
+        - `appointment_type` (`appointment-type`): The Slot's appointment type. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule`: The Slot's Schedule, as `Schedule/{id}`, its id alone, or its address on this base; several separated by commas. Chained once, as `schedule.service-type`.
+        - `service_type` (`service-type`): The Slot's own service type, FHIR's Slot.serviceType. A Slot that names none matches no value: find the Slots of a Schedule offering a service with `schedule.service-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule_service_type` (`schedule.service-type`): The service type of the Slot's Schedule, FHIR's chained `schedule` and the Schedule's `service-type`: every Slot of a Schedule offering it, whether or not the Slot names a service type of its own. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Slot's own specialty, FHIR's Slot.specialty. For a specialty its Schedule or its provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Slot states it, as its Schedule does (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension), or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Slot's Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `patient_type` (`patient-type`): Who the Slot accepts, from the SMART Scheduling Links `patient-type` extension: `newpt`, `existptonly` and the other codes of `http://terminology.hl7.org/CodeSystem/accepting-patients`. A Slot that carries none matches no value. A Slot not accepting patients (`nopt`) is never served. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Slot's `meta.source`: where the publisher published it, its feed's address followed by `Slot/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Slot's `meta.source`: a feed's address, for every Slot it published. Several separated by commas.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return self._engine.call(
+            SEARCH_SLOT,
+            (),
+            (
+                ("status", status),
+                ("start", start),
+                ("appointment-type", appointment_type),
+                ("schedule", schedule),
+                ("service-type", service_type),
+                ("schedule.service-type", schedule_service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("patient-type", patient_type),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", ("Slot:schedule",)),
+                ("_include:iterate", ("Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location")),
                 ("_count", count),
                 ("page", page),
             ),
@@ -1590,6 +1747,584 @@ class SyncMethods:
         return self._engine.call(
             VALUE_SET_VALIDATE_CODE_POST, (), (), hidden, Options(timeout, max_retries, correlation_id, extra_headers)
         ).data
+
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Bundle"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Bundle | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["CapabilityStatement"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.CapabilityStatement | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Claim"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Claim | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Coverage"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Coverage | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Endpoint"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Endpoint | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["HealthcareService"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.HealthcareService | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["InsurancePlan"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.InsurancePlan | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Location"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Location | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Medication"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Medication | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["MedicationRequest"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.MedicationRequest | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["MedicationStatement"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.MedicationStatement | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["MessageHeader"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.MessageHeader | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["OperationOutcome"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.OperationOutcome | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Organization"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Organization | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["OrganizationAffiliation"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.OrganizationAffiliation | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Parameters"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Parameters | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Patient"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Patient | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Practitioner"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Practitioner | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["PractitionerRole"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.PractitionerRole | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Questionnaire"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Questionnaire | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Schedule"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Schedule | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Slot"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Slot | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["TerminologyCapabilities"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.TerminologyCapabilities | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["ValueSet"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.ValueSet | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal[
+            "Account",
+            "ActivityDefinition",
+            "AdverseEvent",
+            "AllergyIntolerance",
+            "Appointment",
+            "AppointmentResponse",
+            "AuditEvent",
+            "Basic",
+            "Binary",
+            "BiologicallyDerivedProduct",
+            "BodyStructure",
+            "CarePlan",
+            "CareTeam",
+            "CatalogEntry",
+            "ChargeItem",
+            "ChargeItemDefinition",
+            "ClaimResponse",
+            "ClinicalImpression",
+            "CodeSystem",
+            "Communication",
+            "CommunicationRequest",
+            "CompartmentDefinition",
+            "Composition",
+            "ConceptMap",
+            "Condition",
+            "Consent",
+            "Contract",
+            "CoverageEligibilityRequest",
+            "CoverageEligibilityResponse",
+            "DetectedIssue",
+            "Device",
+            "DeviceDefinition",
+            "DeviceMetric",
+            "DeviceRequest",
+            "DeviceUseStatement",
+            "DiagnosticReport",
+            "DocumentManifest",
+            "DocumentReference",
+            "EffectEvidenceSynthesis",
+            "Encounter",
+            "EnrollmentRequest",
+            "EnrollmentResponse",
+            "EpisodeOfCare",
+            "EventDefinition",
+            "Evidence",
+            "EvidenceVariable",
+            "ExampleScenario",
+            "ExplanationOfBenefit",
+            "FamilyMemberHistory",
+            "Flag",
+            "Goal",
+            "GraphDefinition",
+            "Group",
+            "GuidanceResponse",
+            "ImagingStudy",
+            "Immunization",
+            "ImmunizationEvaluation",
+            "ImmunizationRecommendation",
+            "ImplementationGuide",
+            "Invoice",
+            "Library",
+            "Linkage",
+            "List",
+            "Measure",
+            "MeasureReport",
+            "Media",
+            "MedicationAdministration",
+            "MedicationDispense",
+            "MedicationKnowledge",
+            "MedicinalProduct",
+            "MedicinalProductAuthorization",
+            "MedicinalProductContraindication",
+            "MedicinalProductIndication",
+            "MedicinalProductIngredient",
+            "MedicinalProductInteraction",
+            "MedicinalProductManufactured",
+            "MedicinalProductPackaged",
+            "MedicinalProductPharmaceutical",
+            "MedicinalProductUndesirableEffect",
+            "MessageDefinition",
+            "MolecularSequence",
+            "NamingSystem",
+            "NutritionOrder",
+            "Observation",
+            "ObservationDefinition",
+            "OperationDefinition",
+            "PaymentNotice",
+            "PaymentReconciliation",
+            "Person",
+            "PlanDefinition",
+            "Procedure",
+            "Provenance",
+            "QuestionnaireResponse",
+            "RelatedPerson",
+            "RequestGroup",
+            "ResearchDefinition",
+            "ResearchElementDefinition",
+            "ResearchStudy",
+            "ResearchSubject",
+            "RiskAssessment",
+            "RiskEvidenceSynthesis",
+            "SearchParameter",
+            "ServiceRequest",
+            "Specimen",
+            "SpecimenDefinition",
+            "StructureDefinition",
+            "StructureMap",
+            "Subscription",
+            "Substance",
+            "SubstanceNucleicAcid",
+            "SubstancePolymer",
+            "SubstanceProtein",
+            "SubstanceReferenceInformation",
+            "SubstanceSourceMaterial",
+            "SubstanceSpecification",
+            "SupplyDelivery",
+            "SupplyRequest",
+            "Task",
+            "TestReport",
+            "TestScript",
+            "VerificationResult",
+            "VisionPrescription",
+        ],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.OtherResource | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: None = None,
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Resource | None: ...
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: str | None = None,
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Resource | None:
+        """The resource a reference names, found in a Bundle as FHIR R4 resolves one, with no request, or None.
+
+        An absolute reference is the entry with that `fullUrl`. A relative one (`Organization/123`) is resolved
+        against the address of the entry holding it when you pass that resource as `from_`, and otherwise is the
+        one entry whose address ends in that type and id. `#id` is found in `from_`'s `contained`. `type` is the
+        resource type the reference must name, and types the result. None when the Bundle does not hold the
+        resource. Raises a `Haau3Error` when two entries could be the one meant, when the resource is not of
+        `type`, for a `#` reference with no `from_`, and for a `from_` that is not an entry of the Bundle.
+
+        ```python
+        page = client.search_practitioner_role(identifier="1093209884", include="PractitionerRole:practitioner")
+        for role in client.matches(page, "PractitionerRole"):
+            practitioner = client.resolve(page, role.get("practitioner"), type="Practitioner", from_=role)
+        ``` The plain function `haau3.resolve()` does the same with no client.
+        """
+        return resolve_in(bundle, reference, type=type, from_=from_)
+
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Bundle"]) -> list[fhir.Bundle]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["CapabilityStatement"]) -> list[fhir.CapabilityStatement]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Claim"]) -> list[fhir.Claim]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Coverage"]) -> list[fhir.Coverage]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Endpoint"]) -> list[fhir.Endpoint]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["HealthcareService"]) -> list[fhir.HealthcareService]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["InsurancePlan"]) -> list[fhir.InsurancePlan]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Location"]) -> list[fhir.Location]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Medication"]) -> list[fhir.Medication]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["MedicationRequest"]) -> list[fhir.MedicationRequest]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["MedicationStatement"]) -> list[fhir.MedicationStatement]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["MessageHeader"]) -> list[fhir.MessageHeader]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["OperationOutcome"]) -> list[fhir.OperationOutcome]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Organization"]) -> list[fhir.Organization]: ...
+    @overload
+    def matches(
+        self, page: fhir.Bundle, type: Literal["OrganizationAffiliation"]
+    ) -> list[fhir.OrganizationAffiliation]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Parameters"]) -> list[fhir.Parameters]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Patient"]) -> list[fhir.Patient]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Practitioner"]) -> list[fhir.Practitioner]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["PractitionerRole"]) -> list[fhir.PractitionerRole]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Questionnaire"]) -> list[fhir.Questionnaire]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Schedule"]) -> list[fhir.Schedule]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Slot"]) -> list[fhir.Slot]: ...
+    @overload
+    def matches(
+        self, page: fhir.Bundle, type: Literal["TerminologyCapabilities"]
+    ) -> list[fhir.TerminologyCapabilities]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["ValueSet"]) -> list[fhir.ValueSet]: ...
+    @overload
+    def matches(
+        self,
+        page: fhir.Bundle,
+        type: Literal[
+            "Account",
+            "ActivityDefinition",
+            "AdverseEvent",
+            "AllergyIntolerance",
+            "Appointment",
+            "AppointmentResponse",
+            "AuditEvent",
+            "Basic",
+            "Binary",
+            "BiologicallyDerivedProduct",
+            "BodyStructure",
+            "CarePlan",
+            "CareTeam",
+            "CatalogEntry",
+            "ChargeItem",
+            "ChargeItemDefinition",
+            "ClaimResponse",
+            "ClinicalImpression",
+            "CodeSystem",
+            "Communication",
+            "CommunicationRequest",
+            "CompartmentDefinition",
+            "Composition",
+            "ConceptMap",
+            "Condition",
+            "Consent",
+            "Contract",
+            "CoverageEligibilityRequest",
+            "CoverageEligibilityResponse",
+            "DetectedIssue",
+            "Device",
+            "DeviceDefinition",
+            "DeviceMetric",
+            "DeviceRequest",
+            "DeviceUseStatement",
+            "DiagnosticReport",
+            "DocumentManifest",
+            "DocumentReference",
+            "EffectEvidenceSynthesis",
+            "Encounter",
+            "EnrollmentRequest",
+            "EnrollmentResponse",
+            "EpisodeOfCare",
+            "EventDefinition",
+            "Evidence",
+            "EvidenceVariable",
+            "ExampleScenario",
+            "ExplanationOfBenefit",
+            "FamilyMemberHistory",
+            "Flag",
+            "Goal",
+            "GraphDefinition",
+            "Group",
+            "GuidanceResponse",
+            "ImagingStudy",
+            "Immunization",
+            "ImmunizationEvaluation",
+            "ImmunizationRecommendation",
+            "ImplementationGuide",
+            "Invoice",
+            "Library",
+            "Linkage",
+            "List",
+            "Measure",
+            "MeasureReport",
+            "Media",
+            "MedicationAdministration",
+            "MedicationDispense",
+            "MedicationKnowledge",
+            "MedicinalProduct",
+            "MedicinalProductAuthorization",
+            "MedicinalProductContraindication",
+            "MedicinalProductIndication",
+            "MedicinalProductIngredient",
+            "MedicinalProductInteraction",
+            "MedicinalProductManufactured",
+            "MedicinalProductPackaged",
+            "MedicinalProductPharmaceutical",
+            "MedicinalProductUndesirableEffect",
+            "MessageDefinition",
+            "MolecularSequence",
+            "NamingSystem",
+            "NutritionOrder",
+            "Observation",
+            "ObservationDefinition",
+            "OperationDefinition",
+            "PaymentNotice",
+            "PaymentReconciliation",
+            "Person",
+            "PlanDefinition",
+            "Procedure",
+            "Provenance",
+            "QuestionnaireResponse",
+            "RelatedPerson",
+            "RequestGroup",
+            "ResearchDefinition",
+            "ResearchElementDefinition",
+            "ResearchStudy",
+            "ResearchSubject",
+            "RiskAssessment",
+            "RiskEvidenceSynthesis",
+            "SearchParameter",
+            "ServiceRequest",
+            "Specimen",
+            "SpecimenDefinition",
+            "StructureDefinition",
+            "StructureMap",
+            "Subscription",
+            "Substance",
+            "SubstanceNucleicAcid",
+            "SubstancePolymer",
+            "SubstanceProtein",
+            "SubstanceReferenceInformation",
+            "SubstanceSourceMaterial",
+            "SubstanceSpecification",
+            "SupplyDelivery",
+            "SupplyRequest",
+            "Task",
+            "TestReport",
+            "TestScript",
+            "VerificationResult",
+            "VisionPrescription",
+        ],
+    ) -> list[fhir.OtherResource]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: None = None) -> list[fhir.Resource]: ...
+    def matches(self, page: fhir.Bundle, type: str | None = None) -> list[Any]:
+        """One page's matches, in page order, with no request: each entry whose search mode is `match` or says none.
+
+        With a resource type, only matches of that type, typed as it. A resource an `_include` brought is not
+        among them; `resolve()` finds one a reference names.
+
+        ```python
+        for role in client.matches(page, "PractitionerRole"):
+            print(role.get("id"))
+        ``` The plain function `haau3.matches()` does the same with no client.
+        """
+        return matches_in(page, type)
 
     @overload
     def batch(
@@ -3068,6 +3803,77 @@ class AsyncMethods:
             )
         ).data
 
+    async def search_schedule_with_includes(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """The Schedule search, with every include it serves sent for you.
+
+        Each Schedule's Locations and provider, the Practitioner behind a role and the Location behind a HealthcareService come in the same Bundle: `_include` of `Schedule:actor`, then `_include:iterate` of `PractitionerRole:practitioner` and `HealthcareService:location`. It takes every other parameter of `search_schedule` and sends nothing else. `schedule_views()` reads the page with no request; `pages()` follows its `next` link.
+
+        ```python
+        page = await client.search_schedule_with_includes(location_address_city="Boston")
+        for view in client.schedule_views(page):
+            print([location.get("name") for location in view.locations])
+        ```
+
+        It takes no `include` or `include_iterate`, and Python refuses either before anything is sent: to send your own, call `search_schedule`.
+
+        `GET /v1/fhir/r4/Schedule`, https://docs.haau3.com/api-reference/scheduling/find-schedules
+
+        Query parameters, each with its name in the API:
+
+        - `service_type` (`service-type`): The Schedule's service type, its own `serviceType`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Schedule's own specialty, FHIR's Schedule.specialty. For a specialty the SMART Scheduling Links `schedule-specialty` extension or the provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Schedule states it (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension) or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Schedule's `meta.source`: where the publisher published it, its feed's address followed by `Schedule/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Schedule's `meta.source`: a feed's address, for every Schedule it published. Several separated by commas.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return (
+            await self._engine.call(
+                SEARCH_SCHEDULE,
+                (),
+                (
+                    ("service-type", service_type),
+                    ("specialty", specialty),
+                    ("provider-specialty", provider_specialty),
+                    ("provider-identifier", provider_identifier),
+                    ("location-address-city", location_address_city),
+                    ("location-address-state", location_address_state),
+                    ("location-physical-type", location_physical_type),
+                    ("_source", source),
+                    ("_source:below", source_below),
+                    ("_include", ("Schedule:actor",)),
+                    ("_include:iterate", ("PractitionerRole:practitioner", "HealthcareService:location")),
+                    ("_count", count),
+                    ("page", page),
+                ),
+                None,
+                Options(timeout, max_retries, correlation_id, extra_headers),
+            )
+        ).data
+
     async def search_slot(
         self,
         *,
@@ -3155,6 +3961,98 @@ class AsyncMethods:
                     ("_source:below", source_below),
                     ("_include", include),
                     ("_include:iterate", include_iterate),
+                    ("_count", count),
+                    ("page", page),
+                ),
+                None,
+                Options(timeout, max_retries, correlation_id, extra_headers),
+            )
+        ).data
+
+    async def search_slot_with_includes(
+        self,
+        *,
+        status: str | None = None,
+        start: str | Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> fhir.Bundle:
+        """The Slot search, with every include it serves sent for you.
+
+        Each Slot's Schedule, the Locations and provider the Schedule names, the Practitioner behind a role and the Location behind a HealthcareService come in the same Bundle: `_include` of `Slot:schedule`, then `_include:iterate` of `Schedule:actor`, `PractitionerRole:practitioner` and `HealthcareService:location`. It takes every other parameter of `search_slot` and sends nothing else, so the API's own defaults hold: free Slots, from now. `slot_views()` reads the page with no request; `pages()` follows its `next` link.
+
+        ```python
+        page = await client.search_slot_with_includes(location_address_state="MA")
+        for view in client.slot_views(page):
+            print(view.slot.get("start"), view.booking_link)
+        ```
+
+        It takes no `include` or `include_iterate`, and Python refuses either before anything is sent: to send your own, call `search_slot`.
+
+        `GET /v1/fhir/r4/Slot`, https://docs.haau3.com/api-reference/scheduling/find-slots
+
+        Query parameters, each with its name in the API:
+
+        - `status`: The Slot's status: `free`, `busy`, `busy-unavailable`, `busy-tentative` or `entered-in-error`, several separated by commas. With no `status`, a search returns `free` Slots, and the `self` link shows it.
+        - `start`: When the Slot starts, with a prefix `ge`, `gt`, `le` or `lt`, or none for that day, hour or minute: `start=ge2026-12-01&start=lt2026-12-08` for one week. Any precision from a year to a second; a value with no time is a day in UTC, and a time needs its offset (`Z` or `-05:00`). Send it twice for a window. With no `start`, a search returns Slots starting from now, and the `self` link shows the moment.
+        - `appointment_type` (`appointment-type`): The Slot's appointment type. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule`: The Slot's Schedule, as `Schedule/{id}`, its id alone, or its address on this base; several separated by commas. Chained once, as `schedule.service-type`.
+        - `service_type` (`service-type`): The Slot's own service type, FHIR's Slot.serviceType. A Slot that names none matches no value: find the Slots of a Schedule offering a service with `schedule.service-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `schedule_service_type` (`schedule.service-type`): The service type of the Slot's Schedule, FHIR's chained `schedule` and the Schedule's `service-type`: every Slot of a Schedule offering it, whether or not the Slot names a service type of its own. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `specialty`: The Slot's own specialty, FHIR's Slot.specialty. For a specialty its Schedule or its provider states, use `provider-specialty`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_specialty` (`provider-specialty`): A specialty of the provider, as the Slot states it, as its Schedule does (its own `specialty` or the SMART Scheduling Links `schedule-specialty` extension), or as the provider itself does (a PractitionerRole or HealthcareService the Schedule names). Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `provider_identifier` (`provider-identifier`): An identifier, such as an NPI (`http://hl7.org/fhir/sid/us-npi|1234567890`), of the provider the Slot's Schedule names: a Practitioner, a PractitionerRole or the Practitioner behind it, or a HealthcareService, whichever the publisher used. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `patient_type` (`patient-type`): Who the Slot accepts, from the SMART Scheduling Links `patient-type` extension: `newpt`, `existptonly` and the other codes of `http://terminology.hl7.org/CodeSystem/accepting-patients`. A Slot that carries none matches no value. A Slot not accepting patients (`nopt`) is never served. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `location_address_city` (`location-address-city`): The city of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: the start of the city's name, ignoring case and accents: `San Jose` finds San José. Several separated by commas.
+        - `location_address_state` (`location-address-state`): The state of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names, matched as `location-address-city` is.
+        - `location_physical_type` (`location-physical-type`): The physicalType of a Location the Slot's Schedule names, or of the Location of a HealthcareService it names: `vi` for a virtual one, from `http://terminology.hl7.org/CodeSystem/location-physical-type`. Any of FHIR's token forms: `code`, `system|code`, `|code` (a code with no system) or `system|` (any code in that system), several separated by commas for any of them.
+        - `source` (`_source`): The Slot's `meta.source`: where the publisher published it, its feed's address followed by `Slot/` and the publisher's own id. Several separated by commas.
+        - `source_below` (`_source:below`): The start of the Slot's `meta.source`: a feed's address, for every Slot it published. Several separated by commas.
+        - `count` (`_count`): Page size, 1 to 100, 25 by default. A larger value is refused rather than quietly reduced.
+        - `page`: The next page's cursor, from the `next` link of the page before. It is opaque and belongs to the one search; follow the link rather than building one.
+        """
+        return (
+            await self._engine.call(
+                SEARCH_SLOT,
+                (),
+                (
+                    ("status", status),
+                    ("start", start),
+                    ("appointment-type", appointment_type),
+                    ("schedule", schedule),
+                    ("service-type", service_type),
+                    ("schedule.service-type", schedule_service_type),
+                    ("specialty", specialty),
+                    ("provider-specialty", provider_specialty),
+                    ("provider-identifier", provider_identifier),
+                    ("patient-type", patient_type),
+                    ("location-address-city", location_address_city),
+                    ("location-address-state", location_address_state),
+                    ("location-physical-type", location_physical_type),
+                    ("_source", source),
+                    ("_source:below", source_below),
+                    ("_include", ("Slot:schedule",)),
+                    (
+                        "_include:iterate",
+                        ("Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"),
+                    ),
                     ("_count", count),
                     ("page", page),
                 ),
@@ -3333,6 +4231,584 @@ class AsyncMethods:
                 Options(timeout, max_retries, correlation_id, extra_headers),
             )
         ).data
+
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Bundle"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Bundle | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["CapabilityStatement"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.CapabilityStatement | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Claim"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Claim | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Coverage"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Coverage | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Endpoint"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Endpoint | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["HealthcareService"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.HealthcareService | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["InsurancePlan"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.InsurancePlan | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Location"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Location | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Medication"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Medication | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["MedicationRequest"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.MedicationRequest | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["MedicationStatement"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.MedicationStatement | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["MessageHeader"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.MessageHeader | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["OperationOutcome"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.OperationOutcome | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Organization"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Organization | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["OrganizationAffiliation"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.OrganizationAffiliation | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Parameters"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Parameters | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Patient"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Patient | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Practitioner"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Practitioner | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["PractitionerRole"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.PractitionerRole | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Questionnaire"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Questionnaire | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Schedule"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Schedule | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["Slot"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Slot | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["TerminologyCapabilities"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.TerminologyCapabilities | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal["ValueSet"],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.ValueSet | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: Literal[
+            "Account",
+            "ActivityDefinition",
+            "AdverseEvent",
+            "AllergyIntolerance",
+            "Appointment",
+            "AppointmentResponse",
+            "AuditEvent",
+            "Basic",
+            "Binary",
+            "BiologicallyDerivedProduct",
+            "BodyStructure",
+            "CarePlan",
+            "CareTeam",
+            "CatalogEntry",
+            "ChargeItem",
+            "ChargeItemDefinition",
+            "ClaimResponse",
+            "ClinicalImpression",
+            "CodeSystem",
+            "Communication",
+            "CommunicationRequest",
+            "CompartmentDefinition",
+            "Composition",
+            "ConceptMap",
+            "Condition",
+            "Consent",
+            "Contract",
+            "CoverageEligibilityRequest",
+            "CoverageEligibilityResponse",
+            "DetectedIssue",
+            "Device",
+            "DeviceDefinition",
+            "DeviceMetric",
+            "DeviceRequest",
+            "DeviceUseStatement",
+            "DiagnosticReport",
+            "DocumentManifest",
+            "DocumentReference",
+            "EffectEvidenceSynthesis",
+            "Encounter",
+            "EnrollmentRequest",
+            "EnrollmentResponse",
+            "EpisodeOfCare",
+            "EventDefinition",
+            "Evidence",
+            "EvidenceVariable",
+            "ExampleScenario",
+            "ExplanationOfBenefit",
+            "FamilyMemberHistory",
+            "Flag",
+            "Goal",
+            "GraphDefinition",
+            "Group",
+            "GuidanceResponse",
+            "ImagingStudy",
+            "Immunization",
+            "ImmunizationEvaluation",
+            "ImmunizationRecommendation",
+            "ImplementationGuide",
+            "Invoice",
+            "Library",
+            "Linkage",
+            "List",
+            "Measure",
+            "MeasureReport",
+            "Media",
+            "MedicationAdministration",
+            "MedicationDispense",
+            "MedicationKnowledge",
+            "MedicinalProduct",
+            "MedicinalProductAuthorization",
+            "MedicinalProductContraindication",
+            "MedicinalProductIndication",
+            "MedicinalProductIngredient",
+            "MedicinalProductInteraction",
+            "MedicinalProductManufactured",
+            "MedicinalProductPackaged",
+            "MedicinalProductPharmaceutical",
+            "MedicinalProductUndesirableEffect",
+            "MessageDefinition",
+            "MolecularSequence",
+            "NamingSystem",
+            "NutritionOrder",
+            "Observation",
+            "ObservationDefinition",
+            "OperationDefinition",
+            "PaymentNotice",
+            "PaymentReconciliation",
+            "Person",
+            "PlanDefinition",
+            "Procedure",
+            "Provenance",
+            "QuestionnaireResponse",
+            "RelatedPerson",
+            "RequestGroup",
+            "ResearchDefinition",
+            "ResearchElementDefinition",
+            "ResearchStudy",
+            "ResearchSubject",
+            "RiskAssessment",
+            "RiskEvidenceSynthesis",
+            "SearchParameter",
+            "ServiceRequest",
+            "Specimen",
+            "SpecimenDefinition",
+            "StructureDefinition",
+            "StructureMap",
+            "Subscription",
+            "Substance",
+            "SubstanceNucleicAcid",
+            "SubstancePolymer",
+            "SubstanceProtein",
+            "SubstanceReferenceInformation",
+            "SubstanceSourceMaterial",
+            "SubstanceSpecification",
+            "SupplyDelivery",
+            "SupplyRequest",
+            "Task",
+            "TestReport",
+            "TestScript",
+            "VerificationResult",
+            "VisionPrescription",
+        ],
+        from_: fhir.Resource | None = None,
+    ) -> fhir.OtherResource | None: ...
+    @overload
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: None = None,
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Resource | None: ...
+    def resolve(
+        self,
+        bundle: fhir.Bundle,
+        reference: fhir.Reference | str | None,
+        *,
+        type: str | None = None,
+        from_: fhir.Resource | None = None,
+    ) -> fhir.Resource | None:
+        """The resource a reference names, found in a Bundle as FHIR R4 resolves one, with no request, or None.
+
+        An absolute reference is the entry with that `fullUrl`. A relative one (`Organization/123`) is resolved
+        against the address of the entry holding it when you pass that resource as `from_`, and otherwise is the
+        one entry whose address ends in that type and id. `#id` is found in `from_`'s `contained`. `type` is the
+        resource type the reference must name, and types the result. None when the Bundle does not hold the
+        resource. Raises a `Haau3Error` when two entries could be the one meant, when the resource is not of
+        `type`, for a `#` reference with no `from_`, and for a `from_` that is not an entry of the Bundle.
+
+        ```python
+        page = client.search_practitioner_role(identifier="1093209884", include="PractitionerRole:practitioner")
+        for role in client.matches(page, "PractitionerRole"):
+            practitioner = client.resolve(page, role.get("practitioner"), type="Practitioner", from_=role)
+        ``` The plain function `haau3.resolve()` does the same with no client.
+        """
+        return resolve_in(bundle, reference, type=type, from_=from_)
+
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Bundle"]) -> list[fhir.Bundle]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["CapabilityStatement"]) -> list[fhir.CapabilityStatement]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Claim"]) -> list[fhir.Claim]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Coverage"]) -> list[fhir.Coverage]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Endpoint"]) -> list[fhir.Endpoint]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["HealthcareService"]) -> list[fhir.HealthcareService]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["InsurancePlan"]) -> list[fhir.InsurancePlan]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Location"]) -> list[fhir.Location]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Medication"]) -> list[fhir.Medication]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["MedicationRequest"]) -> list[fhir.MedicationRequest]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["MedicationStatement"]) -> list[fhir.MedicationStatement]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["MessageHeader"]) -> list[fhir.MessageHeader]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["OperationOutcome"]) -> list[fhir.OperationOutcome]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Organization"]) -> list[fhir.Organization]: ...
+    @overload
+    def matches(
+        self, page: fhir.Bundle, type: Literal["OrganizationAffiliation"]
+    ) -> list[fhir.OrganizationAffiliation]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Parameters"]) -> list[fhir.Parameters]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Patient"]) -> list[fhir.Patient]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Practitioner"]) -> list[fhir.Practitioner]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["PractitionerRole"]) -> list[fhir.PractitionerRole]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Questionnaire"]) -> list[fhir.Questionnaire]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Schedule"]) -> list[fhir.Schedule]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["Slot"]) -> list[fhir.Slot]: ...
+    @overload
+    def matches(
+        self, page: fhir.Bundle, type: Literal["TerminologyCapabilities"]
+    ) -> list[fhir.TerminologyCapabilities]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: Literal["ValueSet"]) -> list[fhir.ValueSet]: ...
+    @overload
+    def matches(
+        self,
+        page: fhir.Bundle,
+        type: Literal[
+            "Account",
+            "ActivityDefinition",
+            "AdverseEvent",
+            "AllergyIntolerance",
+            "Appointment",
+            "AppointmentResponse",
+            "AuditEvent",
+            "Basic",
+            "Binary",
+            "BiologicallyDerivedProduct",
+            "BodyStructure",
+            "CarePlan",
+            "CareTeam",
+            "CatalogEntry",
+            "ChargeItem",
+            "ChargeItemDefinition",
+            "ClaimResponse",
+            "ClinicalImpression",
+            "CodeSystem",
+            "Communication",
+            "CommunicationRequest",
+            "CompartmentDefinition",
+            "Composition",
+            "ConceptMap",
+            "Condition",
+            "Consent",
+            "Contract",
+            "CoverageEligibilityRequest",
+            "CoverageEligibilityResponse",
+            "DetectedIssue",
+            "Device",
+            "DeviceDefinition",
+            "DeviceMetric",
+            "DeviceRequest",
+            "DeviceUseStatement",
+            "DiagnosticReport",
+            "DocumentManifest",
+            "DocumentReference",
+            "EffectEvidenceSynthesis",
+            "Encounter",
+            "EnrollmentRequest",
+            "EnrollmentResponse",
+            "EpisodeOfCare",
+            "EventDefinition",
+            "Evidence",
+            "EvidenceVariable",
+            "ExampleScenario",
+            "ExplanationOfBenefit",
+            "FamilyMemberHistory",
+            "Flag",
+            "Goal",
+            "GraphDefinition",
+            "Group",
+            "GuidanceResponse",
+            "ImagingStudy",
+            "Immunization",
+            "ImmunizationEvaluation",
+            "ImmunizationRecommendation",
+            "ImplementationGuide",
+            "Invoice",
+            "Library",
+            "Linkage",
+            "List",
+            "Measure",
+            "MeasureReport",
+            "Media",
+            "MedicationAdministration",
+            "MedicationDispense",
+            "MedicationKnowledge",
+            "MedicinalProduct",
+            "MedicinalProductAuthorization",
+            "MedicinalProductContraindication",
+            "MedicinalProductIndication",
+            "MedicinalProductIngredient",
+            "MedicinalProductInteraction",
+            "MedicinalProductManufactured",
+            "MedicinalProductPackaged",
+            "MedicinalProductPharmaceutical",
+            "MedicinalProductUndesirableEffect",
+            "MessageDefinition",
+            "MolecularSequence",
+            "NamingSystem",
+            "NutritionOrder",
+            "Observation",
+            "ObservationDefinition",
+            "OperationDefinition",
+            "PaymentNotice",
+            "PaymentReconciliation",
+            "Person",
+            "PlanDefinition",
+            "Procedure",
+            "Provenance",
+            "QuestionnaireResponse",
+            "RelatedPerson",
+            "RequestGroup",
+            "ResearchDefinition",
+            "ResearchElementDefinition",
+            "ResearchStudy",
+            "ResearchSubject",
+            "RiskAssessment",
+            "RiskEvidenceSynthesis",
+            "SearchParameter",
+            "ServiceRequest",
+            "Specimen",
+            "SpecimenDefinition",
+            "StructureDefinition",
+            "StructureMap",
+            "Subscription",
+            "Substance",
+            "SubstanceNucleicAcid",
+            "SubstancePolymer",
+            "SubstanceProtein",
+            "SubstanceReferenceInformation",
+            "SubstanceSourceMaterial",
+            "SubstanceSpecification",
+            "SupplyDelivery",
+            "SupplyRequest",
+            "Task",
+            "TestReport",
+            "TestScript",
+            "VerificationResult",
+            "VisionPrescription",
+        ],
+    ) -> list[fhir.OtherResource]: ...
+    @overload
+    def matches(self, page: fhir.Bundle, type: None = None) -> list[fhir.Resource]: ...
+    def matches(self, page: fhir.Bundle, type: str | None = None) -> list[Any]:
+        """One page's matches, in page order, with no request: each entry whose search mode is `match` or says none.
+
+        With a resource type, only matches of that type, typed as it. A resource an `_include` brought is not
+        among them; `resolve()` finds one a reference names.
+
+        ```python
+        for role in client.matches(page, "PractitionerRole"):
+            print(role.get("id"))
+        ``` The plain function `haau3.matches()` does the same with no client.
+        """
+        return matches_in(page, type)
 
     @overload
     async def batch(
@@ -4353,6 +5829,48 @@ class SyncWithResponse:
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
 
+    def search_schedule_with_includes(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`Haau3.search_schedule_with_includes`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            SEARCH_SCHEDULE,
+            (),
+            (
+                ("service-type", service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", ("Schedule:actor",)),
+                ("_include:iterate", ("PractitionerRole:practitioner", "HealthcareService:location")),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
     def search_slot(
         self,
         *,
@@ -4408,6 +5926,60 @@ class SyncWithResponse:
                 ("_source:below", source_below),
                 ("_include", include),
                 ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    def search_slot_with_includes(
+        self,
+        *,
+        status: str | None = None,
+        start: str | Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`Haau3.search_slot_with_includes`, returning a `Response` with the request id and timing as well as the answer."""
+        return self._engine.call(
+            SEARCH_SLOT,
+            (),
+            (
+                ("status", status),
+                ("start", start),
+                ("appointment-type", appointment_type),
+                ("schedule", schedule),
+                ("service-type", service_type),
+                ("schedule.service-type", schedule_service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("patient-type", patient_type),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", ("Slot:schedule",)),
+                ("_include:iterate", ("Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location")),
                 ("_count", count),
                 ("page", page),
             ),
@@ -5527,6 +7099,48 @@ class AsyncWithResponse:
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
 
+    async def search_schedule_with_includes(
+        self,
+        *,
+        service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`AsyncHaau3.search_schedule_with_includes`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            SEARCH_SCHEDULE,
+            (),
+            (
+                ("service-type", service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", ("Schedule:actor",)),
+                ("_include:iterate", ("PractitionerRole:practitioner", "HealthcareService:location")),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
     async def search_slot(
         self,
         *,
@@ -5582,6 +7196,60 @@ class AsyncWithResponse:
                 ("_source:below", source_below),
                 ("_include", include),
                 ("_include:iterate", include_iterate),
+                ("_count", count),
+                ("page", page),
+            ),
+            None,
+            Options(timeout, max_retries, correlation_id, extra_headers),
+        )
+
+    async def search_slot_with_includes(
+        self,
+        *,
+        status: str | None = None,
+        start: str | Sequence[str] | None = None,
+        appointment_type: str | None = None,
+        schedule: str | None = None,
+        service_type: str | None = None,
+        schedule_service_type: str | None = None,
+        specialty: str | None = None,
+        provider_specialty: str | None = None,
+        provider_identifier: str | None = None,
+        patient_type: str | None = None,
+        location_address_city: str | None = None,
+        location_address_state: str | None = None,
+        location_physical_type: str | None = None,
+        source: str | None = None,
+        source_below: str | None = None,
+        count: int | None = None,
+        page: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        correlation_id: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> Response[fhir.Bundle]:
+        """`AsyncHaau3.search_slot_with_includes`, returning a `Response` with the request id and timing as well as the answer."""
+        return await self._engine.call(
+            SEARCH_SLOT,
+            (),
+            (
+                ("status", status),
+                ("start", start),
+                ("appointment-type", appointment_type),
+                ("schedule", schedule),
+                ("service-type", service_type),
+                ("schedule.service-type", schedule_service_type),
+                ("specialty", specialty),
+                ("provider-specialty", provider_specialty),
+                ("provider-identifier", provider_identifier),
+                ("patient-type", patient_type),
+                ("location-address-city", location_address_city),
+                ("location-address-state", location_address_state),
+                ("location-physical-type", location_physical_type),
+                ("_source", source),
+                ("_source:below", source_below),
+                ("_include", ("Slot:schedule",)),
+                ("_include:iterate", ("Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location")),
                 ("_count", count),
                 ("page", page),
             ),

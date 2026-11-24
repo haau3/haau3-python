@@ -10,7 +10,7 @@ with, and no more.
 # ruff: noqa
 # fmt: off
 
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from typing_extensions import Required, TypeAlias, TypedDict
 
@@ -20,7 +20,7 @@ class Address(TypedDict, total=False):
     """An address expressed using postal conventions (as opposed to GPS or other location definition formats).  This data type may be used to convey addresses for use in delivering mail as well as for visiting locations which might not be valid for mail delivery.  There are a variety of postal address formats defined around the world."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     use: Literal['home', 'work', 'temp', 'old', 'billing']
     """The purpose of this address."""
@@ -34,9 +34,9 @@ class Address(TypedDict, total=False):
     """Specifies the entire address as it should be displayed e.g."""
     _text: "Element"
     """Extensions for text"""
-    line: list[str]
+    line: List[str]
     """This component contains the house number, apartment number, street name, street direction, P.O."""
-    _line: list["Element"]
+    _line: List["Element"]
     """Extensions for line"""
     city: str
     """The name of the city, town, suburb, village or other community or delivery center."""
@@ -66,7 +66,7 @@ class Age(TypedDict, total=False):
     """A duration of time during which an organism (or a process) has existed."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     value: float
     """The value of the measured amount."""
@@ -94,7 +94,7 @@ class Annotation(TypedDict, total=False):
     """A  text note which also  contains information about who made the statement and when."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     authorReference: "Reference"
     """The individual responsible for making the annotation."""
@@ -116,7 +116,7 @@ class Attachment(TypedDict, total=False):
     """For referring to data content defined in other formats."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     contentType: str
     """Identifies the type of the data in the attachment and allows a method to be chosen to interpret or render the data."""
@@ -182,9 +182,9 @@ class Bundle(TypedDict, total=False):
     """If a set of search matches, this is the total number of entries of type 'match' across all pages in the search."""
     _total: "Element"
     """Extensions for total"""
-    link: list["BundleLink"]
+    link: List["BundleLink"]
     """A series of links that provide context to this bundle."""
-    entry: list["BundleEntry"]
+    entry: List["BundleEntry"]
     """An entry in a bundle resource - will either contain a resource or information about a resource (transactions and history only)."""
     signature: "Signature"
     """Digital Signature - base64 encoded."""
@@ -194,11 +194,11 @@ class BundleEntry(TypedDict, total=False):
     """A container for a collection of resources."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    link: list["BundleLink"]
+    link: List["BundleLink"]
     """A series of links that provide context to this entry."""
     fullUrl: str
     """The Absolute URL for the resource."""
@@ -218,9 +218,9 @@ class BundleLink(TypedDict, total=False):
     """A container for a collection of resources."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     relation: str
     """A name which details the functional use for this link - see [http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1](http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1)."""
@@ -236,9 +236,9 @@ class BundleRequest(TypedDict, total=False):
     """A container for a collection of resources."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     method: Literal['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH']
     """In a transaction or batch, this is the HTTP action to be executed for this entry."""
@@ -270,9 +270,9 @@ class BundleResponse(TypedDict, total=False):
     """A container for a collection of resources."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     status: str
     """The status code returned by processing this entry."""
@@ -298,9 +298,9 @@ class BundleSearch(TypedDict, total=False):
     """A container for a collection of resources."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     mode: Literal['match', 'include', 'outcome']
     """Why this entry is in the result set - whether it's included as a match or because of an _include requirement, or to convey information or warning information about the search process."""
@@ -330,11 +330,11 @@ class CapabilityStatement(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
     url: str
     """An absolute URI that is used to identify this capability statement when it is referenced in a specification, model, design or an instance; also called its canonical identifier."""
@@ -368,15 +368,15 @@ class CapabilityStatement(TypedDict, total=False):
     """The name of the organization or individual that published the capability statement."""
     _publisher: "Element"
     """Extensions for publisher"""
-    contact: list["ContactDetail"]
+    contact: List["ContactDetail"]
     """Contact details to assist a user in finding and communicating with the publisher."""
     description: str
     """A free text natural language description of the capability statement from a consumer's perspective."""
     _description: "Element"
     """Extensions for description"""
-    useContext: list["UsageContext"]
+    useContext: List["UsageContext"]
     """The content was developed with a focus and intent of supporting the contexts that are listed."""
-    jurisdiction: list["CodeableConcept"]
+    jurisdiction: List["CodeableConcept"]
     """A legal or geographic region in which the capability statement is intended to be used."""
     purpose: str
     """Explanation of why this capability statement is needed and why it has been designed as it has."""
@@ -390,9 +390,9 @@ class CapabilityStatement(TypedDict, total=False):
     """The way that this statement is intended to be used, to describe an actual running instance of software, a particular product (kind, not instance of software) or a class of implementation (e.g."""
     _kind: "Element"
     """Extensions for kind"""
-    instantiates: list[str]
+    instantiates: List[str]
     """Reference to a canonical URL of another CapabilityStatement that this software implements."""
-    imports: list[str]
+    imports: List[str]
     """Reference to a canonical URL of another CapabilityStatement that this software adds to."""
     software: "CapabilityStatementSoftware"
     """Software that is covered by this capability statement."""
@@ -402,21 +402,21 @@ class CapabilityStatement(TypedDict, total=False):
     """The version of the FHIR specification that this CapabilityStatement describes (which SHALL be the same as the FHIR version of the CapabilityStatement itself)."""
     _fhirVersion: "Element"
     """Extensions for fhirVersion"""
-    format: list[str]
+    format: List[str]
     """A list of the formats supported by this implementation using their content types."""
-    _format: list["Element"]
+    _format: List["Element"]
     """Extensions for format"""
-    patchFormat: list[str]
+    patchFormat: List[str]
     """A list of the patch formats supported by this implementation using their content types."""
-    _patchFormat: list["Element"]
+    _patchFormat: List["Element"]
     """Extensions for patchFormat"""
-    implementationGuide: list[str]
+    implementationGuide: List[str]
     """A list of implementation guides that the server does (or should) support in their entirety."""
-    rest: list["CapabilityStatementRest"]
+    rest: List["CapabilityStatementRest"]
     """A definition of the restful capabilities of the solution, if any."""
-    messaging: list["CapabilityStatementMessaging"]
+    messaging: List["CapabilityStatementMessaging"]
     """A description of the messaging capabilities of the solution."""
-    document: list["CapabilityStatementDocument"]
+    document: List["CapabilityStatementDocument"]
     """A document definition."""
 
 
@@ -424,9 +424,9 @@ class CapabilityStatementDocument(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     mode: Literal['producer', 'consumer']
     """Mode of this document declaration - whether an application is a producer or consumer."""
@@ -444,9 +444,9 @@ class CapabilityStatementEndpoint(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     protocol: Required["Coding"]
     """A list of the messaging transport protocol(s) identifiers, supported by this endpoint."""
@@ -460,9 +460,9 @@ class CapabilityStatementImplementation(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     description: str
     """Information about the specific installation that this capability statement relates to."""
@@ -480,9 +480,9 @@ class CapabilityStatementInteraction(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     code: Literal['read', 'vread', 'update', 'patch', 'delete', 'history-instance', 'history-type', 'create', 'search-type']
     """Coded identifier of the operation, supported by the system resource."""
@@ -498,9 +498,9 @@ class CapabilityStatementInteraction1(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     code: Literal['transaction', 'batch', 'search-system', 'history-system']
     """A coded identifier of the operation, supported by the system."""
@@ -516,11 +516,11 @@ class CapabilityStatementMessaging(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    endpoint: list["CapabilityStatementEndpoint"]
+    endpoint: List["CapabilityStatementEndpoint"]
     """An endpoint (network accessible address) to which messages and/or replies are to be sent."""
     reliableCache: int
     """Length if the receiver's reliable messaging cache in minutes (if a receiver) or how long the cache length on the receiver should be (if a sender)."""
@@ -530,7 +530,7 @@ class CapabilityStatementMessaging(TypedDict, total=False):
     """Documentation about the system's messaging capabilities for this endpoint not otherwise documented by the capability statement."""
     _documentation: "Element"
     """Extensions for documentation"""
-    supportedMessage: list["CapabilityStatementSupportedMessage"]
+    supportedMessage: List["CapabilityStatementSupportedMessage"]
     """References to message definitions for messages this system can send or receive."""
 
 
@@ -538,9 +538,9 @@ class CapabilityStatementOperation(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """The name of the operation or query."""
@@ -558,9 +558,9 @@ class CapabilityStatementResource(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: str
     """A type of resource exposed via the restful interface."""
@@ -568,13 +568,13 @@ class CapabilityStatementResource(TypedDict, total=False):
     """Extensions for type"""
     profile: str
     """A specification of the profile that describes the solution's overall support for the resource, including any constraints on cardinality, bindings, lengths or other limitations."""
-    supportedProfile: list[str]
+    supportedProfile: List[str]
     """A list of profiles that represent different use cases supported by the system."""
     documentation: str
     """Additional information about the resource type used by the system."""
     _documentation: "Element"
     """Extensions for documentation"""
-    interaction: list["CapabilityStatementInteraction"]
+    interaction: List["CapabilityStatementInteraction"]
     """Identifies a restful operation supported by the solution."""
     versioning: Literal['no-version', 'versioned', 'versioned-update']
     """This field is set to no-version to specify that the system does not support (server) or use (client) versioning for this resource type."""
@@ -604,21 +604,21 @@ class CapabilityStatementResource(TypedDict, total=False):
     """A code that indicates how the server supports conditional delete."""
     _conditionalDelete: "Element"
     """Extensions for conditionalDelete"""
-    referencePolicy: list[Literal['literal', 'logical', 'resolves', 'enforced', 'local']]
+    referencePolicy: List[Literal['literal', 'logical', 'resolves', 'enforced', 'local']]
     """A set of flags that defines how references are supported."""
-    _referencePolicy: list["Element"]
+    _referencePolicy: List["Element"]
     """Extensions for referencePolicy"""
-    searchInclude: list[str]
+    searchInclude: List[str]
     """A list of _include values supported by the server."""
-    _searchInclude: list["Element"]
+    _searchInclude: List["Element"]
     """Extensions for searchInclude"""
-    searchRevInclude: list[str]
+    searchRevInclude: List[str]
     """A list of _revinclude (reverse include) values supported by the server."""
-    _searchRevInclude: list["Element"]
+    _searchRevInclude: List["Element"]
     """Extensions for searchRevInclude"""
-    searchParam: list["CapabilityStatementSearchParam"]
+    searchParam: List["CapabilityStatementSearchParam"]
     """Search parameters for implementations to support and/or make use of - either references to ones defined in the specification, or additional ones defined for/by the implementation."""
-    operation: list["CapabilityStatementOperation"]
+    operation: List["CapabilityStatementOperation"]
     """Definition of an operation or a named query together with its parameters and their meaning and type."""
 
 
@@ -626,9 +626,9 @@ class CapabilityStatementRest(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     mode: Literal['client', 'server']
     """Identifies whether this portion of the statement is describing the ability to initiate or receive restful operations."""
@@ -640,15 +640,15 @@ class CapabilityStatementRest(TypedDict, total=False):
     """Extensions for documentation"""
     security: "CapabilityStatementSecurity"
     """Information about security implementation from an interface perspective - what a client needs to know."""
-    resource: list["CapabilityStatementResource"]
+    resource: List["CapabilityStatementResource"]
     """A specification of the restful capabilities of the solution for a specific resource type."""
-    interaction: list["CapabilityStatementInteraction1"]
+    interaction: List["CapabilityStatementInteraction1"]
     """A specification of restful operations supported by the system."""
-    searchParam: list["CapabilityStatementSearchParam"]
+    searchParam: List["CapabilityStatementSearchParam"]
     """Search parameters that are supported for searching all resources for implementations to support and/or make use of - either references to ones defined in the specification, or additional ones defined for/by the implementation."""
-    operation: list["CapabilityStatementOperation"]
+    operation: List["CapabilityStatementOperation"]
     """Definition of an operation or a named query together with its parameters and their meaning and type."""
-    compartment: list[str]
+    compartment: List[str]
     """An absolute URI which is a reference to the definition of a compartment that the system supports."""
 
 
@@ -656,9 +656,9 @@ class CapabilityStatementSearchParam(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """The name of the search parameter used in the interface."""
@@ -680,15 +680,15 @@ class CapabilityStatementSecurity(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     cors: bool
     """Server adds CORS headers when responding to requests - this enables Javascript applications to use the server."""
     _cors: "Element"
     """Extensions for cors"""
-    service: list["CodeableConcept"]
+    service: List["CodeableConcept"]
     """Types of security services that are supported/required by the system."""
     description: str
     """General description of how security works."""
@@ -700,9 +700,9 @@ class CapabilityStatementSoftware(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """Name the software is known by."""
@@ -722,9 +722,9 @@ class CapabilityStatementSupportedMessage(TypedDict, total=False):
     """A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     mode: Literal['sender', 'receiver']
     """The mode of this event declaration - whether application is sender or receiver."""
@@ -752,13 +752,13 @@ class Claim(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """A unique identifier assigned to this claim."""
     status: str
     """The status of the resource instance."""
@@ -790,7 +790,7 @@ class Claim(TypedDict, total=False):
     """The provider-required urgency of processing the request."""
     fundsReserve: "CodeableConcept"
     """A code to indicate whether and for whom funds are to be reserved for future claims."""
-    related: list["ClaimRelated"]
+    related: List["ClaimRelated"]
     """Other claims which are related to this claim such as prior submissions or claims for related services or for the same event."""
     prescription: "Reference"
     """Prescription to support the dispensing of pharmacy, device or vision products."""
@@ -802,19 +802,19 @@ class Claim(TypedDict, total=False):
     """A reference to a referral resource."""
     facility: "Reference"
     """Facility where the services were provided."""
-    careTeam: list["ClaimCareTeam"]
+    careTeam: List["ClaimCareTeam"]
     """The members of the team who provided the products and services."""
-    supportingInfo: list["ClaimSupportingInfo"]
+    supportingInfo: List["ClaimSupportingInfo"]
     """Additional information codes regarding exceptions, special considerations, the condition, situation, prior or concurrent issues."""
-    diagnosis: list["ClaimDiagnosis"]
+    diagnosis: List["ClaimDiagnosis"]
     """Information about diagnoses relevant to the claim items."""
-    procedure: list["ClaimProcedure"]
+    procedure: List["ClaimProcedure"]
     """Procedures performed on the patient relevant to the billing items with the claim."""
-    insurance: Required[list["ClaimInsurance"]]
+    insurance: Required[List["ClaimInsurance"]]
     """Financial instruments for reimbursement for the health care products and services specified on the claim."""
     accident: "ClaimAccident"
     """Details of an accident which resulted in injuries which required the products and services listed in the claim."""
-    item: list["ClaimItem"]
+    item: List["ClaimItem"]
     """A claim line."""
     total: "Money"
     """The total value of the all the items in the claim."""
@@ -824,9 +824,9 @@ class ClaimAccident(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     date: str
     """Date of an accident event related to the products and services contained in the claim."""
@@ -844,9 +844,9 @@ class ClaimCareTeam(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify care team entries."""
@@ -868,9 +868,9 @@ class ClaimDetail(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify item entries."""
@@ -882,9 +882,9 @@ class ClaimDetail(TypedDict, total=False):
     """Code to identify the general type of benefits under which products and services are provided."""
     productOrService: Required["CodeableConcept"]
     """When the value is a group code then this item collects a set of related claim details, otherwise this contains the product, service, drug or other billing code for the item."""
-    modifier: list["CodeableConcept"]
+    modifier: List["CodeableConcept"]
     """Item typification or modifiers codes to convey additional context for the product or service."""
-    programCode: list["CodeableConcept"]
+    programCode: List["CodeableConcept"]
     """Identifies the program under which this may be recovered."""
     quantity: "Quantity"
     """The number of repetitions of a service or product."""
@@ -896,9 +896,9 @@ class ClaimDetail(TypedDict, total=False):
     """Extensions for factor"""
     net: "Money"
     """The quantity times the unit price for an additional service or product or charge."""
-    udi: list["Reference"]
+    udi: List["Reference"]
     """Unique Device Identifiers associated with this line item."""
-    subDetail: list["ClaimSubDetail"]
+    subDetail: List["ClaimSubDetail"]
     """A claim detail line."""
 
 
@@ -906,9 +906,9 @@ class ClaimDiagnosis(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify diagnosis entries."""
@@ -918,7 +918,7 @@ class ClaimDiagnosis(TypedDict, total=False):
     """The nature of illness or problem in a coded form or as a reference to an external defined Condition."""
     diagnosisReference: "Reference"
     """The nature of illness or problem in a coded form or as a reference to an external defined Condition."""
-    type: list["CodeableConcept"]
+    type: List["CodeableConcept"]
     """When the condition was observed or the relative ranking."""
     onAdmission: "CodeableConcept"
     """Indication of whether the diagnosis was present on admission to a facility."""
@@ -930,9 +930,9 @@ class ClaimInsurance(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify insurance entries and provide a sequence of coverages to convey coordination of benefit order."""
@@ -950,9 +950,9 @@ class ClaimInsurance(TypedDict, total=False):
     """A business agreement number established between the provider and the insurer for special business processing purposes."""
     _businessArrangement: "Element"
     """Extensions for businessArrangement"""
-    preAuthRef: list[str]
+    preAuthRef: List[str]
     """Reference numbers previously provided by the insurer to the provider to be quoted on subsequent claims containing services or products related to the prior authorization."""
-    _preAuthRef: list["Element"]
+    _preAuthRef: List["Element"]
     """Extensions for preAuthRef"""
     claimResponse: "Reference"
     """The result of the adjudication of the line items for the Coverage specified in this insurance."""
@@ -962,29 +962,29 @@ class ClaimItem(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify item entries."""
     _sequence: "Element"
     """Extensions for sequence"""
-    careTeamSequence: list[int]
+    careTeamSequence: List[int]
     """CareTeam members related to this service or product."""
-    _careTeamSequence: list["Element"]
+    _careTeamSequence: List["Element"]
     """Extensions for careTeamSequence"""
-    diagnosisSequence: list[int]
+    diagnosisSequence: List[int]
     """Diagnosis applicable for this service or product."""
-    _diagnosisSequence: list["Element"]
+    _diagnosisSequence: List["Element"]
     """Extensions for diagnosisSequence"""
-    procedureSequence: list[int]
+    procedureSequence: List[int]
     """Procedures applicable for this service or product."""
-    _procedureSequence: list["Element"]
+    _procedureSequence: List["Element"]
     """Extensions for procedureSequence"""
-    informationSequence: list[int]
+    informationSequence: List[int]
     """Exceptions, special conditions and supporting information applicable for this service or product."""
-    _informationSequence: list["Element"]
+    _informationSequence: List["Element"]
     """Extensions for informationSequence"""
     revenue: "CodeableConcept"
     """The type of revenue or cost center providing the product and/or service."""
@@ -992,9 +992,9 @@ class ClaimItem(TypedDict, total=False):
     """Code to identify the general type of benefits under which products and services are provided."""
     productOrService: Required["CodeableConcept"]
     """When the value is a group code then this item collects a set of related claim details, otherwise this contains the product, service, drug or other billing code for the item."""
-    modifier: list["CodeableConcept"]
+    modifier: List["CodeableConcept"]
     """Item typification or modifiers codes to convey additional context for the product or service."""
-    programCode: list["CodeableConcept"]
+    programCode: List["CodeableConcept"]
     """Identifies the program under which this may be recovered."""
     servicedDate: str
     """The date or dates when the service or product was supplied, performed or completed."""
@@ -1018,15 +1018,15 @@ class ClaimItem(TypedDict, total=False):
     """Extensions for factor"""
     net: "Money"
     """The quantity times the unit price for an additional service or product or charge."""
-    udi: list["Reference"]
+    udi: List["Reference"]
     """Unique Device Identifiers associated with this line item."""
     bodySite: "CodeableConcept"
     """Physical service site on the patient (limb, tooth, etc.)."""
-    subSite: list["CodeableConcept"]
+    subSite: List["CodeableConcept"]
     """A region or surface of the bodySite, e.g."""
-    encounter: list["Reference"]
+    encounter: List["Reference"]
     """The Encounters during which this Claim was created or to which the creation of this record is tightly associated."""
-    detail: list["ClaimDetail"]
+    detail: List["ClaimDetail"]
     """A claim detail line."""
 
 
@@ -1034,9 +1034,9 @@ class ClaimPayee(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """Type of Party to be reimbursed: subscriber, provider, other."""
@@ -1048,15 +1048,15 @@ class ClaimProcedure(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify procedure entries."""
     _sequence: "Element"
     """Extensions for sequence"""
-    type: list["CodeableConcept"]
+    type: List["CodeableConcept"]
     """When the condition was observed or the relative ranking."""
     date: str
     """Date and optionally time the procedure was performed."""
@@ -1066,7 +1066,7 @@ class ClaimProcedure(TypedDict, total=False):
     """The code or reference to a Procedure resource which identifies the clinical intervention performed."""
     procedureReference: "Reference"
     """The code or reference to a Procedure resource which identifies the clinical intervention performed."""
-    udi: list["Reference"]
+    udi: List["Reference"]
     """Unique Device Identifiers associated with this line item."""
 
 
@@ -1074,9 +1074,9 @@ class ClaimRelated(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     claim: "Reference"
     """Reference to a related claim."""
@@ -1090,9 +1090,9 @@ class ClaimSubDetail(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify item entries."""
@@ -1104,9 +1104,9 @@ class ClaimSubDetail(TypedDict, total=False):
     """Code to identify the general type of benefits under which products and services are provided."""
     productOrService: Required["CodeableConcept"]
     """When the value is a group code then this item collects a set of related claim details, otherwise this contains the product, service, drug or other billing code for the item."""
-    modifier: list["CodeableConcept"]
+    modifier: List["CodeableConcept"]
     """Item typification or modifiers codes to convey additional context for the product or service."""
-    programCode: list["CodeableConcept"]
+    programCode: List["CodeableConcept"]
     """Identifies the program under which this may be recovered."""
     quantity: "Quantity"
     """The number of repetitions of a service or product."""
@@ -1118,7 +1118,7 @@ class ClaimSubDetail(TypedDict, total=False):
     """Extensions for factor"""
     net: "Money"
     """The quantity times the unit price for an additional service or product or charge."""
-    udi: list["Reference"]
+    udi: List["Reference"]
     """Unique Device Identifiers associated with this line item."""
 
 
@@ -1126,9 +1126,9 @@ class ClaimSupportingInfo(TypedDict, total=False):
     """A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """A number to uniquely identify supporting information entries."""
@@ -1166,9 +1166,9 @@ class CodeableConcept(TypedDict, total=False):
     """A concept that may be defined by a formal reference to a terminology or ontology or may be provided by text."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    coding: list["Coding"]
+    coding: List["Coding"]
     """A reference to a code defined by a terminology system."""
     text: str
     """A human language representation of the concept as seen/selected/uttered by the user who entered the data and/or which represents the intended meaning of the user."""
@@ -1180,7 +1180,7 @@ class Coding(TypedDict, total=False):
     """A reference to a code defined by a terminology system."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     system: str
     """The identification of the code system that defines the meaning of the symbol in the code."""
@@ -1208,13 +1208,13 @@ class ContactDetail(TypedDict, total=False):
     """Specifies contact information for a person or organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     name: str
     """The name of an individual to contact."""
     _name: "Element"
     """Extensions for name"""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """The contact details for the individual (if a name was provided) or the organization."""
 
 
@@ -1222,7 +1222,7 @@ class ContactPoint(TypedDict, total=False):
     """Details for all kinds of technology mediated contact points for a person or organization, including telephone, email, etc."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     system: Literal['phone', 'fax', 'email', 'pager', 'url', 'sms', 'other']
     """Telecommunications form for contact point - what communications system is required to make use of the contact."""
@@ -1248,7 +1248,7 @@ class Contributor(TypedDict, total=False):
     """A contributor to the content of a knowledge asset, including authors, editors, reviewers, and endorsers."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     type: Literal['author', 'editor', 'reviewer', 'endorser']
     """The type of contributor."""
@@ -1258,7 +1258,7 @@ class Contributor(TypedDict, total=False):
     """The name of the individual or organization responsible for the contribution."""
     _name: "Element"
     """Extensions for name"""
-    contact: list["ContactDetail"]
+    contact: List["ContactDetail"]
     """Contact details to assist a user in finding and communicating with the contributor."""
 
 
@@ -1266,7 +1266,7 @@ class Count(TypedDict, total=False):
     """A measured amount (or an amount that can potentially be measured). Note that measured amounts include amounts that are not precisely quantified, including amounts involving arbitrary units and floating currencies."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     value: float
     """The value of the measured amount."""
@@ -1290,7 +1290,7 @@ class Count(TypedDict, total=False):
     """Extensions for code"""
 
 
-_CoverageKeywords = TypedDict("_CoverageKeywords", {"class": "list[CoverageClass]"}, total=False)
+_CoverageKeywords = TypedDict("_CoverageKeywords", {"class": "List[CoverageClass]"}, total=False)
 
 
 class Coverage(_CoverageKeywords, total=False):
@@ -1311,13 +1311,13 @@ class Coverage(_CoverageKeywords, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """A unique identifier assigned to this coverage."""
     status: str
     """The status of the resource instance."""
@@ -1343,7 +1343,7 @@ class Coverage(_CoverageKeywords, total=False):
     """The relationship of beneficiary (patient) to the subscriber."""
     period: "Period"
     """Time period during which the coverage is in force."""
-    payor: Required[list["Reference"]]
+    payor: Required[List["Reference"]]
     """The program or plan underwriter or payor including both insurance and non-insurance agreements, such as patient-pay agreements."""
     order: int
     """The order of applicability of this coverage relative to other coverages which are currently in force."""
@@ -1353,13 +1353,13 @@ class Coverage(_CoverageKeywords, total=False):
     """The insurer-specific identifier for the insurer-defined network of providers to which the beneficiary may seek treatment which will be covered at the 'in-network' rate, otherwise 'out of network' terms and conditions apply."""
     _network: "Element"
     """Extensions for network"""
-    costToBeneficiary: list["CoverageCostToBeneficiary"]
+    costToBeneficiary: List["CoverageCostToBeneficiary"]
     """A suite of codes indicating the cost category and associated amount which have been detailed in the policy and may have been included on the health card."""
     subrogation: bool
     """When 'subrogation=true' this insurance instance has been included not for adjudication but to provide insurers with the details to recover costs."""
     _subrogation: "Element"
     """Extensions for subrogation"""
-    contract: list["Reference"]
+    contract: List["Reference"]
     """The policy(s) which constitute this insurance coverage."""
 
 
@@ -1367,9 +1367,9 @@ class CoverageClass(TypedDict, total=False):
     """Financial instrument which may be used to reimburse or pay for health care products and services. Includes both insurance and self-payment."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """The type of classification for which an insurer-specific class label or number and optional name is provided, for example may be used to identify a class of coverage or employer group, Policy, Plan."""
@@ -1387,9 +1387,9 @@ class CoverageCostToBeneficiary(TypedDict, total=False):
     """Financial instrument which may be used to reimburse or pay for health care products and services. Includes both insurance and self-payment."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: "CodeableConcept"
     """The category of patient centric costs associated with treatment."""
@@ -1397,7 +1397,7 @@ class CoverageCostToBeneficiary(TypedDict, total=False):
     """The amount due from the patient for the cost category."""
     valueMoney: "Money"
     """The amount due from the patient for the cost category."""
-    exception: list["CoverageException"]
+    exception: List["CoverageException"]
     """A suite of codes indicating exceptions or reductions to patient costs and their effective periods."""
 
 
@@ -1405,9 +1405,9 @@ class CoverageException(TypedDict, total=False):
     """Financial instrument which may be used to reimburse or pay for health care products and services. Includes both insurance and self-payment."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """The code for the specific exception."""
@@ -1419,31 +1419,31 @@ class DataRequirement(TypedDict, total=False):
     """Describes a required data item for evaluation in terms of the type of data, and optional code or date-based filters of the data."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     type: str
     """The type of the required data, specified as the type name of a resource."""
     _type: "Element"
     """Extensions for type"""
-    profile: list[str]
+    profile: List[str]
     """The profile of the required data, specified as the uri of the profile definition."""
     subjectCodeableConcept: "CodeableConcept"
     """The intended subjects of the data requirement."""
     subjectReference: "Reference"
     """The intended subjects of the data requirement."""
-    mustSupport: list[str]
+    mustSupport: List[str]
     """Indicates that specific elements of the type are referenced by the knowledge module and must be supported by the consumer in order to obtain an effective evaluation."""
-    _mustSupport: list["Element"]
+    _mustSupport: List["Element"]
     """Extensions for mustSupport"""
-    codeFilter: list["DataRequirementCodeFilter"]
+    codeFilter: List["DataRequirementCodeFilter"]
     """Code filters specify additional constraints on the data, specifying the value set of interest for a particular element of the data."""
-    dateFilter: list["DataRequirementDateFilter"]
+    dateFilter: List["DataRequirementDateFilter"]
     """Date filters specify additional constraints on the data in terms of the applicable date range for specific elements."""
     limit: int
     """Specifies a maximum number of results that are required (uses the _count search parameter)."""
     _limit: "Element"
     """Extensions for limit"""
-    sort: list["DataRequirementSort"]
+    sort: List["DataRequirementSort"]
     """Specifies the order of the results to be returned."""
 
 
@@ -1451,9 +1451,9 @@ class DataRequirementCodeFilter(TypedDict, total=False):
     """Describes a required data item for evaluation in terms of the type of data, and optional code or date-based filters of the data."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     path: str
     """The code-valued attribute of the filter."""
@@ -1465,7 +1465,7 @@ class DataRequirementCodeFilter(TypedDict, total=False):
     """Extensions for searchParam"""
     valueSet: str
     """The valueset for the code filter."""
-    code: list["Coding"]
+    code: List["Coding"]
     """The codes for the code filter."""
 
 
@@ -1473,9 +1473,9 @@ class DataRequirementDateFilter(TypedDict, total=False):
     """Describes a required data item for evaluation in terms of the type of data, and optional code or date-based filters of the data."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     path: str
     """The date-valued attribute of the filter."""
@@ -1499,9 +1499,9 @@ class DataRequirementSort(TypedDict, total=False):
     """Describes a required data item for evaluation in terms of the type of data, and optional code or date-based filters of the data."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     path: str
     """The attribute of the sort."""
@@ -1517,7 +1517,7 @@ class Distance(TypedDict, total=False):
     """A length - a value with a unit that is a physical distance."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     value: float
     """The value of the measured amount."""
@@ -1545,9 +1545,9 @@ class Dosage(TypedDict, total=False):
     """Indicates how the medication is/was taken or should be taken by the patient."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     sequence: int
     """Indicates the order in which the dosage instructions should be applied or interpreted."""
@@ -1557,7 +1557,7 @@ class Dosage(TypedDict, total=False):
     """Free text dosage instructions e.g."""
     _text: "Element"
     """Extensions for text"""
-    additionalInstruction: list["CodeableConcept"]
+    additionalInstruction: List["CodeableConcept"]
     """Supplemental instructions to the patient on how to take the medication (e.g."""
     patientInstruction: str
     """Instructions in terms that are understood by the patient or consumer."""
@@ -1577,7 +1577,7 @@ class Dosage(TypedDict, total=False):
     """How drug should enter body."""
     method: "CodeableConcept"
     """Technique for administering medication."""
-    doseAndRate: list["DosageDoseAndRate"]
+    doseAndRate: List["DosageDoseAndRate"]
     """The amount of medication administered."""
     maxDosePerPeriod: "Ratio"
     """Upper limit on medication per unit of time."""
@@ -1591,9 +1591,9 @@ class DosageDoseAndRate(TypedDict, total=False):
     """Indicates how the medication is/was taken or should be taken by the patient."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: "CodeableConcept"
     """The kind of dose or rate specified, for example, ordered or calculated."""
@@ -1613,7 +1613,7 @@ class Duration(TypedDict, total=False):
     """A length of time."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     value: float
     """The value of the measured amount."""
@@ -1641,7 +1641,7 @@ class Element(TypedDict, total=False):
     """Base definition for all elements in a resource."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
 
 
@@ -1663,13 +1663,13 @@ class Endpoint(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Identifier for the organization that is used to identify the endpoint across multiple disparate systems."""
     status: Literal['active', 'suspended', 'error', 'off', 'entered-in-error', 'test']
     """active | suspended | error | off | test."""
@@ -1683,23 +1683,23 @@ class Endpoint(TypedDict, total=False):
     """Extensions for name"""
     managingOrganization: "Reference"
     """The organization that manages this endpoint (even if technically another organization is hosting this in the cloud, it is the organization associated with the data)."""
-    contact: list["ContactPoint"]
+    contact: List["ContactPoint"]
     """Contact details for a human to contact about the subscription."""
     period: "Period"
     """The interval during which the endpoint is expected to be operational."""
-    payloadType: Required[list["CodeableConcept"]]
+    payloadType: Required[List["CodeableConcept"]]
     """The payload type describes the acceptable content that can be communicated on the endpoint."""
-    payloadMimeType: list[str]
+    payloadMimeType: List[str]
     """The mime type to send the payload in - e.g."""
-    _payloadMimeType: list["Element"]
+    _payloadMimeType: List["Element"]
     """Extensions for payloadMimeType"""
     address: str
     """The uri that describes the actual end-point to connect to."""
     _address: "Element"
     """Extensions for address"""
-    header: list[str]
+    header: List[str]
     """Additional headers / information to send as part of the notification."""
-    _header: list["Element"]
+    _header: List["Element"]
     """Extensions for header"""
 
 
@@ -1707,7 +1707,7 @@ class Expression(TypedDict, total=False):
     """A expression that is evaluated in a specified context and returns a value. The context of use of the expression must specify the context in which the expression is evaluated, and how the result of the expression is used."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     description: str
     """A brief, natural language description of the condition that effectively communicates the intended semantics."""
@@ -1735,7 +1735,7 @@ class Extension(TypedDict, total=False):
     """Optional Extension Element - found in all resources."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     url: str
     """Source of the definition for the extension code - a logical name or a URL."""
@@ -1899,13 +1899,13 @@ class HealthcareService(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """External identifiers for this item."""
     active: bool
     """This flag is used to mark the record to not be used."""
@@ -1913,13 +1913,13 @@ class HealthcareService(TypedDict, total=False):
     """Extensions for active"""
     providedBy: "Reference"
     """The organization that provides this healthcare service."""
-    category: list["CodeableConcept"]
+    category: List["CodeableConcept"]
     """Identifies the broad category of service being performed or delivered."""
-    type: list["CodeableConcept"]
+    type: List["CodeableConcept"]
     """The specific type of service that may be delivered or performed."""
-    specialty: list["CodeableConcept"]
+    specialty: List["CodeableConcept"]
     """Collection of specialties handled by the service site."""
-    location: list["Reference"]
+    location: List["Reference"]
     """The location(s) where this healthcare service may be provided."""
     name: str
     """Further description of the service as it would be presented to a consumer while searching."""
@@ -1935,35 +1935,35 @@ class HealthcareService(TypedDict, total=False):
     """Extensions for extraDetails"""
     photo: "Attachment"
     """If there is a photo/symbol associated with this HealthcareService, it may be included here to facilitate quick identification of the service in a list."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """List of contacts related to this specific healthcare service."""
-    coverageArea: list["Reference"]
+    coverageArea: List["Reference"]
     """The location(s) that this service is available to (not where the service is provided)."""
-    serviceProvisionCode: list["CodeableConcept"]
+    serviceProvisionCode: List["CodeableConcept"]
     """The code(s) that detail the conditions under which the healthcare service is available/offered."""
-    eligibility: list["HealthcareServiceEligibility"]
+    eligibility: List["HealthcareServiceEligibility"]
     """Does this service have specific eligibility requirements that need to be met in order to use the service?"""
-    program: list["CodeableConcept"]
+    program: List["CodeableConcept"]
     """Programs that this service is applicable to."""
-    characteristic: list["CodeableConcept"]
+    characteristic: List["CodeableConcept"]
     """Collection of characteristics (attributes)."""
-    communication: list["CodeableConcept"]
+    communication: List["CodeableConcept"]
     """Some services are specifically made available in multiple languages, this property permits a directory to declare the languages this is offered in."""
-    referralMethod: list["CodeableConcept"]
+    referralMethod: List["CodeableConcept"]
     """Ways that the service accepts referrals, if this is not provided then it is implied that no referral is required."""
     appointmentRequired: bool
     """Indicates whether or not a prospective consumer will require an appointment for a particular service at a site to be provided by the Organization."""
     _appointmentRequired: "Element"
     """Extensions for appointmentRequired"""
-    availableTime: list["HealthcareServiceAvailableTime"]
+    availableTime: List["HealthcareServiceAvailableTime"]
     """A collection of times that the Service Site is available."""
-    notAvailable: list["HealthcareServiceNotAvailable"]
+    notAvailable: List["HealthcareServiceNotAvailable"]
     """The HealthcareService is not available during this period of time due to the provided reason."""
     availabilityExceptions: str
     """A description of site availability exceptions, e.g."""
     _availabilityExceptions: "Element"
     """Extensions for availabilityExceptions"""
-    endpoint: list["Reference"]
+    endpoint: List["Reference"]
     """Technical endpoints providing access to services operated for the specific healthcare services defined at this resource."""
 
 
@@ -1971,13 +1971,13 @@ class HealthcareServiceAvailableTime(TypedDict, total=False):
     """The details of a healthcare service available at a location."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    daysOfWeek: list[Literal['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']]
+    daysOfWeek: List[Literal['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']]
     """Indicates which days of the week are available between the start and end Times."""
-    _daysOfWeek: list["Element"]
+    _daysOfWeek: List["Element"]
     """Extensions for daysOfWeek"""
     allDay: bool
     """Is this always available?"""
@@ -1997,9 +1997,9 @@ class HealthcareServiceEligibility(TypedDict, total=False):
     """The details of a healthcare service available at a location."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     code: "CodeableConcept"
     """Coded value for the eligibility."""
@@ -2013,9 +2013,9 @@ class HealthcareServiceNotAvailable(TypedDict, total=False):
     """The details of a healthcare service available at a location."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     description: str
     """The reason that can be presented to the user as to why this time is not available."""
@@ -2029,7 +2029,7 @@ class HumanName(TypedDict, total=False):
     """A human's name with the ability to identify parts and usage."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     use: Literal['usual', 'official', 'temp', 'nickname', 'anonymous', 'old', 'maiden']
     """Identifies the purpose for this name."""
@@ -2043,17 +2043,17 @@ class HumanName(TypedDict, total=False):
     """The part of a name that links to the genealogy."""
     _family: "Element"
     """Extensions for family"""
-    given: list[str]
+    given: List[str]
     """Given name."""
-    _given: list["Element"]
+    _given: List["Element"]
     """Extensions for given"""
-    prefix: list[str]
+    prefix: List[str]
     """Part of the name that is acquired as a title due to academic, legal, employment or nobility status, etc."""
-    _prefix: list["Element"]
+    _prefix: List["Element"]
     """Extensions for prefix"""
-    suffix: list[str]
+    suffix: List[str]
     """Part of the name that is acquired as a title due to academic, legal, employment or nobility status, etc."""
-    _suffix: list["Element"]
+    _suffix: List["Element"]
     """Extensions for suffix"""
     period: "Period"
     """Indicates the period of time when this name was valid for the named person."""
@@ -2063,7 +2063,7 @@ class Identifier(TypedDict, total=False):
     """An identifier - identifies some entity uniquely and unambiguously. Typically this is used for business identifiers."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     use: Literal['usual', 'official', 'temp', 'secondary', 'old']
     """The purpose of this identifier."""
@@ -2103,27 +2103,27 @@ class InsurancePlan(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Business identifiers assigned to this health insurance product which remain constant as the resource is updated and propagates from server to server."""
     status: Literal['draft', 'active', 'retired', 'unknown']
     """The current state of the health insurance product."""
     _status: "Element"
     """Extensions for status"""
-    type: list["CodeableConcept"]
+    type: List["CodeableConcept"]
     """The kind of health insurance product."""
     name: str
     """Official name of the health insurance product as designated by the owner."""
     _name: "Element"
     """Extensions for name"""
-    alias: list[str]
+    alias: List[str]
     """A list of alternate names that the product is known as, or was known as in the past."""
-    _alias: list["Element"]
+    _alias: List["Element"]
     """Extensions for alias"""
     period: "Period"
     """The period of time that the health insurance product is available."""
@@ -2131,17 +2131,17 @@ class InsurancePlan(TypedDict, total=False):
     """The entity that is providing the health insurance product and underwriting the risk."""
     administeredBy: "Reference"
     """An organization which administer other services such as underwriting, customer service and/or claims processing on behalf of the health insurance product owner."""
-    coverageArea: list["Reference"]
+    coverageArea: List["Reference"]
     """The geographic region in which a health insurance product's benefits apply."""
-    contact: list["InsurancePlanContact"]
+    contact: List["InsurancePlanContact"]
     """The contact for the health insurance product for a certain purpose."""
-    endpoint: list["Reference"]
+    endpoint: List["Reference"]
     """The technical endpoints providing access to services operated for the health insurance product."""
-    network: list["Reference"]
+    network: List["Reference"]
     """Reference to the network included in the health insurance product."""
-    coverage: list["InsurancePlanCoverage"]
+    coverage: List["InsurancePlanCoverage"]
     """Details about the coverage offered by the insurance product."""
-    plan: list["InsurancePlanPlan"]
+    plan: List["InsurancePlanPlan"]
     """Details about an insurance plan."""
 
 
@@ -2149,9 +2149,9 @@ class InsurancePlanBenefit(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """Type of benefit (primary care; speciality care; inpatient; outpatient)."""
@@ -2159,7 +2159,7 @@ class InsurancePlanBenefit(TypedDict, total=False):
     """The referral requirements to have access/coverage for this benefit."""
     _requirement: "Element"
     """Extensions for requirement"""
-    limit: list["InsurancePlanLimit"]
+    limit: List["InsurancePlanLimit"]
     """The specific limits on the benefit."""
 
 
@@ -2167,13 +2167,13 @@ class InsurancePlanBenefit1(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """Type of specific benefit (preventative; primary care office visit; speciality office visit; hospitalization; emergency room; urgent care)."""
-    cost: list["InsurancePlanCost"]
+    cost: List["InsurancePlanCost"]
     """List of the costs associated with a specific benefit."""
 
 
@@ -2181,15 +2181,15 @@ class InsurancePlanContact(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     purpose: "CodeableConcept"
     """Indicates a purpose for which the contact can be reached."""
     name: "HumanName"
     """A name associated with the contact."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """A contact detail (e.g."""
     address: "Address"
     """Visiting or postal addresses for the contact."""
@@ -2199,15 +2199,15 @@ class InsurancePlanCost(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """Type of cost (copay; individual cap; family cap; coinsurance; deductible)."""
     applicability: "CodeableConcept"
     """Whether the cost applies to in-network or out-of-network providers (in-network; out-of-network; other)."""
-    qualifiers: list["CodeableConcept"]
+    qualifiers: List["CodeableConcept"]
     """Additional information about the cost, such as information about funding sources (e.g."""
     value: "Quantity"
     """The actual cost value."""
@@ -2217,15 +2217,15 @@ class InsurancePlanCoverage(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: Required["CodeableConcept"]
     """Type of coverage (Medical; Dental; Mental Health; Substance Abuse; Vision; Drug; Short Term; Long Term Care; Hospice; Home Health)."""
-    network: list["Reference"]
+    network: List["Reference"]
     """Reference to the network that providing the type of coverage."""
-    benefit: Required[list["InsurancePlanBenefit"]]
+    benefit: Required[List["InsurancePlanBenefit"]]
     """Specific benefits under this type of coverage."""
 
 
@@ -2233,9 +2233,9 @@ class InsurancePlanGeneralCost(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     type: "CodeableConcept"
     """Type of cost."""
@@ -2255,9 +2255,9 @@ class InsurancePlanLimit(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     value: "Quantity"
     """The maximum amount of a service item a plan will pay for a covered benefit."""
@@ -2269,21 +2269,21 @@ class InsurancePlanPlan(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Business identifiers assigned to this health insurance plan which remain constant as the resource is updated and propagates from server to server."""
     type: "CodeableConcept"
     """Type of plan."""
-    coverageArea: list["Reference"]
+    coverageArea: List["Reference"]
     """The geographic region in which a health insurance plan's benefits apply."""
-    network: list["Reference"]
+    network: List["Reference"]
     """Reference to the network that providing the type of coverage."""
-    generalCost: list["InsurancePlanGeneralCost"]
+    generalCost: List["InsurancePlanGeneralCost"]
     """Overall costs associated with the plan."""
-    specificCost: list["InsurancePlanSpecificCost"]
+    specificCost: List["InsurancePlanSpecificCost"]
     """Costs associated with the coverage provided by the product."""
 
 
@@ -2291,13 +2291,13 @@ class InsurancePlanSpecificCost(TypedDict, total=False):
     """Details of a Health Insurance product/plan provided by an organization."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     category: Required["CodeableConcept"]
     """General category of benefit (Medical; Dental; Vision; Drug; Mental Health; Substance Abuse; Hospice, Home Health)."""
-    benefit: list["InsurancePlanBenefit1"]
+    benefit: List["InsurancePlanBenefit1"]
     """List of the specific benefits under this category of benefit."""
 
 
@@ -2319,13 +2319,13 @@ class Location(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Unique code or number identifying the location to its users."""
     status: Literal['active', 'suspended', 'inactive']
     """The status property covers the general availability of the resource, not the current value which may be covered by the operationStatus, or by a schedule/slots if they are configured for the location."""
@@ -2337,9 +2337,9 @@ class Location(TypedDict, total=False):
     """Name of the location as used by humans."""
     _name: "Element"
     """Extensions for name"""
-    alias: list[str]
+    alias: List[str]
     """A list of alternate names that the location is known as, or was known as, in the past."""
-    _alias: list["Element"]
+    _alias: List["Element"]
     """Extensions for alias"""
     description: str
     """Description of the Location, which helps in finding or referencing the place."""
@@ -2349,9 +2349,9 @@ class Location(TypedDict, total=False):
     """Indicates whether a resource instance represents a specific location or a class of locations."""
     _mode: "Element"
     """Extensions for mode"""
-    type: list["CodeableConcept"]
+    type: List["CodeableConcept"]
     """Indicates the type of function performed at the location."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """The contact details of communication devices available at the location."""
     address: "Address"
     """Physical location."""
@@ -2363,13 +2363,13 @@ class Location(TypedDict, total=False):
     """The organization responsible for the provisioning and upkeep of the location."""
     partOf: "Reference"
     """Another Location of which this Location is physically a part of."""
-    hoursOfOperation: list["LocationHoursOfOperation"]
+    hoursOfOperation: List["LocationHoursOfOperation"]
     """What days/times during a week is this location usually open."""
     availabilityExceptions: str
     """A description of when the locations opening ours are different to normal, e.g."""
     _availabilityExceptions: "Element"
     """Extensions for availabilityExceptions"""
-    endpoint: list["Reference"]
+    endpoint: List["Reference"]
     """Technical endpoints providing access to services operated for the location."""
 
 
@@ -2377,13 +2377,13 @@ class LocationHoursOfOperation(TypedDict, total=False):
     """Details and position information for a physical place where services are provided and resources and participants may be stored, found, contained, or accommodated."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    daysOfWeek: list[str]
+    daysOfWeek: List[str]
     """Indicates which days of the week are available between the start and end Times."""
-    _daysOfWeek: list["Element"]
+    _daysOfWeek: List["Element"]
     """Extensions for daysOfWeek"""
     allDay: bool
     """The Location is open all day."""
@@ -2403,9 +2403,9 @@ class LocationPosition(TypedDict, total=False):
     """Details and position information for a physical place where services are provided and resources and participants may be stored, found, contained, or accommodated."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     longitude: float
     """Longitude."""
@@ -2439,13 +2439,13 @@ class Medication(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Business identifier for this medication."""
     code: "CodeableConcept"
     """A code (or set of codes) that specify this medication, or a textual description if no code is available."""
@@ -2459,7 +2459,7 @@ class Medication(TypedDict, total=False):
     """Describes the form of the item."""
     amount: "Ratio"
     """Specific amount of the drug in the packaged product."""
-    ingredient: list["MedicationIngredient"]
+    ingredient: List["MedicationIngredient"]
     """Identifies a particular constituent of interest in the product."""
     batch: "MedicationBatch"
     """Information that only applies to packages (not products)."""
@@ -2483,13 +2483,13 @@ class MedicationRequest(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Identifiers associated with this medication request that are defined by business processes and/or used to refer to it when a direct URL reference to the resource itself is not appropriate."""
     status: str
     """A code specifying the current state of the order."""
@@ -2501,7 +2501,7 @@ class MedicationRequest(TypedDict, total=False):
     """Whether the request is a proposal, plan, or an original order."""
     _intent: "Element"
     """Extensions for intent"""
-    category: list["CodeableConcept"]
+    category: List["CodeableConcept"]
     """Indicates the type of medication request (for example, where the medication is expected to be consumed or administered (i.e."""
     priority: str
     """Indicates how quickly the Medication Request should be addressed with respect to other requests."""
@@ -2525,7 +2525,7 @@ class MedicationRequest(TypedDict, total=False):
     """A link to a resource representing the person or set of individuals to whom the medication will be given."""
     encounter: "Reference"
     """The Encounter during which this [x] was created or to which the creation of this record is tightly associated."""
-    supportingInformation: list["Reference"]
+    supportingInformation: List["Reference"]
     """Include additional information (for example, patient height and weight) that supports the ordering of the medication."""
     authoredOn: str
     """The date (and perhaps time) when the prescription was initially written or authored on."""
@@ -2539,29 +2539,29 @@ class MedicationRequest(TypedDict, total=False):
     """Indicates the type of performer of the administration of the medication."""
     recorder: "Reference"
     """The person who entered the order on behalf of another individual for example in the case of a verbal or a telephone order."""
-    reasonCode: list["CodeableConcept"]
+    reasonCode: List["CodeableConcept"]
     """The reason or the indication for ordering or not ordering the medication."""
-    reasonReference: list["Reference"]
+    reasonReference: List["Reference"]
     """Condition or observation that supports why the medication was ordered."""
-    instantiatesCanonical: list[str]
+    instantiatesCanonical: List[str]
     """The URL pointing to a protocol, guideline, orderset, or other definition that is adhered to in whole or in part by this MedicationRequest."""
-    _instantiatesCanonical: list["Element"]
+    _instantiatesCanonical: List["Element"]
     """Extensions for instantiatesCanonical"""
-    instantiatesUri: list[str]
+    instantiatesUri: List[str]
     """The URL pointing to an externally maintained protocol, guideline, orderset or other definition that is adhered to in whole or in part by this MedicationRequest."""
-    _instantiatesUri: list["Element"]
+    _instantiatesUri: List["Element"]
     """Extensions for instantiatesUri"""
-    basedOn: list["Reference"]
+    basedOn: List["Reference"]
     """A plan or request that is fulfilled in whole or in part by this medication request."""
     groupIdentifier: "Identifier"
     """A shared identifier common to all requests that were authorized more or less simultaneously by a single author, representing the identifier of the requisition or prescription."""
     courseOfTherapyType: "CodeableConcept"
     """The description of the overall patte3rn of the administration of the medication to the patient."""
-    insurance: list["Reference"]
+    insurance: List["Reference"]
     """Insurance plans, coverage extensions, pre-authorizations and/or pre-determinations that may be required for delivering the requested service."""
-    note: list["Annotation"]
+    note: List["Annotation"]
     """Extra information about the prescription that could not be conveyed by the other attributes."""
-    dosageInstruction: list["Dosage"]
+    dosageInstruction: List["Dosage"]
     """Indicates how the medication is to be used by the patient."""
     dispenseRequest: "MedicationRequestDispenseRequest"
     """Indicates the specific details for the dispense or medication supply part of a medication request (also known as a Medication Prescription or Medication Order)."""
@@ -2569,9 +2569,9 @@ class MedicationRequest(TypedDict, total=False):
     """Indicates whether or not substitution can or should be part of the dispense."""
     priorPrescription: "Reference"
     """A link to a resource representing an earlier order related order or prescription."""
-    detectedIssue: list["Reference"]
+    detectedIssue: List["Reference"]
     """Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a patient; e.g."""
-    eventHistory: list["Reference"]
+    eventHistory: List["Reference"]
     """Links to Provenance records for past versions of this resource or fulfilling request or event resources that identify key state transitions or updates that are likely to be relevant to a user looking at the current version of the resource."""
 
 
@@ -2579,9 +2579,9 @@ class MedicationRequestDispenseRequest(TypedDict, total=False):
     """An order or request for both supply of the medication and the instructions for administration of the medication to a patient. The resource is called "MedicationRequest" rather than "MedicationPrescription" or "MedicationOrder" to generalize the use across inpatient and outpatient settings, including care plans, etc., and to harmonize with workflow patterns."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     initialFill: "MedicationRequestInitialFill"
     """Indicates the quantity or duration for the first dispense of the medication."""
@@ -2605,9 +2605,9 @@ class MedicationRequestInitialFill(TypedDict, total=False):
     """An order or request for both supply of the medication and the instructions for administration of the medication to a patient. The resource is called "MedicationRequest" rather than "MedicationPrescription" or "MedicationOrder" to generalize the use across inpatient and outpatient settings, including care plans, etc., and to harmonize with workflow patterns."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     quantity: "Quantity"
     """The amount or quantity to provide as part of the first dispense."""
@@ -2619,9 +2619,9 @@ class MedicationRequestSubstitution(TypedDict, total=False):
     """An order or request for both supply of the medication and the instructions for administration of the medication to a patient. The resource is called "MedicationRequest" rather than "MedicationPrescription" or "MedicationOrder" to generalize the use across inpatient and outpatient settings, including care plans, etc., and to harmonize with workflow patterns."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     allowedBoolean: bool
     """True if the prescriber allows a different drug to be dispensed from what was prescribed."""
@@ -2653,23 +2653,23 @@ The primary difference between a medication statement and a medication administr
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Identifiers associated with this Medication Statement that are defined by business processes and/or used to refer to it when a direct URL reference to the resource itself is not appropriate."""
-    basedOn: list["Reference"]
+    basedOn: List["Reference"]
     """A plan, proposal or order that is fulfilled in whole or in part by this event."""
-    partOf: list["Reference"]
+    partOf: List["Reference"]
     """A larger event of which this particular event is a component or step."""
     status: str
     """A code representing the patient or other source's judgment about the state of the medication used that this statement is about."""
     _status: "Element"
     """Extensions for status"""
-    statusReason: list["CodeableConcept"]
+    statusReason: List["CodeableConcept"]
     """Captures the reason for the current state of the MedicationStatement."""
     category: "CodeableConcept"
     """Indicates where the medication is expected to be consumed or administered."""
@@ -2693,15 +2693,15 @@ The primary difference between a medication statement and a medication administr
     """Extensions for dateAsserted"""
     informationSource: "Reference"
     """The person or organization that provided the information about the taking of this medication."""
-    derivedFrom: list["Reference"]
+    derivedFrom: List["Reference"]
     """Allows linking the MedicationStatement to the underlying MedicationRequest, or to other information that supports or is used to derive the MedicationStatement."""
-    reasonCode: list["CodeableConcept"]
+    reasonCode: List["CodeableConcept"]
     """A reason for why the medication is being/was taken."""
-    reasonReference: list["Reference"]
+    reasonReference: List["Reference"]
     """Condition or observation that supports why the medication is being/was taken."""
-    note: list["Annotation"]
+    note: List["Annotation"]
     """Provides extra information about the medication statement that is not conveyed by the other attributes."""
-    dosage: list["Dosage"]
+    dosage: List["Dosage"]
     """Indicates how the medication is/was or should be taken by the patient."""
 
 
@@ -2709,9 +2709,9 @@ class MedicationBatch(TypedDict, total=False):
     """This resource is primarily used for the identification and definition of a medication for the purposes of prescribing, dispensing, and administering a medication as well as for making statements about medication use."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     lotNumber: str
     """The assigned lot number of a batch of the specified product."""
@@ -2727,9 +2727,9 @@ class MedicationIngredient(TypedDict, total=False):
     """This resource is primarily used for the identification and definition of a medication for the purposes of prescribing, dispensing, and administering a medication as well as for making statements about medication use."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     itemCodeableConcept: "CodeableConcept"
     """The actual ingredient - either a substance (simple ingredient) or another medication of a medication."""
@@ -2761,11 +2761,11 @@ class MessageHeader(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
     eventCoding: "Coding"
     """Code that identifies the event this message represents and connects it with its definition."""
@@ -2773,7 +2773,7 @@ class MessageHeader(TypedDict, total=False):
     """Code that identifies the event this message represents and connects it with its definition."""
     _eventUri: "Element"
     """Extensions for eventUri"""
-    destination: list["MessageHeaderDestination"]
+    destination: List["MessageHeaderDestination"]
     """The destination application which the message is intended for."""
     sender: "Reference"
     """Identifies the sending system to allow the use of a trust relationship."""
@@ -2789,7 +2789,7 @@ class MessageHeader(TypedDict, total=False):
     """Coded indication of the cause for the event - indicates a reason for the occurrence of the event that is a focus of this message."""
     response: "MessageHeaderResponse"
     """Information about the message that this message is a response to."""
-    focus: list["Reference"]
+    focus: List["Reference"]
     """The actual data of the message - a reference to the root/focus class of the event."""
     definition: str
     """Permanent link to the MessageDefinition for this message."""
@@ -2799,9 +2799,9 @@ class MessageHeaderDestination(TypedDict, total=False):
     """The header for a message exchange that is either requesting or responding to an action.  The reference(s) that are the subject of the action as well as other information related to the action are typically transmitted in a bundle in which the MessageHeader resource instance is the first resource in the bundle."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """Human-readable name for the target system."""
@@ -2821,9 +2821,9 @@ class MessageHeaderResponse(TypedDict, total=False):
     """The header for a message exchange that is either requesting or responding to an action.  The reference(s) that are the subject of the action as well as other information related to the action are typically transmitted in a bundle in which the MessageHeader resource instance is the first resource in the bundle."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     identifier: str
     """The MessageHeader.id of the message to which this message is a response."""
@@ -2841,9 +2841,9 @@ class MessageHeaderSource(TypedDict, total=False):
     """The header for a message exchange that is either requesting or responding to an action.  The reference(s) that are the subject of the action as well as other information related to the action are typically transmitted in a bundle in which the MessageHeader resource instance is the first resource in the bundle."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """Human-readable name for the source system."""
@@ -2869,7 +2869,7 @@ class Meta(TypedDict, total=False):
     """The metadata about a resource. This is content in the resource that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     versionId: str
     """The version specific identifier, as it appears in the version portion of the URL."""
@@ -2883,11 +2883,11 @@ class Meta(TypedDict, total=False):
     """A uri that identifies the source system of the resource."""
     _source: "Element"
     """Extensions for source"""
-    profile: list[str]
+    profile: List[str]
     """A list of profiles (references to [[[StructureDefinition]]] resources) that this resource claims to conform to."""
-    security: list["Coding"]
+    security: List["Coding"]
     """Security labels applied to this resource."""
-    tag: list["Coding"]
+    tag: List["Coding"]
     """Tags applied to this resource."""
 
 
@@ -2895,7 +2895,7 @@ class Money(TypedDict, total=False):
     """An amount of economic utility in some recognized currency."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     value: float
     """Numerical value (with implicit precision)."""
@@ -2911,7 +2911,7 @@ class Narrative(TypedDict, total=False):
     """A human-readable summary of the resource conveying the essential clinical and business information for the resource."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     status: Literal['generated', 'extensions', 'additional', 'empty']
     """The status of the narrative - whether it's entirely generated (from just the defined data or the extensions too), or whether a human authored it and it may contain additional data."""
@@ -2939,13 +2939,13 @@ class OperationOutcome(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    issue: Required[list["OperationOutcomeIssue"]]
+    issue: Required[List["OperationOutcomeIssue"]]
     """An error, warning, or information message that results from a system action."""
 
 
@@ -2953,9 +2953,9 @@ class OperationOutcomeIssue(TypedDict, total=False):
     """A collection of error, warning, or information messages that result from a system action."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     severity: Literal['fatal', 'error', 'warning', 'information']
     """Indicates whether the issue indicates a variation from successful processing."""
@@ -2971,13 +2971,13 @@ class OperationOutcomeIssue(TypedDict, total=False):
     """Additional diagnostic information about the issue."""
     _diagnostics: "Element"
     """Extensions for diagnostics"""
-    location: list[str]
+    location: List[str]
     """This element is deprecated because it is XML specific."""
-    _location: list["Element"]
+    _location: List["Element"]
     """Extensions for location"""
-    expression: list[str]
+    expression: List[str]
     """A [simple subset of FHIRPath](fhirpath.html#simple) limited to element names, repetition indicators and the default child accessor that identifies one of the elements in the resource that caused this issue to be raised."""
-    _expression: list["Element"]
+    _expression: List["Element"]
     """Extensions for expression"""
 
 
@@ -2999,37 +2999,37 @@ class Organization(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Identifier for the organization that is used to identify the organization across multiple disparate systems."""
     active: bool
     """Whether the organization's record is still in active use."""
     _active: "Element"
     """Extensions for active"""
-    type: list["CodeableConcept"]
+    type: List["CodeableConcept"]
     """The kind(s) of organization that this is."""
     name: str
     """A name associated with the organization."""
     _name: "Element"
     """Extensions for name"""
-    alias: list[str]
+    alias: List[str]
     """A list of alternate names that the organization is known as, or was known as in the past."""
-    _alias: list["Element"]
+    _alias: List["Element"]
     """Extensions for alias"""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """A contact detail for the organization."""
-    address: list["Address"]
+    address: List["Address"]
     """An address for the organization."""
     partOf: "Reference"
     """The organization of which this organization forms a part."""
-    contact: list["OrganizationContact"]
+    contact: List["OrganizationContact"]
     """Contact for the organization for a certain purpose."""
-    endpoint: list["Reference"]
+    endpoint: List["Reference"]
     """Technical endpoints providing access to services operated for the organization."""
 
 
@@ -3051,13 +3051,13 @@ class OrganizationAffiliation(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Business identifiers that are specific to this role."""
     active: bool
     """Whether this organization affiliation record is in active use."""
@@ -3069,19 +3069,19 @@ class OrganizationAffiliation(TypedDict, total=False):
     """Organization where the role is available (primary organization/has members)."""
     participatingOrganization: "Reference"
     """The Participating Organization provides/performs the role(s) defined by the code to the Primary Organization (e.g."""
-    network: list["Reference"]
+    network: List["Reference"]
     """Health insurance provider network in which the participatingOrganization provides the role's services (if defined) at the indicated locations (if defined)."""
-    code: list["CodeableConcept"]
+    code: List["CodeableConcept"]
     """Definition of the role the participatingOrganization plays in the association."""
-    specialty: list["CodeableConcept"]
+    specialty: List["CodeableConcept"]
     """Specific specialty of the participatingOrganization in the context of the role."""
-    location: list["Reference"]
+    location: List["Reference"]
     """The location(s) at which the role occurs."""
-    healthcareService: list["Reference"]
+    healthcareService: List["Reference"]
     """Healthcare services provided through the role."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """Contact details at the participatingOrganization relevant to this Affiliation."""
-    endpoint: list["Reference"]
+    endpoint: List["Reference"]
     """Technical endpoints providing access to services operated for this role."""
 
 
@@ -3089,15 +3089,15 @@ class OrganizationContact(TypedDict, total=False):
     """A formally or informally recognized grouping of people or organizations formed for the purpose of achieving some form of collective action.  Includes companies, institutions, corporations, departments, community groups, healthcare practice groups, payer/insurer, etc."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     purpose: "CodeableConcept"
     """Indicates a purpose for which the contact can be reached."""
     name: "HumanName"
     """A name associated with the contact."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """A contact detail (e.g."""
     address: "Address"
     """Visiting or postal addresses for the contact."""
@@ -3107,7 +3107,7 @@ class ParameterDefinition(TypedDict, total=False):
     """The parameters to the module. This collection specifies both the input and output parameters. Input parameters are provided by the caller as part of the $evaluate operation. Output parameters are included in the GuidanceResponse."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     name: str
     """The name of the parameter used to allow access to the value of the parameter in evaluation contexts."""
@@ -3153,7 +3153,7 @@ class Parameters(TypedDict, total=False):
     """The base language in which the resource is written."""
     _language: "Element"
     """Extensions for language"""
-    parameter: list["ParametersParameter"]
+    parameter: List["ParametersParameter"]
     """A parameter passed to or received from the operation."""
 
 
@@ -3161,9 +3161,9 @@ class ParametersParameter(TypedDict, total=False):
     """This resource is a non-persisted resource used to pass information into and back from an [operation](operations.html). It has no other use, and there is no RESTful endpoint associated with it."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """The name of the parameter (reference to the operation definition)."""
@@ -3309,7 +3309,7 @@ class ParametersParameter(TypedDict, total=False):
     """If the parameter is a data type."""
     resource: "Resource"
     """If the parameter is a whole resource."""
-    part: list["ParametersParameter"]
+    part: List["ParametersParameter"]
     """A named part of a multi-part parameter."""
 
 
@@ -3331,21 +3331,21 @@ class Patient(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """An identifier for this patient."""
     active: bool
     """Whether this patient record is in active use."""
     _active: "Element"
     """Extensions for active"""
-    name: list["HumanName"]
+    name: List["HumanName"]
     """A name associated with the individual."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """A contact detail (e.g."""
     gender: Literal['male', 'female', 'other', 'unknown']
     """Administrative Gender - the gender that the patient is considered to have for administration and record keeping purposes."""
@@ -3363,7 +3363,7 @@ class Patient(TypedDict, total=False):
     """Indicates if the individual is deceased or not."""
     _deceasedDateTime: "Element"
     """Extensions for deceasedDateTime"""
-    address: list["Address"]
+    address: List["Address"]
     """An address for the individual."""
     maritalStatus: "CodeableConcept"
     """This field contains a patient's most recent marital (civil) status."""
@@ -3375,17 +3375,17 @@ class Patient(TypedDict, total=False):
     """Indicates whether the patient is part of a multiple (boolean) or indicates the actual birth order (integer)."""
     _multipleBirthInteger: "Element"
     """Extensions for multipleBirthInteger"""
-    photo: list["Attachment"]
+    photo: List["Attachment"]
     """Image of the patient."""
-    contact: list["PatientContact"]
+    contact: List["PatientContact"]
     """A contact party (e.g."""
-    communication: list["PatientCommunication"]
+    communication: List["PatientCommunication"]
     """A language which may be used to communicate with the patient about his or her health."""
-    generalPractitioner: list["Reference"]
+    generalPractitioner: List["Reference"]
     """Patient's nominated care provider."""
     managingOrganization: "Reference"
     """Organization that is the custodian of the patient record."""
-    link: list["PatientLink"]
+    link: List["PatientLink"]
     """Link to another patient resource that concerns the same actual patient."""
 
 
@@ -3393,9 +3393,9 @@ class PatientCommunication(TypedDict, total=False):
     """Demographics and other administrative information about an individual or animal receiving care or other health-related services."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     language: Required["CodeableConcept"]
     """The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 code for the region in upper case; e.g."""
@@ -3409,15 +3409,15 @@ class PatientContact(TypedDict, total=False):
     """Demographics and other administrative information about an individual or animal receiving care or other health-related services."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    relationship: list["CodeableConcept"]
+    relationship: List["CodeableConcept"]
     """The nature of the relationship between the patient and the contact person."""
     name: "HumanName"
     """A name associated with the contact person."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """A contact detail for the person, e.g."""
     address: "Address"
     """Address for the contact person."""
@@ -3435,9 +3435,9 @@ class PatientLink(TypedDict, total=False):
     """Demographics and other administrative information about an individual or animal receiving care or other health-related services."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     other: Required["Reference"]
     """The other patient resource that the link refers to."""
@@ -3451,7 +3451,7 @@ class Period(TypedDict, total=False):
     """A time period defined by a start and end date and optionally time."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     start: str
     """The start of the period."""
@@ -3481,23 +3481,23 @@ class Practitioner(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """An identifier that applies to this person in this role."""
     active: bool
     """Whether this practitioner's record is in active use."""
     _active: "Element"
     """Extensions for active"""
-    name: list["HumanName"]
+    name: List["HumanName"]
     """The name(s) associated with the practitioner."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """A contact detail for the practitioner, e.g."""
-    address: list["Address"]
+    address: List["Address"]
     """Address(es) of the practitioner that are not role specific (typically home address)."""
     gender: Literal['male', 'female', 'other', 'unknown']
     """Administrative Gender - the gender that the person is considered to have for administration and record keeping purposes."""
@@ -3507,11 +3507,11 @@ class Practitioner(TypedDict, total=False):
     """The date of birth for the practitioner."""
     _birthDate: "Element"
     """Extensions for birthDate"""
-    photo: list["Attachment"]
+    photo: List["Attachment"]
     """Image of the person."""
-    qualification: list["PractitionerQualification"]
+    qualification: List["PractitionerQualification"]
     """The official certifications, training, and licenses that authorize or otherwise pertain to the provision of care by the practitioner."""
-    communication: list["CodeableConcept"]
+    communication: List["CodeableConcept"]
     """A language the practitioner can use in patient communication."""
 
 
@@ -3533,13 +3533,13 @@ class PractitionerRole(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """Business Identifiers that are specific to a role/location."""
     active: bool
     """Whether this practitioner role record is in active use."""
@@ -3551,25 +3551,25 @@ class PractitionerRole(TypedDict, total=False):
     """Practitioner that is able to provide the defined services for the organization."""
     organization: "Reference"
     """The organization where the Practitioner performs the roles associated."""
-    code: list["CodeableConcept"]
+    code: List["CodeableConcept"]
     """Roles which this practitioner is authorized to perform for the organization."""
-    specialty: list["CodeableConcept"]
+    specialty: List["CodeableConcept"]
     """Specific specialty of the practitioner."""
-    location: list["Reference"]
+    location: List["Reference"]
     """The location(s) at which this practitioner provides care."""
-    healthcareService: list["Reference"]
+    healthcareService: List["Reference"]
     """The list of healthcare services that this worker provides for this role's Organization/Location(s)."""
-    telecom: list["ContactPoint"]
+    telecom: List["ContactPoint"]
     """Contact details that are specific to the role/location/service."""
-    availableTime: list["PractitionerRoleAvailableTime"]
+    availableTime: List["PractitionerRoleAvailableTime"]
     """A collection of times the practitioner is available or performing this role at the location and/or healthcareservice."""
-    notAvailable: list["PractitionerRoleNotAvailable"]
+    notAvailable: List["PractitionerRoleNotAvailable"]
     """The practitioner is not available or performing this role during this period of time due to the provided reason."""
     availabilityExceptions: str
     """A description of site availability exceptions, e.g."""
     _availabilityExceptions: "Element"
     """Extensions for availabilityExceptions"""
-    endpoint: list["Reference"]
+    endpoint: List["Reference"]
     """Technical endpoints providing access to services operated for the practitioner with this role."""
 
 
@@ -3577,13 +3577,13 @@ class PractitionerRoleAvailableTime(TypedDict, total=False):
     """A specific set of Roles/Locations/specialties/services that a practitioner may perform at an organization for a period of time."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    daysOfWeek: list[str]
+    daysOfWeek: List[str]
     """Indicates which days of the week are available between the start and end Times."""
-    _daysOfWeek: list["Element"]
+    _daysOfWeek: List["Element"]
     """Extensions for daysOfWeek"""
     allDay: bool
     """Is this always available?"""
@@ -3603,9 +3603,9 @@ class PractitionerRoleNotAvailable(TypedDict, total=False):
     """A specific set of Roles/Locations/specialties/services that a practitioner may perform at an organization for a period of time."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     description: str
     """The reason that can be presented to the user as to why this time is not available."""
@@ -3619,11 +3619,11 @@ class PractitionerQualification(TypedDict, total=False):
     """A person who is directly or indirectly involved in the provisioning of healthcare."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """An identifier that applies to this person's qualification in this role."""
     code: Required["CodeableConcept"]
     """Coded representation of the qualification."""
@@ -3637,7 +3637,7 @@ class Quantity(TypedDict, total=False):
     """A measured amount (or an amount that can potentially be measured). Note that measured amounts include amounts that are not precisely quantified, including amounts involving arbitrary units and floating currencies."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     value: float
     """The value of the measured amount."""
@@ -3679,17 +3679,17 @@ class Questionnaire(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
     url: str
     """An absolute URI that is used to identify this questionnaire when it is referenced in a specification, model, design or an instance; also called its canonical identifier."""
     _url: "Element"
     """Extensions for url"""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """A formal identifier that is used to identify this questionnaire when it is represented in other formats, or referenced in a specification, model, design or an instance."""
     version: str
     """The identifier that is used to identify this version of the questionnaire when it is referenced in a specification, model, design or instance."""
@@ -3703,7 +3703,7 @@ class Questionnaire(TypedDict, total=False):
     """A short, descriptive, user-friendly title for the questionnaire."""
     _title: "Element"
     """Extensions for title"""
-    derivedFrom: list[str]
+    derivedFrom: List[str]
     """The URL of a Questionnaire that this Questionnaire is based on."""
     status: Literal['draft', 'active', 'retired', 'unknown']
     """The status of this questionnaire."""
@@ -3713,9 +3713,9 @@ class Questionnaire(TypedDict, total=False):
     """A Boolean value to indicate that this questionnaire is authored for testing purposes (or education/evaluation/marketing) and is not intended to be used for genuine usage."""
     _experimental: "Element"
     """Extensions for experimental"""
-    subjectType: list[str]
+    subjectType: List[str]
     """The types of subjects that can be the subject of responses created for the questionnaire."""
-    _subjectType: list["Element"]
+    _subjectType: List["Element"]
     """Extensions for subjectType"""
     date: str
     """The date (and optionally time) when the questionnaire was published."""
@@ -3725,15 +3725,15 @@ class Questionnaire(TypedDict, total=False):
     """The name of the organization or individual that published the questionnaire."""
     _publisher: "Element"
     """Extensions for publisher"""
-    contact: list["ContactDetail"]
+    contact: List["ContactDetail"]
     """Contact details to assist a user in finding and communicating with the publisher."""
     description: str
     """A free text natural language description of the questionnaire from a consumer's perspective."""
     _description: "Element"
     """Extensions for description"""
-    useContext: list["UsageContext"]
+    useContext: List["UsageContext"]
     """The content was developed with a focus and intent of supporting the contexts that are listed."""
-    jurisdiction: list["CodeableConcept"]
+    jurisdiction: List["CodeableConcept"]
     """A legal or geographic region in which the questionnaire is intended to be used."""
     purpose: str
     """Explanation of why this questionnaire is needed and why it has been designed as it has."""
@@ -3753,9 +3753,9 @@ class Questionnaire(TypedDict, total=False):
     """Extensions for lastReviewDate"""
     effectivePeriod: "Period"
     """The period during which the questionnaire content was or is planned to be in active use."""
-    code: list["Coding"]
+    code: List["Coding"]
     """An identifier for this question or group of questions in a particular terminology such as LOINC."""
-    item: list["QuestionnaireItem"]
+    item: List["QuestionnaireItem"]
     """A particular question, question grouping or display text that is part of the questionnaire."""
 
 
@@ -3763,9 +3763,9 @@ class QuestionnaireAnswerOption(TypedDict, total=False):
     """A structured set of questions intended to guide the collection of answers from end-users. Questionnaires provide detailed control over order, presentation, phraseology and grouping to allow coherent, consistent data collection."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     valueInteger: int
     """A potential answer that's allowed as the answer to this question."""
@@ -3797,9 +3797,9 @@ class QuestionnaireEnableWhen(TypedDict, total=False):
     """A structured set of questions intended to guide the collection of answers from end-users. Questionnaires provide detailed control over order, presentation, phraseology and grouping to allow coherent, consistent data collection."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     question: str
     """The linkId for the question whose answer (or lack of answer) governs whether this item is enabled."""
@@ -3849,9 +3849,9 @@ class QuestionnaireInitial(TypedDict, total=False):
     """A structured set of questions intended to guide the collection of answers from end-users. Questionnaires provide detailed control over order, presentation, phraseology and grouping to allow coherent, consistent data collection."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     valueBoolean: bool
     """The actual value to for an initial answer."""
@@ -3899,9 +3899,9 @@ class QuestionnaireItem(TypedDict, total=False):
     """A structured set of questions intended to guide the collection of answers from end-users. Questionnaires provide detailed control over order, presentation, phraseology and grouping to allow coherent, consistent data collection."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     linkId: str
     """An identifier that is unique within the Questionnaire allowing linkage to the equivalent item in a QuestionnaireResponse resource."""
@@ -3911,7 +3911,7 @@ class QuestionnaireItem(TypedDict, total=False):
     """This element is a URI that refers to an [[[ElementDefinition]]] that provides information about this item, including information that might otherwise be included in the instance of the Questionnaire resource."""
     _definition: "Element"
     """Extensions for definition"""
-    code: list["Coding"]
+    code: List["Coding"]
     """A terminology code that corresponds to this group or question (e.g."""
     prefix: str
     """A short label for a particular group, question or set of display text within the questionnaire used for reference by the individual completing the questionnaire."""
@@ -3925,7 +3925,7 @@ class QuestionnaireItem(TypedDict, total=False):
     """The type of questionnaire item this is - whether text for display, a grouping of other items or a particular type of data to be captured (string, integer, coded choice, etc.)."""
     _type: "Element"
     """Extensions for type"""
-    enableWhen: list["QuestionnaireEnableWhen"]
+    enableWhen: List["QuestionnaireEnableWhen"]
     """A constraint indicating that this item should only be enabled (displayed/allow answers to be captured) when the specified condition is true."""
     enableBehavior: Literal['all', 'any']
     """Controls how multiple enableWhen values are interpreted - whether all or any must be true."""
@@ -3949,11 +3949,11 @@ class QuestionnaireItem(TypedDict, total=False):
     """Extensions for maxLength"""
     answerValueSet: str
     """A reference to a value set containing a list of codes representing permitted answers for a "choice" or "open-choice" question."""
-    answerOption: list["QuestionnaireAnswerOption"]
+    answerOption: List["QuestionnaireAnswerOption"]
     """One of the permitted answers for a "choice" or "open-choice" question."""
-    initial: list["QuestionnaireInitial"]
+    initial: List["QuestionnaireInitial"]
     """One or more values that should be pre-populated in the answer when initially rendering the questionnaire for user input."""
-    item: list["QuestionnaireItem"]
+    item: List["QuestionnaireItem"]
     """Text, questions and other groups to be nested beneath a question or group."""
 
 
@@ -3961,7 +3961,7 @@ class Range(TypedDict, total=False):
     """A set of ordered Quantities defined by a low and high limit."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     low: "Quantity"
     """The low limit."""
@@ -3973,7 +3973,7 @@ class Ratio(TypedDict, total=False):
     """A relationship of two Quantity values - expressed as a numerator and a denominator."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     numerator: "Quantity"
     """The value of the numerator."""
@@ -3985,7 +3985,7 @@ class Reference(TypedDict, total=False):
     """A reference from one resource to another."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     reference: str
     """A reference to a location at which the other resource is found."""
@@ -4007,7 +4007,7 @@ class RelatedArtifact(TypedDict, total=False):
     """Related artifacts such as additional documentation, justification, or bibliographic references."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     type: Literal['documentation', 'justification', 'citation', 'predecessor', 'successor', 'derived-from', 'depends-on', 'composed-of']
     """The type of relationship to the related artifact."""
@@ -4039,7 +4039,7 @@ class SampledData(TypedDict, total=False):
     """A series of measurements taken by a device, with upper and lower limits. There may be more than one dimension in the data."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     origin: Required["Quantity"]
     """The base quantity that a measured value of zero represents."""
@@ -4087,25 +4087,25 @@ class Schedule(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """External Ids for this item."""
     active: bool
     """Whether this schedule record is in active use or should not be used (such as was entered in error)."""
     _active: "Element"
     """Extensions for active"""
-    serviceCategory: list["CodeableConcept"]
+    serviceCategory: List["CodeableConcept"]
     """A broad categorization of the service that is to be performed during this appointment."""
-    serviceType: list["CodeableConcept"]
+    serviceType: List["CodeableConcept"]
     """The specific service that is to be performed during this appointment."""
-    specialty: list["CodeableConcept"]
+    specialty: List["CodeableConcept"]
     """The specialty of a practitioner that would be required to perform the service requested in this appointment."""
-    actor: Required[list["Reference"]]
+    actor: Required[List["Reference"]]
     """Slots that reference this schedule resource provide the availability details to these referenced resource(s)."""
     planningHorizon: "Period"
     """The period of time that the slots that reference this Schedule resource cover (even if none exist)."""
@@ -4119,9 +4119,9 @@ class Signature(TypedDict, total=False):
     """A signature along with supporting context. The signature may be a digital signature that is cryptographic in nature, or some other signature acceptable to the domain. This other signature may be as simple as a graphical image representing a hand-written signature, or a signature ceremony Different signature approaches have different utilities."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    type: Required[list["Coding"]]
+    type: Required[List["Coding"]]
     """An indication of the reason that the entity signed this document."""
     when: str
     """When the digital signature was signed."""
@@ -4163,19 +4163,19 @@ class Slot(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """External Ids for this item."""
-    serviceCategory: list["CodeableConcept"]
+    serviceCategory: List["CodeableConcept"]
     """A broad categorization of the service that is to be performed during this appointment."""
-    serviceType: list["CodeableConcept"]
+    serviceType: List["CodeableConcept"]
     """The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is at a location, rather than the location itself)."""
-    specialty: list["CodeableConcept"]
+    specialty: List["CodeableConcept"]
     """The specialty of a practitioner that would be required to perform the service requested in this appointment."""
     appointmentType: "CodeableConcept"
     """The style of appointment or patient that may be booked in the slot (not service type)."""
@@ -4221,11 +4221,11 @@ class TerminologyCapabilities(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
     url: str
     """An absolute URI that is used to identify this terminology capabilities when it is referenced in a specification, model, design or an instance; also called its canonical identifier."""
@@ -4259,15 +4259,15 @@ class TerminologyCapabilities(TypedDict, total=False):
     """The name of the organization or individual that published the terminology capabilities."""
     _publisher: "Element"
     """Extensions for publisher"""
-    contact: list["ContactDetail"]
+    contact: List["ContactDetail"]
     """Contact details to assist a user in finding and communicating with the publisher."""
     description: str
     """A free text natural language description of the terminology capabilities from a consumer's perspective."""
     _description: "Element"
     """Extensions for description"""
-    useContext: list["UsageContext"]
+    useContext: List["UsageContext"]
     """The content was developed with a focus and intent of supporting the contexts that are listed."""
-    jurisdiction: list["CodeableConcept"]
+    jurisdiction: List["CodeableConcept"]
     """A legal or geographic region in which the terminology capabilities is intended to be used."""
     purpose: str
     """Explanation of why this terminology capabilities is needed and why it has been designed as it has."""
@@ -4289,7 +4289,7 @@ class TerminologyCapabilities(TypedDict, total=False):
     """Whether the server supports lockedDate."""
     _lockedDate: "Element"
     """Extensions for lockedDate"""
-    codeSystem: list["TerminologyCapabilitiesCodeSystem"]
+    codeSystem: List["TerminologyCapabilitiesCodeSystem"]
     """Identifies a code system that is supported by the server."""
     expansion: "TerminologyCapabilitiesExpansion"
     """Information about the [ValueSet/$expand](valueset-operation-expand.html) operation."""
@@ -4309,9 +4309,9 @@ class TerminologyCapabilitiesClosure(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     translation: bool
     """If cross-system closure is supported."""
@@ -4323,13 +4323,13 @@ class TerminologyCapabilitiesCodeSystem(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     uri: str
     """URI for the Code System."""
-    version: list["TerminologyCapabilitiesVersion"]
+    version: List["TerminologyCapabilitiesVersion"]
     """For the code system, a list of versions that are supported by the server."""
     subsumption: bool
     """True if subsumption is supported for this version of the code system."""
@@ -4341,9 +4341,9 @@ class TerminologyCapabilitiesExpansion(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     hierarchical: bool
     """Whether the server can return nested value sets."""
@@ -4357,7 +4357,7 @@ class TerminologyCapabilitiesExpansion(TypedDict, total=False):
     """Allow request for incomplete expansions?"""
     _incomplete: "Element"
     """Extensions for incomplete"""
-    parameter: list["TerminologyCapabilitiesParameter"]
+    parameter: List["TerminologyCapabilitiesParameter"]
     """Supported expansion parameter."""
     textFilter: str
     """Documentation about text searching works."""
@@ -4369,17 +4369,17 @@ class TerminologyCapabilitiesFilter(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     code: str
     """Code of the property supported."""
     _code: "Element"
     """Extensions for code"""
-    op: list[str]
+    op: List[str]
     """Operations supported for the property."""
-    _op: list["Element"]
+    _op: List["Element"]
     """Extensions for op"""
 
 
@@ -4387,9 +4387,9 @@ class TerminologyCapabilitiesImplementation(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     description: str
     """Information about the specific installation that this terminology capability statement relates to."""
@@ -4405,9 +4405,9 @@ class TerminologyCapabilitiesParameter(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """Expansion Parameter name."""
@@ -4423,9 +4423,9 @@ class TerminologyCapabilitiesSoftware(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """Name the software is known by."""
@@ -4441,9 +4441,9 @@ class TerminologyCapabilitiesTranslation(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     needsMap: bool
     """Whether the client must identify the map."""
@@ -4455,9 +4455,9 @@ class TerminologyCapabilitiesValidateCode(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     translations: bool
     """Whether translations are validated."""
@@ -4469,9 +4469,9 @@ class TerminologyCapabilitiesVersion(TypedDict, total=False):
     """A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may be used as a statement of actual server functionality or a statement of required or desired server implementation."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     code: str
     """For version-less code systems, there should be a single version with no identifier."""
@@ -4485,15 +4485,15 @@ class TerminologyCapabilitiesVersion(TypedDict, total=False):
     """If the compositional grammar defined by the code system is supported."""
     _compositional: "Element"
     """Extensions for compositional"""
-    language: list[str]
+    language: List[str]
     """Language Displays supported."""
-    _language: list["Element"]
+    _language: List["Element"]
     """Extensions for language"""
-    filter: list["TerminologyCapabilitiesFilter"]
+    filter: List["TerminologyCapabilitiesFilter"]
     """Filter Properties supported."""
-    property: list[str]
+    property: List[str]
     """Properties supported for $lookup."""
-    _property: list["Element"]
+    _property: List["Element"]
     """Extensions for property"""
 
 
@@ -4501,13 +4501,13 @@ class Timing(TypedDict, total=False):
     """Specifies an event that may occur multiple times. Timing schedules are used to record when things are planned, expected or requested to occur. The most common usage is in dosage instructions for medications. They are also used when planning care of various kinds, and may be used for reporting the schedule to which past regular activities were carried out."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
-    event: list[str]
+    event: List[str]
     """Identifies specific times when the event occurs."""
-    _event: list["Element"]
+    _event: List["Element"]
     """Extensions for event"""
     repeat: "TimingRepeat"
     """A set of rules that describe when the event is scheduled."""
@@ -4519,9 +4519,9 @@ class TimingRepeat(TypedDict, total=False):
     """Specifies an event that may occur multiple times. Timing schedules are used to record when things are planned, expected or requested to occur. The most common usage is in dosage instructions for medications. They are also used when planning care of various kinds, and may be used for reporting the schedule to which past regular activities were carried out."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     boundsDuration: "Duration"
     """Either a duration for the length of the timing schedule, a range of possible length, or outer bounds for start and/or end limits of the timing schedule."""
@@ -4569,17 +4569,17 @@ class TimingRepeat(TypedDict, total=False):
     """The units of time for the period in UCUM units."""
     _periodUnit: "Element"
     """Extensions for periodUnit"""
-    dayOfWeek: list[str]
+    dayOfWeek: List[str]
     """If one or more days of week is provided, then the action happens only on the specified day(s)."""
-    _dayOfWeek: list["Element"]
+    _dayOfWeek: List["Element"]
     """Extensions for dayOfWeek"""
-    timeOfDay: list[str]
+    timeOfDay: List[str]
     """Specified time of day for action to take place."""
-    _timeOfDay: list["Element"]
+    _timeOfDay: List["Element"]
     """Extensions for timeOfDay"""
-    when: list[Literal['MORN', 'MORN.early', 'MORN.late', 'NOON', 'AFT', 'AFT.early', 'AFT.late', 'EVE', 'EVE.early', 'EVE.late', 'NIGHT', 'PHS', 'HS', 'WAKE', 'C', 'CM', 'CD', 'CV', 'AC', 'ACM', 'ACD', 'ACV', 'PC', 'PCM', 'PCD', 'PCV']]
+    when: List[Literal['MORN', 'MORN.early', 'MORN.late', 'NOON', 'AFT', 'AFT.early', 'AFT.late', 'EVE', 'EVE.early', 'EVE.late', 'NIGHT', 'PHS', 'HS', 'WAKE', 'C', 'CM', 'CD', 'CV', 'AC', 'ACM', 'ACD', 'ACV', 'PC', 'PCM', 'PCD', 'PCV']]
     """An approximate time period during the day, potentially linked to an event of daily living that indicates when the action should occur."""
-    _when: list["Element"]
+    _when: List["Element"]
     """Extensions for when"""
     offset: int
     """The number of minutes from the event."""
@@ -4591,7 +4591,7 @@ class TriggerDefinition(TypedDict, total=False):
     """A description of a triggering event. Triggering events can be named events, data events, or periodic, as determined by the type element."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     type: Literal['named-event', 'periodic', 'data-changed', 'data-added', 'data-modified', 'data-removed', 'data-accessed', 'data-access-ended']
     """The type of triggering event."""
@@ -4613,7 +4613,7 @@ class TriggerDefinition(TypedDict, total=False):
     """The timing of the event (if this is a periodic trigger)."""
     _timingDateTime: "Element"
     """Extensions for timingDateTime"""
-    data: list["DataRequirement"]
+    data: List["DataRequirement"]
     """The triggering data of the event (if this is a data trigger)."""
     condition: "Expression"
     """A boolean-valued expression that is evaluated in the context of the container of the trigger definition and returns whether or not the trigger fires."""
@@ -4623,7 +4623,7 @@ class UsageContext(TypedDict, total=False):
     """Specifies clinical/business/etc. metadata that can be used to retrieve, index and/or categorize an artifact. This metadata can either be specific to the applicable population (e.g., age category, DRG) or the specific context of care (e.g., venue, care setting, provider of care)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
     code: Required["Coding"]
     """A code that identifies the type of context being specified by this usage context."""
@@ -4655,17 +4655,17 @@ class ValueSet(TypedDict, total=False):
     """Extensions for language"""
     text: "Narrative"
     """A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human."""
-    contained: list["Resource"]
+    contained: List["Resource"]
     """These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants."""
     url: str
     """An absolute URI that is used to identify this value set when it is referenced in a specification, model, design or an instance; also called its canonical identifier."""
     _url: "Element"
     """Extensions for url"""
-    identifier: list["Identifier"]
+    identifier: List["Identifier"]
     """A formal identifier that is used to identify this value set when it is represented in other formats, or referenced in a specification, model, design or an instance."""
     version: str
     """The identifier that is used to identify this version of the value set when it is referenced in a specification, model, design or instance."""
@@ -4695,15 +4695,15 @@ class ValueSet(TypedDict, total=False):
     """The name of the organization or individual that published the value set."""
     _publisher: "Element"
     """Extensions for publisher"""
-    contact: list["ContactDetail"]
+    contact: List["ContactDetail"]
     """Contact details to assist a user in finding and communicating with the publisher."""
     description: str
     """A free text natural language description of the value set from a consumer's perspective."""
     _description: "Element"
     """Extensions for description"""
-    useContext: list["UsageContext"]
+    useContext: List["UsageContext"]
     """The content was developed with a focus and intent of supporting the contexts that are listed."""
-    jurisdiction: list["CodeableConcept"]
+    jurisdiction: List["CodeableConcept"]
     """A legal or geographic region in which the value set is intended to be used."""
     immutable: bool
     """If this is set to 'true', then no new versions of the content logical definition can be created."""
@@ -4727,9 +4727,9 @@ class ValueSetCompose(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     lockedDate: str
     """The Locked Date is the effective date that is used to determine the version of all referenced Code Systems and Value Set Definitions included in the compose that are not already tied to a specific version."""
@@ -4739,9 +4739,9 @@ class ValueSetCompose(TypedDict, total=False):
     """Whether inactive codes - codes that are not approved for current use - are in the value set."""
     _inactive: "Element"
     """Extensions for inactive"""
-    include: Required[list["ValueSetInclude"]]
+    include: Required[List["ValueSetInclude"]]
     """Include one or more codes from a code system or other value set(s)."""
-    exclude: list["ValueSetInclude"]
+    exclude: List["ValueSetInclude"]
     """Exclude one or more codes from the value set based on code system filters and/or other value sets."""
 
 
@@ -4749,9 +4749,9 @@ class ValueSetConcept(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     code: str
     """Specifies a code for the concept to be included or excluded."""
@@ -4761,7 +4761,7 @@ class ValueSetConcept(TypedDict, total=False):
     """The text to display to the user for this concept in the context of this valueset."""
     _display: "Element"
     """Extensions for display"""
-    designation: list["ValueSetDesignation"]
+    designation: List["ValueSetDesignation"]
     """Additional representations for this concept when used in this value set - other languages, aliases, specialized purposes, used for particular purposes, etc."""
 
 
@@ -4769,9 +4769,9 @@ class ValueSetContains(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     system: str
     """An absolute URI which is the code system in which the code for this item in the expansion is defined."""
@@ -4797,9 +4797,9 @@ class ValueSetContains(TypedDict, total=False):
     """The recommended display for this item in the expansion."""
     _display: "Element"
     """Extensions for display"""
-    designation: list["ValueSetDesignation"]
+    designation: List["ValueSetDesignation"]
     """Additional representations for this item - other languages, aliases, specialized purposes, used for particular purposes, etc."""
-    contains: list["ValueSetContains"]
+    contains: List["ValueSetContains"]
     """Other codes and entries contained under this entry in the hierarchy."""
 
 
@@ -4807,9 +4807,9 @@ class ValueSetDesignation(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     language: str
     """The language this designation is defined for."""
@@ -4827,9 +4827,9 @@ class ValueSetExpansion(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     identifier: str
     """An identifier that uniquely identifies this expansion of the valueset, based on a unique combination of the provided parameters, the system default parameters, and the underlying system code system versions etc."""
@@ -4847,9 +4847,9 @@ class ValueSetExpansion(TypedDict, total=False):
     """If paging is being used, the offset at which this resource starts."""
     _offset: "Element"
     """Extensions for offset"""
-    parameter: list["ValueSetParameter"]
+    parameter: List["ValueSetParameter"]
     """A parameter that controlled the expansion process."""
-    contains: list["ValueSetContains"]
+    contains: List["ValueSetContains"]
     """The codes that are contained in the value set expansion."""
 
 
@@ -4857,9 +4857,9 @@ class ValueSetFilter(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     property: str
     """A code that identifies a property or a filter defined in the code system."""
@@ -4879,9 +4879,9 @@ class ValueSetInclude(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     system: str
     """An absolute URI which is the code system from which the selected codes come from."""
@@ -4891,11 +4891,11 @@ class ValueSetInclude(TypedDict, total=False):
     """The version of the code system that the codes are selected from, or the special version '*' for all versions."""
     _version: "Element"
     """Extensions for version"""
-    concept: list["ValueSetConcept"]
+    concept: List["ValueSetConcept"]
     """Specifies a concept to be included or excluded."""
-    filter: list["ValueSetFilter"]
+    filter: List["ValueSetFilter"]
     """Select concepts by specify a matching criterion based on the properties (including relationships) defined by the system, or on filters defined by the system."""
-    valueSet: list[str]
+    valueSet: List[str]
     """Selects the concepts found in this value set (based on its value set definition)."""
 
 
@@ -4903,9 +4903,9 @@ class ValueSetParameter(TypedDict, total=False):
     """A ValueSet resource instance specifies a set of codes drawn from one or more code systems, intended for use in a particular context. Value sets link between [[[CodeSystem]]] definitions and their use in [coded elements](terminologies.html)."""
     id: str
     """Unique id for the element within a resource (for internal references)."""
-    extension: list["Extension"]
+    extension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element."""
-    modifierExtension: list["Extension"]
+    modifierExtension: List["Extension"]
     """May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants."""
     name: str
     """Name of the input parameter to the $expand operation; may be a server-assigned name for additional default or other server-supplied parameters used to control the expansion process."""
@@ -4951,9 +4951,9 @@ class OtherResource(TypedDict, total=False):
     language: str
     _language: "Element"
     text: "Narrative"
-    contained: list["Resource"]
-    extension: list["Extension"]
-    modifierExtension: list["Extension"]
+    contained: List["Resource"]
+    extension: List["Extension"]
+    modifierExtension: List["Extension"]
 
 
 Resource: TypeAlias = Union[Bundle, CapabilityStatement, Claim, Coverage, Endpoint, HealthcareService, InsurancePlan, Location, Medication, MedicationRequest, MedicationStatement, MessageHeader, OperationOutcome, Organization, OrganizationAffiliation, Parameters, Patient, Practitioner, PractitionerRole, Questionnaire, Schedule, Slot, TerminologyCapabilities, ValueSet, OtherResource]
