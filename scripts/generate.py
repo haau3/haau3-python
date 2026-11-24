@@ -945,28 +945,24 @@ def _client(spec: Spec, op: Op, raw: Json) -> str:
     return f"client = Haau3()  # {comment}"
 
 
-FIRST_CALL = "searchSlots"
+FIRST_CALL = "searchSlot"
 """The operation a quickstart makes its first call with."""
 
 
 def _first_call_sample(spec: Spec, op: Op, raw: Json) -> str:
-    """The first call: the slot search's example, which names a city, with the first slot it found
-    printed whole as JSON, since one field says nothing of what a slot is."""
-    city = next(
-        (p.get("example") for p in raw.get("parameters", []) if p.get("in") == "query" and p.get("name") == "city"),
-        None,
-    )
-    if not isinstance(city, str):
-        raise ValueError(f"{op.id}: the first call's example names no city")
+    """The first call: the slot search's example, which finds a provider's open slots by NPI, with the
+    first slot it found printed whole as JSON, since one field says nothing of what a slot is. A
+    search that finds nothing says so."""
     lines = [
         "import json",
         "",
         "from haau3 import Haau3",
         "",
         _client(spec, op, raw),
-        f"# Open appointment slots, here in {city}.",
-        f'slots = client.{op.name}({", ".join(_example_args(spec, op, raw))})["slots"]',
-        'print(json.dumps(slots[0], indent=2) if slots else "No open slots matched.")',
+        "# Open appointment slots of one provider, found by NPI.",
+        f"page = client.{op.name}({', '.join(_example_args(spec, op, raw))})",
+        "slot = next(client.resources(page), None)",
+        'print(json.dumps(slot, indent=2) if slot else "No open slots matched.")',
     ]
     return "\n".join(lines) + "\n"
 
@@ -1012,6 +1008,9 @@ def _sample(spec: Spec, op: Op) -> str:
 
 
 def code_samples_json(spec: Spec) -> str:
+    # A first call whose operation left the spec would quietly become an ordinary sample.
+    if not any(op.id == FIRST_CALL for op in spec.ops):
+        raise ValueError(f"The first call is {FIRST_CALL}, which the spec no longer has")
     in_spec_order = [
         next(op for op in spec.ops if op.path == path and op.method == method.upper())
         for path, item in spec.spec["paths"].items()

@@ -37,7 +37,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_slot(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Slot:schedule\",\n    include_iterate=[\"Schedule:actor\", \"PractitionerRole:practitioner\", \"HealthcareService:location\"],\n    count=1,\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "import json\n\nfrom haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# Open appointment slots of one provider, found by NPI.\npage = client.search_slot(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Slot:schedule\",\n    include_iterate=[\"Schedule:actor\", \"PractitionerRole:practitioner\", \"HealthcareService:location\"],\n    count=1,\n)\nslot = next(client.resources(page), None)\nprint(json.dumps(slot, indent=2) if slot else \"No open slots matched.\")\n"
           }
         ]
       }
