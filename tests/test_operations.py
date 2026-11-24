@@ -113,6 +113,12 @@ def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -
         "batch",
         "pages",
         "resources",
+        "matches",
+        "resolve",
+        "slot_views",
+        "schedule_views",
+        "search_slot_with_includes",
+        "search_schedule_with_includes",
         "parameters",
         "parameter",
         "review_flags",
@@ -132,7 +138,8 @@ def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -
 
 @pytest.mark.parametrize("cls", [haau3.SyncWithResponse, haau3.AsyncWithResponse])
 def test_with_response_has_every_method_and_the_batch(cls: type) -> None:
-    assert _public(cls) == {naming.method_name(o[0]) for o in OPERATIONS} | {"batch"}
+    helpers = {"search_slot_with_includes", "search_schedule_with_includes"}
+    assert _public(cls) == {naming.method_name(o[0]) for o in OPERATIONS} | {"batch"} | helpers
 
 
 def test_async_methods_are_coroutines_and_sync_ones_are_not() -> None:
@@ -140,6 +147,13 @@ def test_async_methods_are_coroutines_and_sync_ones_are_not() -> None:
         name = naming.method_name(operation_id)
         assert inspect.iscoroutinefunction(getattr(AsyncHaau3, name))
         assert not inspect.iscoroutinefunction(getattr(Haau3, name))
+    # The search helpers send, so they are awaited too; the readers send nothing, so they are not.
+    for name in ("search_slot_with_includes", "search_schedule_with_includes"):
+        assert inspect.iscoroutinefunction(getattr(AsyncHaau3, name))
+        assert inspect.iscoroutinefunction(getattr(haau3.AsyncWithResponse, name))
+        assert not inspect.iscoroutinefunction(getattr(Haau3, name))
+    for name in ("slot_views", "schedule_views", "resolve", "matches"):
+        assert not inspect.iscoroutinefunction(getattr(AsyncHaau3, name))
 
 
 def test_calls_offers_every_batchable_operation_and_nothing_else() -> None:

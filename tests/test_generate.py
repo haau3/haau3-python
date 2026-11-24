@@ -359,12 +359,55 @@ def test_a_header_on_an_operation_a_batch_can_carry_stops_the_generator() -> Non
         generate.Spec(spec)
 
 
-def test_the_generator_refuses_a_first_call_the_spec_no_longer_has() -> None:
+def test_the_generator_refuses_a_first_call_the_spec_no_longer_has(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(generate, "FIRST_CALL", "searchNothing")
+    with pytest.raises(ValueError, match="The first call is searchNothing, which the spec no longer has"):
+        generate.code_samples_json(generate.Spec(SPEC))
+
+
+def _search(spec: dict[str, Any], op_id: str) -> dict[str, Any]:
+    found: dict[str, Any] = next(
+        i["get"] for i in spec["paths"].values() if i.get("get", {}).get("operationId") == op_id
+    )
+    return found
+
+
+def test_the_generator_refuses_a_search_helper_whose_search_is_gone() -> None:
     spec: dict[str, Any] = json.loads(json.dumps(SPEC))
-    path = next(p for p, item in spec["paths"].items() if item.get("get", {}).get("operationId") == generate.FIRST_CALL)
+    path = next(p for p, item in spec["paths"].items() if item.get("get", {}).get("operationId") == "searchSchedule")
     del spec["paths"][path]
-    with pytest.raises(ValueError, match=f"The first call is {generate.FIRST_CALL}, which the spec no longer has"):
-        generate.code_samples_json(generate.Spec(spec))
+    with pytest.raises(ValueError, match="The search helper of searchSchedule: the spec no longer has searchSchedule"):
+        generate.Spec(spec)
+
+
+def test_the_generator_refuses_a_search_helper_whose_search_takes_no_include() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    search = _search(spec, "searchSlot")
+    search["parameters"] = [p for p in search["parameters"] if p.get("name") != "_include:iterate"]
+    with pytest.raises(ValueError, match="The search helper of searchSlot: searchSlot takes no _include:iterate"):
+        generate.Spec(spec)
+
+
+def test_the_generator_refuses_a_search_helper_that_sends_an_include_the_search_does_not_serve() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    for p in _search(spec, "searchSchedule")["parameters"]:
+        if p.get("name") == "_include:iterate":
+            p["schema"]["items"]["enum"] = ["Schedule:actor", "PractitionerRole:practitioner"]
+    with pytest.raises(
+        ValueError,
+        match="The search helper of searchSchedule sends _include:iterate=HealthcareService:location, which searchSchedule does not serve",
+    ):
+        generate.Spec(spec)
+    # The control: the pinned spec serves every include each helper sends.
+    assert set(generate.Spec(SPEC).helpers) == set(generate.WITH_INCLUDES)
+
+
+def test_a_search_helpers_query_is_its_searchs_less_the_includes() -> None:
+    spec = generate.Spec(SPEC)
+    for op_id, helper in spec.helpers.items():
+        search = next(o for o in spec.ops if o.id == op_id)
+        assert [p.wire for p in helper.query] == [p.wire for p in search.query if p.wire not in generate.INCLUDE_PARAMS]
+        assert helper.name == f"{search.name}_with_includes"
 
 
 def test_a_list_parameter_takes_one_value_or_a_list() -> None:

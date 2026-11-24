@@ -30,6 +30,8 @@ from urllib.parse import parse_qsl, unquote, urljoin, urlsplit
 
 import pytest
 
+import haau3
+
 from .helpers import KEY, ROOT, answers_fhir, example_answer, example_body, operations
 
 OVERLAY: dict[str, Any] = json.loads((ROOT / "openapi" / "code-samples.json").read_text(encoding="utf-8"))
@@ -80,10 +82,21 @@ def _batch_keys(bundle: dict[str, Any]) -> list[str]:
 def _expected_output(op_id: str, op: dict[str, Any]) -> str:
     """What a sample prints for its example answer, by the rule the generator writes."""
     answer = example_answer(op)
-    # The first call prints the first slot it found whole, as JSON in the order the API sent it.
+    # The first call prints its first slot through the slot view, as JSON.
     if op_id == "searchSlot":
-        matched = (e["resource"] for e in answer["entry"] if e.get("search", {}).get("mode", "match") == "match")
-        return json.dumps(next(matched), indent=2)
+        views = haau3.slot_views(answer)
+        if not views:
+            return "No open slots matched."
+        view = views[0]
+        names = [n.get("text") for p in view.practitioners for n in p.get("name", [])]
+        places = [place.get("name") for place in view.locations]
+        printed = {
+            "start": view.slot.get("start"),
+            "practitioner": names[0] if names else None,
+            "location": places[0] if places else None,
+            "booking_link": view.booking_link,
+        }
+        return json.dumps(printed, indent=2)
     if op_id == "fhirBatch":
         return "\n".join(str(int(re.match(r"\d+", e["response"]["status"]).group())) for e in answer["entry"])  # type: ignore[union-attr]
     if op_id == "fhirMetadata" or answer.get("resourceType") == "CapabilityStatement":
@@ -201,15 +214,24 @@ def test_every_sample_reads_the_key_from_the_environment_and_sets_no_address() -
 
 
 SLOT_SEARCH = "/v1/fhir/r4/Slot"
-GUARDED = 'print(json.dumps(slot, indent=2) if slot else "No open slots matched.")'
+GUARD = "if views:\n    view = views[0]\n"
 
 
-def test_the_slot_search_is_the_first_call_by_npi_then_the_first_slot_it_found() -> None:
+def test_the_slot_search_is_the_first_call_through_the_helper_and_the_slot_view() -> None:
     source = _sample("GET", SLOT_SEARCH)
-    assert re.search(r"^# Open appointment slots of one provider, found by NPI\.$", source, re.M)
-    assert 'page = client.search_slot(\n    provider_identifier="http://hl7.org/fhir/sid/us-npi|' in source
-    assert "slot = next(client.resources(page), None)\n" in source
-    assert source.rstrip("\n").endswith(GUARDED)
+    assert re.search(
+        r"^# Open appointment slots of one provider, found by NPI, each with its schedule, location and provider\.$",
+        source,
+        re.M,
+    )
+    assert 'page = client.search_slot_with_includes(provider_identifier="http://hl7.org/fhir/sid/us-npi|' in source
+    # The helper sends the includes, so the sample names none.
+    assert "include=" not in source
+    assert "include_iterate" not in source
+    assert "views = client.slot_views(page)\n" in source
+    assert GUARD in source
+    assert '"booking_link": view.booking_link,' in source
+    assert source.rstrip("\n").endswith('else:\n    print("No open slots matched.")')
 
 
 @pytest.fixture(scope="module")
@@ -243,14 +265,14 @@ def test_the_first_call_says_so_when_the_search_finds_no_slot(finds_nothing: str
     assert result.stdout == "No open slots matched.\n"
 
 
-def test_the_first_call_without_the_guard_prints_null_on_no_slot(finds_nothing: str) -> None:
-    """The control: without the guard, a search that found nothing prints `null`."""
+def test_the_first_call_without_the_guard_fails_on_no_slot(finds_nothing: str) -> None:
+    """The control: without the guard, a search that found nothing raises IndexError."""
     source = _sample("GET", SLOT_SEARCH)
-    unguarded = source.replace(GUARDED, "print(json.dumps(slot, indent=2))")
+    unguarded = source.replace(GUARD, "if True:\n    view = views[0]\n")
     assert unguarded != source
     result = _run(unguarded, finds_nothing)
-    assert result.returncode == 0
-    assert result.stdout == "null\n"
+    assert result.returncode != 0
+    assert "IndexError" in result.stderr
 
 
 @pytest.mark.parametrize(("op_id", "method", "path", "op"), OPERATIONS, ids=[o[0] for o in OPERATIONS])
