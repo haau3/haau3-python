@@ -22,7 +22,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -88,7 +88,11 @@ def _expected_output(op_id: str, op: dict[str, Any]) -> str:
         if not views:
             return "No open slots matched."
         view = views[0]
-        names = [n.get("text") for p in view.practitioners for n in p.get("name", [])]
+        names = [
+            n.get("text") or " ".join([*n.get("given", []), n.get("family", "")]).strip() or None
+            for p in view.practitioners
+            for n in p.get("name", [])
+        ]
         places = [place.get("name") for place in view.locations]
         printed = {
             "start": view.slot.get("start"),
@@ -256,6 +260,116 @@ def finds_nothing() -> Iterator[str]:
     yield f"http://127.0.0.1:{server.server_address[1]}"
     server.shutdown()
     server.server_close()
+
+
+_API = "https://api.haau3.com/v1/fhir/r4"
+_LINK = "http://hl7.org/fhir/uv/smart-scheduling-links/StructureDefinition/booking-deep-link"
+
+
+def _slot_page(actors: list[str], more: list[dict[str, Any]]) -> dict[str, Any]:
+    """A slot search answering one Slot of one Schedule at one Location, and whatever else is given."""
+
+    def entry(resource: dict[str, Any], mode: str) -> dict[str, Any]:
+        return {
+            "fullUrl": f"{_API}/{resource['resourceType']}/{resource['id']}",
+            "search": {"mode": mode},
+            "resource": resource,
+        }
+
+    slot = {
+        "resourceType": "Slot",
+        "id": "s1",
+        "schedule": {"reference": "Schedule/sc1"},
+        "status": "free",
+        "start": "2026-12-01T09:00:00-05:00",
+        "end": "2026-12-01T09:30:00-05:00",
+        "extension": [{"url": _LINK, "valueUrl": "https://example.org/book"}],
+    }
+    schedule = {"resourceType": "Schedule", "id": "sc1", "actor": [{"reference": actor} for actor in actors]}
+    location = {"resourceType": "Location", "id": "l1", "name": "Main Street Clinic"}
+    return {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            entry(slot, "match"),
+            entry(schedule, "include"),
+            entry(location, "include"),
+            *(entry(r, "include") for r in more),
+        ],
+    }
+
+
+@pytest.fixture
+def answers_with() -> Iterator[Callable[[dict[str, Any]], str]]:
+    """A stand-in API answering every request with the body given."""
+    body: dict[str, Any] = {}
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format: str, *args: Any) -> None:
+            pass
+
+        def do_GET(self) -> None:
+            data = json.dumps(body).encode()
+            self.send_response(200)
+            self.send_header("content-type", "application/fhir+json")
+            self.send_header("content-length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def serve(answer: dict[str, Any]) -> str:
+        body.clear()
+        body.update(answer)
+        return f"http://127.0.0.1:{server.server_address[1]}"
+
+    yield serve
+    server.shutdown()
+    server.server_close()
+
+
+def _printed(practitioner: str | None) -> str:
+    printed = {
+        "start": "2026-12-01T09:00:00-05:00",
+        "practitioner": practitioner,
+        "location": "Main Street Clinic",
+        "booking_link": "https://example.org/book",
+    }
+    return json.dumps(printed, indent=2) + "\n"
+
+
+def test_the_first_call_prints_given_and_family_names_when_a_name_has_no_text(
+    answers_with: Callable[[dict[str, Any]], str],
+) -> None:
+    role = {"resourceType": "PractitionerRole", "id": "r1", "practitioner": {"reference": "Practitioner/p1"}}
+    practitioner = {"resourceType": "Practitioner", "id": "p1", "name": [{"given": ["Ana", "Maria"], "family": "Lee"}]}
+    base_url = answers_with(_slot_page(["Location/l1", "PractitionerRole/r1"], [role, practitioner]))
+    result = _run(_sample("GET", SLOT_SEARCH), base_url)
+    assert result.stderr == ""
+    assert result.stdout == _printed("Ana Maria Lee")
+
+
+def test_the_first_call_prints_no_practitioner_when_the_schedule_names_none(
+    answers_with: Callable[[dict[str, Any]], str],
+) -> None:
+    base_url = answers_with(_slot_page(["Location/l1"], []))
+    result = _run(_sample("GET", SLOT_SEARCH), base_url)
+    assert result.stderr == ""
+    assert result.stdout == _printed(None)
+
+
+def test_the_first_call_prints_no_practitioner_when_a_name_has_no_parts(
+    answers_with: Callable[[dict[str, Any]], str],
+) -> None:
+    role = {"resourceType": "PractitionerRole", "id": "r1", "practitioner": {"reference": "Practitioner/p1"}}
+    practitioner = {"resourceType": "Practitioner", "id": "p1", "name": [{"use": "official"}]}
+    base_url = answers_with(_slot_page(["Location/l1", "PractitionerRole/r1"], [role, practitioner]))
+    result = _run(_sample("GET", SLOT_SEARCH), base_url)
+    assert result.stderr == ""
+    assert result.stdout == _printed(None)
 
 
 def test_the_first_call_says_so_when_the_search_finds_no_slot(finds_nothing: str) -> None:

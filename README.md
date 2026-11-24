@@ -56,7 +56,12 @@ page = client.search_slot_with_includes(provider_identifier="http://hl7.org/fhir
 views = client.slot_views(page)
 if views:
     view = views[0]
-    names = [name.get("text") for practitioner in view.practitioners for name in practitioner.get("name", [])]
+    # A name's text, or its given and family names when the publisher sent no text.
+    names = [
+        name.get("text") or " ".join([*name.get("given", []), name.get("family", "")]).strip() or None
+        for practitioner in view.practitioners
+        for name in practitioner.get("name", [])
+    ]
     places = [location.get("name") for location in view.locations]
     print(
         json.dumps(
@@ -394,6 +399,32 @@ for page in client.pages(first):
             print(resource.get("id"))
 ```
 
+When the next page is asked for in a later request, as a web page's "Load more" does, there is no
+page to hand `pages()`. `next_cursor()` reads the cursor from a page's `next` link, with no request,
+and a search takes it back as `page`:
+
+```python
+from datetime import datetime, timezone
+
+# The search, its moment chosen once and kept: the cursor belongs to it.
+start = ["ge" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]
+first = client.search_slot_with_includes(status="free", start=start, location_address_state="TX")
+cursor = client.next_cursor(first)  # None on the last page
+
+# Later, in another request, with the same search:
+if cursor:
+    second = client.search_slot_with_includes(status="free", start=start, location_address_state="TX", page=cursor)
+```
+
+A cursor belongs to its search: send it with every other parameter exactly as before. A Slot,
+Schedule or plan search refuses a cursor sent with its search changed (a `400`), and that includes a
+parameter the API fills in for you, as the page's `self` link shows: for a Slot search, send `status`
+and `start` yourself when you will page this way, since their defaults are free Slots from the moment
+of the first request. A cursor does not last: the provider directory's searches say their cursors
+expire, and a plan search answers `410` once the plans are updated, so start the search again.
+`next_cursor()` raises a `Haau3Error` when a next link is not a URL, or carries no cursor or two. The
+plain function `haau3.next_cursor()` does the same with no client.
+
 `resources()` yields every resource the search found, across every page:
 
 ```python
@@ -445,7 +476,11 @@ FHIR resource the API served:
 page = client.search_slot_with_includes(location_address_state="MA", count=10)
 
 for view in client.slot_views(page):
-    who = [name.get("text") for practitioner in view.practitioners for name in practitioner.get("name", [])]
+    who = [
+        name.get("text") or " ".join([*name.get("given", []), name.get("family", "")]).strip() or None
+        for practitioner in view.practitioners
+        for name in practitioner.get("name", [])
+    ]
     where = [location.get("name") for location in view.locations]
     print(view.slot.get("start"), who[:1], where[:1], view.booking_link or view.booking_phone)
 ```

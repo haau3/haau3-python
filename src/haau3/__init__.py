@@ -21,6 +21,7 @@ from ._batch import BatchResult as BatchResult
 from ._batch import Call as Call
 from ._bundle_reads import matches as matches
 from ._bundle_reads import resolve as resolve
+from ._bundles import next_cursor as next_cursor
 from ._client import DEFAULT_BASE_URL as DEFAULT_BASE_URL
 from ._client import DEFAULT_MAX_RETRIES as DEFAULT_MAX_RETRIES
 from ._client import DEFAULT_TIMEOUT as DEFAULT_TIMEOUT
@@ -122,6 +123,7 @@ __all__ = [
     "lookup_result",
     "mark_as_test_data",
     "matches",
+    "next_cursor",
     "parameter",
     "parameters",
     "resolve",

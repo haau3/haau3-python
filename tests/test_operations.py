@@ -112,6 +112,7 @@ def test_the_clients_have_one_method_per_operation_and_nothing_else(cls: type) -
     assert _public(cls) == methods | {
         "batch",
         "pages",
+        "next_cursor",
         "resources",
         "matches",
         "resolve",
@@ -152,7 +153,7 @@ def test_async_methods_are_coroutines_and_sync_ones_are_not() -> None:
         assert inspect.iscoroutinefunction(getattr(AsyncHaau3, name))
         assert inspect.iscoroutinefunction(getattr(haau3.AsyncWithResponse, name))
         assert not inspect.iscoroutinefunction(getattr(Haau3, name))
-    for name in ("slot_views", "schedule_views", "resolve", "matches"):
+    for name in ("slot_views", "schedule_views", "resolve", "matches", "next_cursor"):
         assert not inspect.iscoroutinefunction(getattr(AsyncHaau3, name))
 
 
