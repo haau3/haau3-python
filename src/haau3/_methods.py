@@ -82,7 +82,7 @@ class SyncMethods:
         id: str,
         /,
         *,
-        npi: Sequence[str],
+        npi: str | Sequence[str],
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -112,7 +112,7 @@ class SyncMethods:
         code: str,
         system: str | None = None,
         version: str | None = None,
-        property: str | Sequence[str] | None = None,
+        property: str | str | Sequence[str] | None = None,
         display_language: str | None = None,
         date: str | None = None,
         timeout: float | None = None,
@@ -667,7 +667,7 @@ class SyncMethods:
         connection_type: str | None = None,
         status: str | None = None,
         name: str | None = None,
-        include: Sequence[Literal["Endpoint:organization"]] | None = None,
+        include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -727,7 +727,9 @@ class SyncMethods:
         organization: str | None = None,
         organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
+        include: Literal["HealthcareService:organization", "HealthcareService:location"]
+        | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -864,8 +866,8 @@ class SyncMethods:
         address_state: str | None = None,
         address_postalcode: str | None = None,
         status: str | None = None,
-        include: Sequence[Literal["Location:organization"]] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:location"]] | None = None,
+        include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]] | None = None,
+        revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -928,8 +930,16 @@ class SyncMethods:
         address_city: str | None = None,
         address_state: str | None = None,
         address_postalcode: str | None = None,
-        include: Sequence[Literal["Organization:partof"]] | None = None,
-        revinclude: Sequence[
+        include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]] | None = None,
+        revinclude: Literal[
+            "PractitionerRole:organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:participating-organization",
+            "Location:organization",
+            "Endpoint:organization",
+            "Organization:partof",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:organization",
                 "OrganizationAffiliation:primary-organization",
@@ -1006,7 +1016,12 @@ class SyncMethods:
         primary_organization: str | None = None,
         participating_organization: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "OrganizationAffiliation:participating-organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:network",
+        ]
+        | Sequence[
             Literal[
                 "OrganizationAffiliation:participating-organization",
                 "OrganizationAffiliation:primary-organization",
@@ -1069,7 +1084,9 @@ class SyncMethods:
         address_city: str | None = None,
         address_state: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:practitioner"]] | None = None,
+        revinclude: Literal["PractitionerRole:practitioner"]
+        | Sequence[Literal["PractitionerRole:practitioner"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -1137,7 +1154,14 @@ class SyncMethods:
         new_patient_from_network: str | None = None,
         new_patient: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "PractitionerRole:practitioner",
+            "PractitionerRole:organization",
+            "PractitionerRole:location",
+            "PractitionerRole:network",
+            "PractitionerRole:endpoint",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:practitioner",
                 "PractitionerRole:organization",
@@ -1258,10 +1282,9 @@ class SyncMethods:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Schedule:actor"]] | None = None,
-        include_iterate: Sequence[
-            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
-        ]
+        include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
         | None = None,
         count: int | None = None,
         page: str | None = None,
@@ -1322,7 +1345,7 @@ class SyncMethods:
         self,
         *,
         status: str | None = None,
-        start: Sequence[str] | None = None,
+        start: str | Sequence[str] | None = None,
         appointment_type: str | None = None,
         schedule: str | None = None,
         service_type: str | None = None,
@@ -1336,8 +1359,11 @@ class SyncMethods:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Slot:schedule"]] | None = None,
-        include_iterate: Sequence[
+        include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Literal[
+            "Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"
+        ]
+        | Sequence[
             Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
         ]
         | None = None,
@@ -1709,7 +1735,7 @@ class AsyncMethods:
         id: str,
         /,
         *,
-        npi: Sequence[str],
+        npi: str | Sequence[str],
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -1741,7 +1767,7 @@ class AsyncMethods:
         code: str,
         system: str | None = None,
         version: str | None = None,
-        property: str | Sequence[str] | None = None,
+        property: str | str | Sequence[str] | None = None,
         display_language: str | None = None,
         date: str | None = None,
         timeout: float | None = None,
@@ -2348,7 +2374,7 @@ class AsyncMethods:
         connection_type: str | None = None,
         status: str | None = None,
         name: str | None = None,
-        include: Sequence[Literal["Endpoint:organization"]] | None = None,
+        include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -2410,7 +2436,9 @@ class AsyncMethods:
         organization: str | None = None,
         organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
+        include: Literal["HealthcareService:organization", "HealthcareService:location"]
+        | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -2551,8 +2579,8 @@ class AsyncMethods:
         address_state: str | None = None,
         address_postalcode: str | None = None,
         status: str | None = None,
-        include: Sequence[Literal["Location:organization"]] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:location"]] | None = None,
+        include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]] | None = None,
+        revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -2617,8 +2645,16 @@ class AsyncMethods:
         address_city: str | None = None,
         address_state: str | None = None,
         address_postalcode: str | None = None,
-        include: Sequence[Literal["Organization:partof"]] | None = None,
-        revinclude: Sequence[
+        include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]] | None = None,
+        revinclude: Literal[
+            "PractitionerRole:organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:participating-organization",
+            "Location:organization",
+            "Endpoint:organization",
+            "Organization:partof",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:organization",
                 "OrganizationAffiliation:primary-organization",
@@ -2697,7 +2733,12 @@ class AsyncMethods:
         primary_organization: str | None = None,
         participating_organization: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "OrganizationAffiliation:participating-organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:network",
+        ]
+        | Sequence[
             Literal[
                 "OrganizationAffiliation:participating-organization",
                 "OrganizationAffiliation:primary-organization",
@@ -2762,7 +2803,9 @@ class AsyncMethods:
         address_city: str | None = None,
         address_state: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:practitioner"]] | None = None,
+        revinclude: Literal["PractitionerRole:practitioner"]
+        | Sequence[Literal["PractitionerRole:practitioner"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -2832,7 +2875,14 @@ class AsyncMethods:
         new_patient_from_network: str | None = None,
         new_patient: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "PractitionerRole:practitioner",
+            "PractitionerRole:organization",
+            "PractitionerRole:location",
+            "PractitionerRole:network",
+            "PractitionerRole:endpoint",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:practitioner",
                 "PractitionerRole:organization",
@@ -2957,10 +3007,9 @@ class AsyncMethods:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Schedule:actor"]] | None = None,
-        include_iterate: Sequence[
-            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
-        ]
+        include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
         | None = None,
         count: int | None = None,
         page: str | None = None,
@@ -3023,7 +3072,7 @@ class AsyncMethods:
         self,
         *,
         status: str | None = None,
-        start: Sequence[str] | None = None,
+        start: str | Sequence[str] | None = None,
         appointment_type: str | None = None,
         schedule: str | None = None,
         service_type: str | None = None,
@@ -3037,8 +3086,11 @@ class AsyncMethods:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Slot:schedule"]] | None = None,
-        include_iterate: Sequence[
+        include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Literal[
+            "Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"
+        ]
+        | Sequence[
             Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
         ]
         | None = None,
@@ -3432,7 +3484,7 @@ class SyncWithResponse:
         id: str,
         /,
         *,
-        npi: Sequence[str],
+        npi: str | Sequence[str],
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -3453,7 +3505,7 @@ class SyncWithResponse:
         code: str,
         system: str | None = None,
         version: str | None = None,
-        property: str | Sequence[str] | None = None,
+        property: str | str | Sequence[str] | None = None,
         display_language: str | None = None,
         date: str | None = None,
         timeout: float | None = None,
@@ -3854,7 +3906,7 @@ class SyncWithResponse:
         connection_type: str | None = None,
         status: str | None = None,
         name: str | None = None,
-        include: Sequence[Literal["Endpoint:organization"]] | None = None,
+        include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -3897,7 +3949,9 @@ class SyncWithResponse:
         organization: str | None = None,
         organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
+        include: Literal["HealthcareService:organization", "HealthcareService:location"]
+        | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -3980,8 +4034,8 @@ class SyncWithResponse:
         address_state: str | None = None,
         address_postalcode: str | None = None,
         status: str | None = None,
-        include: Sequence[Literal["Location:organization"]] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:location"]] | None = None,
+        include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]] | None = None,
+        revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -4024,8 +4078,16 @@ class SyncWithResponse:
         address_city: str | None = None,
         address_state: str | None = None,
         address_postalcode: str | None = None,
-        include: Sequence[Literal["Organization:partof"]] | None = None,
-        revinclude: Sequence[
+        include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]] | None = None,
+        revinclude: Literal[
+            "PractitionerRole:organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:participating-organization",
+            "Location:organization",
+            "Endpoint:organization",
+            "Organization:partof",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:organization",
                 "OrganizationAffiliation:primary-organization",
@@ -4076,7 +4138,12 @@ class SyncWithResponse:
         primary_organization: str | None = None,
         participating_organization: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "OrganizationAffiliation:participating-organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:network",
+        ]
+        | Sequence[
             Literal[
                 "OrganizationAffiliation:participating-organization",
                 "OrganizationAffiliation:primary-organization",
@@ -4122,7 +4189,9 @@ class SyncWithResponse:
         address_city: str | None = None,
         address_state: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:practitioner"]] | None = None,
+        revinclude: Literal["PractitionerRole:practitioner"]
+        | Sequence[Literal["PractitionerRole:practitioner"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -4166,7 +4235,14 @@ class SyncWithResponse:
         new_patient_from_network: str | None = None,
         new_patient: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "PractitionerRole:practitioner",
+            "PractitionerRole:organization",
+            "PractitionerRole:location",
+            "PractitionerRole:network",
+            "PractitionerRole:endpoint",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:practitioner",
                 "PractitionerRole:organization",
@@ -4243,10 +4319,9 @@ class SyncWithResponse:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Schedule:actor"]] | None = None,
-        include_iterate: Sequence[
-            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
-        ]
+        include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
         | None = None,
         count: int | None = None,
         page: str | None = None,
@@ -4282,7 +4357,7 @@ class SyncWithResponse:
         self,
         *,
         status: str | None = None,
-        start: Sequence[str] | None = None,
+        start: str | Sequence[str] | None = None,
         appointment_type: str | None = None,
         schedule: str | None = None,
         service_type: str | None = None,
@@ -4296,8 +4371,11 @@ class SyncWithResponse:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Slot:schedule"]] | None = None,
-        include_iterate: Sequence[
+        include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Literal[
+            "Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"
+        ]
+        | Sequence[
             Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
         ]
         | None = None,
@@ -4580,7 +4658,7 @@ class AsyncWithResponse:
         id: str,
         /,
         *,
-        npi: Sequence[str],
+        npi: str | Sequence[str],
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -4601,7 +4679,7 @@ class AsyncWithResponse:
         code: str,
         system: str | None = None,
         version: str | None = None,
-        property: str | Sequence[str] | None = None,
+        property: str | str | Sequence[str] | None = None,
         display_language: str | None = None,
         date: str | None = None,
         timeout: float | None = None,
@@ -5002,7 +5080,7 @@ class AsyncWithResponse:
         connection_type: str | None = None,
         status: str | None = None,
         name: str | None = None,
-        include: Sequence[Literal["Endpoint:organization"]] | None = None,
+        include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -5045,7 +5123,9 @@ class AsyncWithResponse:
         organization: str | None = None,
         organization_identifier: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
+        include: Literal["HealthcareService:organization", "HealthcareService:location"]
+        | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -5128,8 +5208,8 @@ class AsyncWithResponse:
         address_state: str | None = None,
         address_postalcode: str | None = None,
         status: str | None = None,
-        include: Sequence[Literal["Location:organization"]] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:location"]] | None = None,
+        include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]] | None = None,
+        revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]] | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -5172,8 +5252,16 @@ class AsyncWithResponse:
         address_city: str | None = None,
         address_state: str | None = None,
         address_postalcode: str | None = None,
-        include: Sequence[Literal["Organization:partof"]] | None = None,
-        revinclude: Sequence[
+        include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]] | None = None,
+        revinclude: Literal[
+            "PractitionerRole:organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:participating-organization",
+            "Location:organization",
+            "Endpoint:organization",
+            "Organization:partof",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:organization",
                 "OrganizationAffiliation:primary-organization",
@@ -5224,7 +5312,12 @@ class AsyncWithResponse:
         primary_organization: str | None = None,
         participating_organization: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "OrganizationAffiliation:participating-organization",
+            "OrganizationAffiliation:primary-organization",
+            "OrganizationAffiliation:network",
+        ]
+        | Sequence[
             Literal[
                 "OrganizationAffiliation:participating-organization",
                 "OrganizationAffiliation:primary-organization",
@@ -5270,7 +5363,9 @@ class AsyncWithResponse:
         address_city: str | None = None,
         address_state: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        revinclude: Sequence[Literal["PractitionerRole:practitioner"]] | None = None,
+        revinclude: Literal["PractitionerRole:practitioner"]
+        | Sequence[Literal["PractitionerRole:practitioner"]]
+        | None = None,
         id: str | None = None,
         summary: Literal["count"] | None = None,
         count: int | None = None,
@@ -5314,7 +5409,14 @@ class AsyncWithResponse:
         new_patient_from_network: str | None = None,
         new_patient: str | None = None,
         active: bool | Literal["true", "false"] | None = None,
-        include: Sequence[
+        include: Literal[
+            "PractitionerRole:practitioner",
+            "PractitionerRole:organization",
+            "PractitionerRole:location",
+            "PractitionerRole:network",
+            "PractitionerRole:endpoint",
+        ]
+        | Sequence[
             Literal[
                 "PractitionerRole:practitioner",
                 "PractitionerRole:organization",
@@ -5391,10 +5493,9 @@ class AsyncWithResponse:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Schedule:actor"]] | None = None,
-        include_iterate: Sequence[
-            Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
-        ]
+        include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]] | None = None,
+        include_iterate: Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
         | None = None,
         count: int | None = None,
         page: str | None = None,
@@ -5430,7 +5531,7 @@ class AsyncWithResponse:
         self,
         *,
         status: str | None = None,
-        start: Sequence[str] | None = None,
+        start: str | Sequence[str] | None = None,
         appointment_type: str | None = None,
         schedule: str | None = None,
         service_type: str | None = None,
@@ -5444,8 +5545,11 @@ class AsyncWithResponse:
         location_physical_type: str | None = None,
         source: str | None = None,
         source_below: str | None = None,
-        include: Sequence[Literal["Slot:schedule"]] | None = None,
-        include_iterate: Sequence[
+        include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]] | None = None,
+        include_iterate: Literal[
+            "Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"
+        ]
+        | Sequence[
             Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
         ]
         | None = None,

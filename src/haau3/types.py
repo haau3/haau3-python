@@ -19,7 +19,7 @@ from . import fhir
 class CheckInsurancePlanNetworkQuery(TypedDict, total=False):
     """The query parameters of `check_insurance_plan_network`, by their Python names, to pass as `**query`."""
 
-    npi: Required[Sequence[str]]
+    npi: Required[str | Sequence[str]]
 
 
 CheckInsurancePlanNetworkResponse: TypeAlias = fhir.Parameters
@@ -32,7 +32,7 @@ class CodeSystemLookupQuery(TypedDict, total=False):
     code: Required[str]
     system: str
     version: str
-    property: str | Sequence[str]
+    property: str | str | Sequence[str]
     display_language: str
     date: str
 
@@ -149,7 +149,7 @@ class SearchEndpointQuery(TypedDict, total=False):
     connection_type: str
     status: str
     name: str
-    include: Sequence[Literal["Endpoint:organization"]]
+    include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]]
     id: str
     summary: Literal["count"]
     count: int
@@ -174,7 +174,10 @@ class SearchHealthcareServiceQuery(TypedDict, total=False):
     organization: str
     organization_identifier: str
     active: bool | Literal["true", "false"]
-    include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+    include: (
+        Literal["HealthcareService:organization", "HealthcareService:location"]
+        | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -213,8 +216,8 @@ class SearchLocationQuery(TypedDict, total=False):
     address_state: str
     address_postalcode: str
     status: str
-    include: Sequence[Literal["Location:organization"]]
-    revinclude: Sequence[Literal["PractitionerRole:location"]]
+    include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]]
+    revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]]
     id: str
     summary: Literal["count"]
     count: int
@@ -236,8 +239,8 @@ class SearchOrganizationQuery(TypedDict, total=False):
     address_city: str
     address_state: str
     address_postalcode: str
-    include: Sequence[Literal["Organization:partof"]]
-    revinclude: Sequence[
+    include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]]
+    revinclude: (
         Literal[
             "PractitionerRole:organization",
             "OrganizationAffiliation:primary-organization",
@@ -246,7 +249,17 @@ class SearchOrganizationQuery(TypedDict, total=False):
             "Endpoint:organization",
             "Organization:partof",
         ]
-    ]
+        | Sequence[
+            Literal[
+                "PractitionerRole:organization",
+                "OrganizationAffiliation:primary-organization",
+                "OrganizationAffiliation:participating-organization",
+                "Location:organization",
+                "Endpoint:organization",
+                "Organization:partof",
+            ]
+        ]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -264,13 +277,20 @@ class SearchOrganizationAffiliationQuery(TypedDict, total=False):
     primary_organization: str
     participating_organization: str
     active: bool | Literal["true", "false"]
-    include: Sequence[
+    include: (
         Literal[
             "OrganizationAffiliation:participating-organization",
             "OrganizationAffiliation:primary-organization",
             "OrganizationAffiliation:network",
         ]
-    ]
+        | Sequence[
+            Literal[
+                "OrganizationAffiliation:participating-organization",
+                "OrganizationAffiliation:primary-organization",
+                "OrganizationAffiliation:network",
+            ]
+        ]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -291,7 +311,7 @@ class SearchPractitionerQuery(TypedDict, total=False):
     address_city: str
     address_state: str
     active: bool | Literal["true", "false"]
-    revinclude: Sequence[Literal["PractitionerRole:practitioner"]]
+    revinclude: Literal["PractitionerRole:practitioner"] | Sequence[Literal["PractitionerRole:practitioner"]]
     id: str
     summary: Literal["count"]
     count: int
@@ -314,7 +334,7 @@ class SearchPractitionerRoleQuery(TypedDict, total=False):
     new_patient_from_network: str
     new_patient: str
     active: bool | Literal["true", "false"]
-    include: Sequence[
+    include: (
         Literal[
             "PractitionerRole:practitioner",
             "PractitionerRole:organization",
@@ -322,7 +342,16 @@ class SearchPractitionerRoleQuery(TypedDict, total=False):
             "PractitionerRole:network",
             "PractitionerRole:endpoint",
         ]
-    ]
+        | Sequence[
+            Literal[
+                "PractitionerRole:practitioner",
+                "PractitionerRole:organization",
+                "PractitionerRole:location",
+                "PractitionerRole:network",
+                "PractitionerRole:endpoint",
+            ]
+        ]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -356,8 +385,11 @@ class SearchScheduleQuery(TypedDict, total=False):
     location_physical_type: str
     source: str
     source_below: str
-    include: Sequence[Literal["Schedule:actor"]]
-    include_iterate: Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
+    include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]]
+    include_iterate: (
+        Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
+    )
     count: int
     page: str
 
@@ -370,7 +402,7 @@ class SearchSlotQuery(TypedDict, total=False):
     """The query parameters of `search_slot`, by their Python names, to pass as `**query`."""
 
     status: str
-    start: Sequence[str]
+    start: str | Sequence[str]
     appointment_type: str
     schedule: str
     service_type: str
@@ -384,10 +416,13 @@ class SearchSlotQuery(TypedDict, total=False):
     location_physical_type: str
     source: str
     source_below: str
-    include: Sequence[Literal["Slot:schedule"]]
-    include_iterate: Sequence[
+    include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]]
+    include_iterate: (
         Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
-    ]
+        | Sequence[
+            Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+    )
     count: int
     page: str
 

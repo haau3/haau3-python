@@ -97,7 +97,7 @@ __all__ = [
 ]
 
 
-def check_insurance_plan_network(id: str, /, *, npi: Sequence[str]) -> Call[fhir.Parameters]:
+def check_insurance_plan_network(id: str, /, *, npi: str | Sequence[str]) -> Call[fhir.Parameters]:
     """Check providers against a plan's network, as one entry of a batch. Called as `Haau3.check_insurance_plan_network` is.
 
     `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`
@@ -110,7 +110,7 @@ def code_system_lookup(
     code: str,
     system: str | None = None,
     version: str | None = None,
-    property: str | Sequence[str] | None = None,
+    property: str | str | Sequence[str] | None = None,
     display_language: str | None = None,
     date: str | None = None,
 ) -> Call[fhir.Parameters]:
@@ -293,7 +293,7 @@ def search_endpoint(
     connection_type: str | None = None,
     status: str | None = None,
     name: str | None = None,
-    include: Sequence[Literal["Endpoint:organization"]] | None = None,
+    include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]] | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -334,7 +334,9 @@ def search_healthcare_service(
     organization: str | None = None,
     organization_identifier: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
+    include: Literal["HealthcareService:organization", "HealthcareService:location"]
+    | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+    | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -413,8 +415,8 @@ def search_location(
     address_state: str | None = None,
     address_postalcode: str | None = None,
     status: str | None = None,
-    include: Sequence[Literal["Location:organization"]] | None = None,
-    revinclude: Sequence[Literal["PractitionerRole:location"]] | None = None,
+    include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]] | None = None,
+    revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]] | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -455,8 +457,16 @@ def search_organization(
     address_city: str | None = None,
     address_state: str | None = None,
     address_postalcode: str | None = None,
-    include: Sequence[Literal["Organization:partof"]] | None = None,
-    revinclude: Sequence[
+    include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]] | None = None,
+    revinclude: Literal[
+        "PractitionerRole:organization",
+        "OrganizationAffiliation:primary-organization",
+        "OrganizationAffiliation:participating-organization",
+        "Location:organization",
+        "Endpoint:organization",
+        "Organization:partof",
+    ]
+    | Sequence[
         Literal[
             "PractitionerRole:organization",
             "OrganizationAffiliation:primary-organization",
@@ -505,7 +515,12 @@ def search_organization_affiliation(
     primary_organization: str | None = None,
     participating_organization: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    include: Sequence[
+    include: Literal[
+        "OrganizationAffiliation:participating-organization",
+        "OrganizationAffiliation:primary-organization",
+        "OrganizationAffiliation:network",
+    ]
+    | Sequence[
         Literal[
             "OrganizationAffiliation:participating-organization",
             "OrganizationAffiliation:primary-organization",
@@ -549,7 +564,9 @@ def search_practitioner(
     address_city: str | None = None,
     address_state: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    revinclude: Sequence[Literal["PractitionerRole:practitioner"]] | None = None,
+    revinclude: Literal["PractitionerRole:practitioner"]
+    | Sequence[Literal["PractitionerRole:practitioner"]]
+    | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -591,7 +608,14 @@ def search_practitioner_role(
     new_patient_from_network: str | None = None,
     new_patient: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    include: Sequence[
+    include: Literal[
+        "PractitionerRole:practitioner",
+        "PractitionerRole:organization",
+        "PractitionerRole:location",
+        "PractitionerRole:network",
+        "PractitionerRole:endpoint",
+    ]
+    | Sequence[
         Literal[
             "PractitionerRole:practitioner",
             "PractitionerRole:organization",
@@ -660,8 +684,9 @@ def search_schedule(
     location_physical_type: str | None = None,
     source: str | None = None,
     source_below: str | None = None,
-    include: Sequence[Literal["Schedule:actor"]] | None = None,
-    include_iterate: Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
+    include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]] | None = None,
+    include_iterate: Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+    | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
     | None = None,
     count: int | None = None,
     page: str | None = None,
@@ -695,7 +720,7 @@ def search_schedule(
 def search_slot(
     *,
     status: str | None = None,
-    start: Sequence[str] | None = None,
+    start: str | Sequence[str] | None = None,
     appointment_type: str | None = None,
     schedule: str | None = None,
     service_type: str | None = None,
@@ -709,8 +734,11 @@ def search_slot(
     location_physical_type: str | None = None,
     source: str | None = None,
     source_below: str | None = None,
-    include: Sequence[Literal["Slot:schedule"]] | None = None,
-    include_iterate: Sequence[
+    include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]] | None = None,
+    include_iterate: Literal[
+        "Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"
+    ]
+    | Sequence[
         Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
     ]
     | None = None,

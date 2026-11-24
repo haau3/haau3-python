@@ -231,8 +231,10 @@ class Spec:
             return " | ".join(options)
         kind = schema.get("type")
         if kind == "array":
+            # One value goes out as a list of one does, so a parameter the spec takes as a list takes one
+            # value too: include="Slot:schedule", as the spec's own example writes it.
             item = self._query_type(op_id, {"schema": schema["items"]})
-            return f"Sequence[{item}]"
+            return f"{item} | Sequence[{item}]"
         if "enum" in schema:
             values = schema["enum"]
             literal = "Literal[" + ", ".join(repr(v) for v in values) + "]"
