@@ -12,6 +12,7 @@ import httpx2
 
 from ._app_info import AppInfo, user_agent
 from ._body import Hidden, Secret
+from ._bundles import next_cursor as _next_cursor
 from ._encode import QueryValue, checked_base_url, origin
 from ._env_file import unloaded_env_file
 from ._errors import Haau3Error, NoAnswerError
@@ -508,6 +509,37 @@ class Haau3(SyncMethods):
         for page in self._held_pages(held, options):
             yield cast("Bundle", page.reveal())
 
+    def next_cursor(self, page: Bundle) -> str | None:
+        """The cursor for the page after this one, with no request: the `page` value of the page's `next`
+        link, or None on the last page.
+
+        It is for a search continued in a later request, such as a web page's "Load more", where
+        `pages()` cannot hold the page between requests.
+
+        ```python
+        from datetime import datetime, timezone
+
+        # The search, its moment chosen once and kept: the cursor belongs to it.
+        search = {"status": "free", "start": ["ge" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]}
+        first = client.search_slot_with_includes(**search)
+        cursor = client.next_cursor(first)  # None on the last page
+        # Later, in another request, with the same search:
+        if cursor:
+            second = client.search_slot_with_includes(**search, page=cursor)
+        ```
+
+        A cursor belongs to its search: send it as `page` with every other parameter exactly as before.
+        A Slot, Schedule or plan search refuses a cursor sent with its search changed (a 400), and that
+        includes a parameter the API filled in for you, as the page's `self` link shows: send a Slot
+        search's `status` and `start` yourself when you will page this way. A cursor does not last: the
+        provider directory's searches say their cursors expire, and a plan search answers 410 once the
+        plans are updated, so start the search again. `pages()` follows the link itself.
+
+        Raises a `Haau3Error` when the next link is not a URL, or carries no cursor or two. The plain
+        function `haau3.next_cursor()` does the same with no client.
+        """
+        return _next_cursor(page)
+
     def resources(
         self,
         first: Bundle,
@@ -843,6 +875,18 @@ class AsyncHaau3(AsyncMethods):
         del first
         async for page in self._held_pages(held, options):
             yield cast("Bundle", page.reveal())
+
+    def next_cursor(self, page: Bundle) -> str | None:
+        """The cursor for the page after this one, with no request, as `Haau3.next_cursor` reads it.
+
+        ```python
+        first = await client.search_slot_with_includes(**search)
+        cursor = client.next_cursor(first)  # None on the last page
+        if cursor:
+            second = await client.search_slot_with_includes(**search, page=cursor)
+        ```
+        """
+        return _next_cursor(page)
 
     async def resources(
         self,

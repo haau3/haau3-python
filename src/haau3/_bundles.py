@@ -15,6 +15,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
+from urllib.parse import parse_qs, urlsplit
 
 from ._errors import Haau3Error
 
@@ -184,3 +185,39 @@ def matches_in(page: Bundle, type: str | None = None) -> list[Resource]:
         if resource is not None and is_match(entry) and (type is None or _type_of(resource) == type):
             found.append(resource)
     return found
+
+
+def next_cursor(page: Bundle) -> str | None:
+    """The cursor of a search page's `next` link: its `page` value, or None on the last page.
+
+    A search takes the cursor back as `page` for the page after this one. A next link that is not a
+    URL, or that carries no cursor or two, raises a `Haau3Error`: reading it as the last page would
+    end a caller's paging with no error.
+    """
+    links: object = page.get("link")
+    next_url: object = None
+    for link in cast("list[object]", links) if isinstance(links, list) else []:
+        fields: Mapping[str, object] = cast("Mapping[str, object]", link) if isinstance(link, dict) else {}
+        if fields.get("relation") == "next":
+            next_url = fields.get("url")
+            break
+    # No next link: this is the last page.
+    if next_url is None:
+        return None
+    if not isinstance(next_url, str):
+        raise Haau3Error("The page's next link is not a URL, so it names no next page.")
+    try:
+        query = urlsplit(next_url).query
+    except ValueError:
+        raise Haau3Error("The page's next link is not a URL, so it names no next page.") from None
+    cursors = parse_qs(query, keep_blank_values=True).get("page", [])
+    if len(cursors) > 1:
+        raise Haau3Error(
+            f"The page's next link carries {len(cursors)} page cursors, so which one continues the search is ambiguous."
+        )
+    if not cursors or not cursors[0]:
+        raise Haau3Error(
+            "The page's next link carries no page cursor, so the next page is reached only by following the link,"
+            " as pages() does."
+        )
+    return cursors[0]
