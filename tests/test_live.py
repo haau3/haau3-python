@@ -125,6 +125,17 @@ def test_every_kind_of_call_against_production() -> None:
 
 
 @not_on_a_test_key
+def test_a_city_with_a_comma_escaped_answers_and_unescaped_is_refused() -> None:
+    """Measured 2026-11-24: "Austin," unescaped is a 400 (an empty value), escaped a search that finds none."""
+    with Haau3() as client:
+        escaped = client.search_slot(location_address_city=haau3.escape_search_value("Austin,"), count=1)
+        assert escaped.get("total") == 0
+        with pytest.raises(RefusedError) as raised:
+            client.search_slot(location_address_city="Austin,", count=1)
+        assert raised.value.status == 400
+
+
+@not_on_a_test_key
 def test_a_slot_search_continued_in_a_later_request_with_next_cursor() -> None:
     """Page two by its cursor answers another Slot; the cursor with a filter changed is refused.
 
