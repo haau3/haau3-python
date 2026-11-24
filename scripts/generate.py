@@ -3,8 +3,8 @@
 - src/haau3/fhir.py: FHIR R4 as TypedDicts, from HL7's own schema (scripts/fhir_emit.py), for the
   resource types the spec names (a component whose `resourceType` is a `const`) and those its
   request examples carry.
-- src/haau3/_components.py: the spec's other components (Scheduling's records and answers, Problem)
-  as TypedDicts, by datamodel-code-generator.
+- src/haau3/_components.py: the spec's other components, every one that is not a FHIR resource, as
+  TypedDicts, by datamodel-code-generator. A spec that declares none gets a module that defines none.
 - src/haau3/_operations.py: one Operation per operation: its method, path and the FHIR resource types
   it answers with.
 - src/haau3/_methods.py: one method per operation, named by its operationId in snake_case, on the
@@ -581,6 +581,11 @@ def _batch_overloads(client: str, refused: list[str], *, asynchronous: bool, wit
     return lines
 
 
+def _components_import(names: list[str]) -> list[str]:
+    """The import of the spec's own components a module names, or none when it names none."""
+    return [f"from ._components import {', '.join(names)}"] if names else []
+
+
 def methods_module(spec: Spec) -> str:
     ops = spec.ops
     own = sorted({o.response for o in ops if not o.response.startswith(("fhir.", "Union["))})
@@ -598,7 +603,7 @@ def methods_module(spec: Spec) -> str:
         "from . import fhir",
         "from ._batch import BatchResult, Call",
         "from ._body import HeldHeaders, Hidden",
-        f"from ._components import {', '.join(own)}",
+        *_components_import(own),
         f"from ._operations import {', '.join(o.const for o in ops)}",
         "from ._response import Options, Response\n",
         "if TYPE_CHECKING:",
@@ -627,7 +632,7 @@ def operations_module(spec: Spec) -> str:
         "from __future__ import annotations\n",
         "from typing import Final, Union\n",
         "from . import fhir",
-        f"from ._components import {', '.join(own)}",
+        *_components_import(own),
         "from ._operation import DeclaredHeader, Operation\n",
         f"SPEC_VERSION: Final[str] = {spec.spec['info']['version']!r}",
         '"""The version of the API\'s spec this SDK was generated from."""\n',
@@ -1052,12 +1057,20 @@ def fhir_module(spec: Spec) -> str:
     return fhir_emit.emit(json.loads(raw), sorted(set(spec.fhir) | set(spec.carried)))
 
 
+COMPONENTS_HEADER = "The spec's own components: every one that is not a FHIR resource."
+
+
 def components_module(spec: Spec) -> str:
     """The spec's own components, by datamodel-code-generator, from a copy without the bounds and formats.
 
     A `format: date-time` or a bound would otherwise become a type or a constraint the plain dicts
-    an answer is made of cannot honour.
+    an answer is made of cannot honour. A spec whose every component is a FHIR resource gets a module
+    that says so and defines nothing: datamodel-code-generator refuses a document with no schemas.
     """
+    if not spec.own:
+        return (
+            header(COMPONENTS_HEADER).rstrip() + "\n\n# The spec declares none: every component is a FHIR resource.\n"
+        )
     drop = {
         "format",
         "pattern",
@@ -1114,10 +1127,7 @@ def components_module(spec: Spec) -> str:
                 "--formatters",
                 "ruff-format",
                 "--custom-file-header",
-                header(
-                    "The spec's own components: Scheduling's records and answers, and the problem other services answer with."
-                ).rstrip()
-                + "\n\n# ruff: noqa",
+                header(COMPONENTS_HEADER).rstrip() + "\n\n# ruff: noqa",
             ],
             check=True,
             capture_output=True,
