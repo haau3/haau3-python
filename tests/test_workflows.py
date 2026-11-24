@@ -48,6 +48,29 @@ def test_the_public_text_check_runs_on_edits_and_never_on_pull_request_target() 
     assert "--text-env PR_TITLE --text-env PR_BODY" in text
 
 
+def _public_text_run(**env: str) -> str:
+    """What the Public text step runs for a pull request, with the checker as `echo`."""
+    import subprocess
+
+    step = WORKFLOWS["public-text.yml"].split("run: |\n", 1)[1]
+    script = "\n".join(line.removeprefix("          ") for line in step.splitlines())
+    script = script.replace("python3 -I scripts/check_public_text.py", "echo check")
+    base = {"AUTHOR": "someone", "STATE": "open", "BASE": "b", "HEAD": "h", "PATH": "/usr/bin:/bin"}
+    return subprocess.run(
+        ["bash", "-c", script], env={**base, **env}, capture_output=True, text=True, check=True
+    ).stdout
+
+
+def test_an_edit_to_a_closed_pull_request_checks_its_title_and_description_alone() -> None:
+    """Its commits were checked while it was open, and its branch may be gone, so they are not read."""
+    assert "STATE: ${{ github.event.pull_request.state }}" in WORKFLOWS["public-text.yml"]
+    assert _public_text_run(STATE="closed") == "check --no-files --text-env PR_TITLE --text-env PR_BODY\n"
+    # The control: an open pull request's commits are read as well.
+    assert _public_text_run(STATE="open") == "check --commits b..h --text-env PR_TITLE --text-env PR_BODY\n"
+    # And Dependabot's files alone, open or closed.
+    assert _public_text_run(AUTHOR="dependabot[bot]", STATE="closed") == "check\n"
+
+
 def test_regeneration_mints_the_token_after_the_generator_and_checks_oasdiff() -> None:
     text = WORKFLOWS["regenerate.yml"]
     assert text.index("scripts/generate.py") < text.index("create-github-app-token")
