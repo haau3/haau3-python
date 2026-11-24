@@ -223,6 +223,8 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     not_a_code: haau3.PatientType = "everyone"  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
     client.matches(found, "NotAResource")  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
     _ = not_a_code
+    # A view holds dicts, so it cannot be hashed. pyright alone checks hashability; mypy does not.
+    _ = {client.slot_views(found)[0]}  # pyright: ignore[reportUnhashable]
     _ = calls.reconcile_medications  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]
     client.search_slot(include="Slot:subject")  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
     client.check_insurance_plan_network("H3359-038-000")  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]

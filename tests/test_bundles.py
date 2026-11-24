@@ -217,3 +217,37 @@ def test_the_plain_functions_and_the_async_clients_methods_give_the_same(recorde
         assert reader.matches(bundle, "HealthcareService") == [SERVICE]
         assert reader.resolve(bundle, SERVICE["providedBy"], from_=SERVICE, type="Organization") is ORGANIZATION
     assert recorder.requests == []
+
+
+def test_resolve_matches_a_reference_as_a_whole_string(client: Haau3) -> None:
+    """`$` in Python also matches before a final newline; a reference with one names nothing."""
+    assert client.resolve(page(), "Organization/Organization-1234567893\n") is None
+    assert client.resolve(page(), f"{BASE}/Location/{STORE['id']}\n") is None
+    assert client.resolve(page(), f"{BASE}/Location/{STORE['id']}/_history/1\n") is None
+    # The control: the same reference without the newline.
+    assert client.resolve(page(), "Organization/Organization-1234567893") is ORGANIZATION
+    # A versioned absolute reference, where a prefix would name a version the page holds.
+    v1: Any = {"resourceType": "Organization", "id": "o", "meta": {"versionId": "1"}}
+    history: Any = {
+        "resourceType": "Bundle",
+        "type": "history",
+        "entry": [{"fullUrl": f"{BASE}/Organization/o", "resource": v1}],
+    }
+    assert client.resolve(history, f"{BASE}/Organization/o/_history/1\n") is None
+    assert client.resolve(history, f"{BASE}/Organization/o/_history/1") is v1
+    # And an entry whose address has one is at no RESTful address.
+    odd: Any = {"resourceType": "Bundle", "entry": [{"fullUrl": f"{BASE}/Organization/o\n", "resource": v1}]}
+    assert client.resolve(odd, "Organization/o") is None
+
+
+def test_matches_and_resolve_pass_over_what_is_not_a_fhir_shape(client: Haau3) -> None:
+    bundle = page()
+    bundle["entry"] += [None, {"resource": "not a resource"}, {"resource": ORGANIZATION, "search": None}]
+    assert [r.get("id") for r in client.matches(bundle)] == [SERVICE["id"], ORGANIZATION["id"]]
+    odd: Any = {"resourceType": "Claim", "contained": None, "provider": {"reference": "#x"}}
+    bundle["entry"].append({"resource": odd})
+    assert client.resolve(bundle, odd["provider"], from_=odd) is None
+    not_a_reference: Any = ["Organization/Organization-1234567893"]
+    assert client.resolve(bundle, not_a_reference) is None
+    no_entries: Any = {"resourceType": "Bundle", "entry": None}
+    assert client.matches(no_entries) == []

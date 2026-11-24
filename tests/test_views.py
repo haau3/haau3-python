@@ -563,3 +563,180 @@ def test_each_helper_takes_its_searchs_keywords_but_the_includes() -> None:
     ):
         taken = set(inspect.signature(helper).parameters)
         assert taken == set(inspect.signature(search).parameters) - {"include", "include_iterate"}
+
+
+# --- the review's points ----------------------------------------------------------------------------
+
+
+def test_an_included_schedules_contained_actors_resolve_from_that_schedule() -> None:
+    """The second hop: a Slot's Schedule is its own entry, and `#r` inside it is the Schedule's, not the Slot's."""
+    contained_role: Any = {
+        "resourceType": "PractitionerRole",
+        "id": "r",
+        "practitioner": {"reference": "Practitioner/p"},
+    }
+    contained_place: Any = {"resourceType": "Location", "id": "l", "name": "contained place"}
+    s: Any = {**schedule("s", "#r", "#l"), "contained": [contained_role, contained_place]}
+    [view] = slot_views(page([slot("x", "s")], [s, practitioner("p")]))
+    assert view.practitioner_roles[0] is contained_role
+    assert [p.get("id") for p in view.practitioners] == ["p"]
+    assert view.locations[0] is contained_place
+
+
+def test_an_included_schedule_at_another_base_resolves_its_actors_against_that_base() -> None:
+    """The second hop again: the Schedule's actors resolve from the Schedule's entry, not the Slot's."""
+    other = "https://other.example/fhir"
+    x: Any = {**slot("x", "s"), "schedule": {"reference": f"{other}/Schedule/s"}}
+    bundle: Any = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "entry": [
+            {"fullUrl": f"{BASE}/Slot/x", "resource": x, "search": {"mode": "match"}},
+            {
+                "fullUrl": f"{other}/Schedule/s",
+                "resource": schedule("s", "Location/a", "PractitionerRole/r"),
+                "search": {"mode": "include"},
+            },
+            {
+                "fullUrl": f"{BASE}/Location/a",
+                "resource": {**location("a"), "name": "on the API's base"},
+                "search": {"mode": "include"},
+            },
+            {
+                "fullUrl": f"{other}/Location/a",
+                "resource": {**location("a"), "name": "on the other base"},
+                "search": {"mode": "include"},
+            },
+            {"fullUrl": f"{other}/PractitionerRole/r", "resource": role("r", "p"), "search": {"mode": "include"}},
+            {
+                "fullUrl": f"{BASE}/Practitioner/p",
+                "resource": {**practitioner("p"), "name": [{"text": "on the API's base"}]},
+                "search": {"mode": "include"},
+            },
+            {
+                "fullUrl": f"{other}/Practitioner/p",
+                "resource": {**practitioner("p"), "name": [{"text": "on the other base"}]},
+                "search": {"mode": "include"},
+            },
+        ],
+    }
+    [view] = slot_views(bundle)
+    assert [place.get("name") for place in view.locations] == ["on the other base"]
+    # The third hop: the role is at the other base, so its practitioner is too.
+    assert [n.get("text") for p in view.practitioners for n in p.get("name", [])] == ["on the other base"]
+
+
+def test_a_target_of_an_actor_type_its_element_does_not_allow_is_left_out() -> None:
+    """A role's practitioner naming a Location, and a service's location naming a Practitioner, though both
+    types are Schedule actors: neither lands in the wrong list."""
+    r: Any = {"resourceType": "PractitionerRole", "id": "r", "practitioner": {"reference": "Location/a"}}
+    svc: Any = {"resourceType": "HealthcareService", "id": "svc", "location": [{"reference": "Practitioner/p"}]}
+    [view] = schedule_views(
+        page([schedule("s", "PractitionerRole/r", "HealthcareService/svc")], [r, svc, location("a"), practitioner("p")])
+    )
+    assert (view.practitioners, view.locations) == ((), ())
+    assert [x.get("id") for x in view.practitioner_roles] == ["r"]
+    assert [x.get("id") for x in view.healthcare_services] == ["svc"]
+
+
+def test_reads_the_first_patient_type_extension_that_carries_a_coding() -> None:
+    view = _view_of(
+        [
+            {"url": f"{SSL}patient-type", "valueString": "newpt"},
+            {"url": f"{SSL}patient-type", "valueCoding": {"system": ACCEPTING, "code": "existptonly"}},
+        ]
+    )
+    assert view.patient_type == "existptonly"
+
+
+def test_a_value_of_another_shape_than_fhir_gives_reads_as_absent_and_never_fails_the_page() -> None:
+    odd_place: Any = {**location("a"), "physicalType": None}
+    x = slot(
+        "x",
+        "s",
+        [
+            {"url": f"{SSL}booking-phone", "valueContactPoint": "+1-555-0100"},
+            {"url": f"{SSL}booking-deep-link", "valueUrl": ["https://book.example/x"]},
+            {"url": f"{SSL}patient-type", "valueCoding": {"system": ACCEPTING, "code": ["newpt"]}},
+            "not an extension",
+        ],
+    )
+    s: Any = {**schedule("s", "Location/a"), "actor": [{"reference": "Location/a"}, "Location/b", None]}
+    bundle = page([x], [s, odd_place])
+    bundle["entry"].append(None)
+    bundle["entry"].append({"resource": "not a resource", "search": None})
+    [view] = slot_views(bundle)
+    assert (view.booking_link, view.booking_phone, view.patient_type, view.virtual) == (None, None, None, False)
+    assert [place.get("id") for place in view.locations] == ["a"]
+    # And with no list where a list belongs.
+    bare: Any = {**schedule("s"), "actor": None}
+    assert schedule_views(page([bare]))[0].locations == ()
+    no_entries: Any = {"resourceType": "Bundle", "entry": None}
+    assert slot_views(no_entries) == []
+
+
+def test_a_view_cannot_be_hashed_and_compares_by_value() -> None:
+    bundle = page([slot("x", "s")], [schedule("s", "Location/a"), location("a")])
+    [view] = slot_views(bundle)
+    [same] = slot_views(bundle)
+    assert view == same
+    for each in (view, schedule_views(page([schedule("s")]))[0]):
+        # Unhashable by its own declaration, not by a hash over its fields raising on a dict inside.
+        assert type(each).__hash__ is None
+        with pytest.raises(TypeError, match=f"unhashable type: {type(each).__name__!r}"):
+            hash(each)
+
+
+def test_a_fastapi_route_returning_slot_views_serializes_them() -> None:
+    """pydantic reads the views' annotations at runtime, so FastAPI can serve them as a response model."""
+    pytest.importorskip("fastapi")
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    views = slot_views(spec_answer("/v1/fhir/r4/Slot"))
+    app = FastAPI()
+
+    @app.get("/slots")
+    def slots() -> list[SlotView]:
+        return views
+
+    served = TestClient(app).get("/slots")
+    assert served.status_code == 200
+    [first] = served.json()
+    assert first["booking_link"] == views[0].booking_link
+    assert first["practitioners"][0]["name"][0]["text"] == "Dr. Wei Example"
+
+
+@pytest.mark.anyio
+async def test_the_with_response_helpers_send_what_the_helpers_send(kind: str) -> None:
+    for method, arguments in (
+        ("search_slot_with_includes", {"provider_identifier": "http://hl7.org/fhir/sid/us-npi|2900000227", "count": 1}),
+        ("search_schedule_with_includes", {"location_address_city": "Boston", "page": "p2"}),
+    ):
+        plain, wrapped = Recorder(answer(200, EMPTY_SEARCH)), Recorder(answer(200, EMPTY_SEARCH))
+        await Client(kind, plain)(method, **arguments)
+        await Client(kind, wrapped).with_response(method, **arguments)
+        assert str(wrapped.last.url) == str(plain.last.url), method
+        assert "_include" in _query(wrapped)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("method", ["search_slot_with_includes", "search_schedule_with_includes"])
+@pytest.mark.parametrize("keyword", ["include", "include_iterate"])
+async def test_python_refuses_an_include_passed_to_a_with_response_helper_and_nothing_is_sent(
+    kind: str, method: str, keyword: str
+) -> None:
+    recorder = Recorder(answer(200, EMPTY_SEARCH))
+    client = Client(kind, recorder)
+    with pytest.raises(TypeError, match=f"unexpected keyword argument '{keyword}'"):
+        await client.with_response(method, **{keyword: "Schedule:actor"})
+    assert recorder.requests == []
+
+
+def test_the_with_response_helpers_take_the_helpers_keywords() -> None:
+    import inspect
+
+    for helper in ("search_slot_with_includes", "search_schedule_with_includes"):
+        expected = set(inspect.signature(getattr(haau3.Haau3, helper)).parameters)
+        for cls in (haau3.SyncWithResponse, haau3.AsyncWithResponse, haau3.AsyncHaau3):
+            assert set(inspect.signature(getattr(cls, helper)).parameters) == expected, (cls, helper)
