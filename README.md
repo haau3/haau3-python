@@ -407,17 +407,13 @@ and a search takes it back as `page`:
 from datetime import datetime, timezone
 
 # The search, its moment chosen once and kept: the cursor belongs to it.
-search = {
-    "status": "free",
-    "start": ["ge" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")],
-    "location_address_state": "TX",
-}
-first = client.search_slot_with_includes(**search)
+start = ["ge" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]
+first = client.search_slot_with_includes(status="free", start=start, location_address_state="TX")
 cursor = client.next_cursor(first)  # None on the last page
 
 # Later, in another request, with the same search:
 if cursor:
-    second = client.search_slot_with_includes(**search, page=cursor)
+    second = client.search_slot_with_includes(status="free", start=start, location_address_state="TX", page=cursor)
 ```
 
 A cursor belongs to its search: send it with every other parameter exactly as before. A Slot,

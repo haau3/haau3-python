@@ -520,12 +520,12 @@ class Haau3(SyncMethods):
         from datetime import datetime, timezone
 
         # The search, its moment chosen once and kept: the cursor belongs to it.
-        search = {"status": "free", "start": ["ge" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]}
-        first = client.search_slot_with_includes(**search)
+        start = ["ge" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]
+        first = client.search_slot_with_includes(status="free", start=start)
         cursor = client.next_cursor(first)  # None on the last page
         # Later, in another request, with the same search:
         if cursor:
-            second = client.search_slot_with_includes(**search, page=cursor)
+            second = client.search_slot_with_includes(status="free", start=start, page=cursor)
         ```
 
         A cursor belongs to its search: send it as `page` with every other parameter exactly as before.
@@ -880,10 +880,10 @@ class AsyncHaau3(AsyncMethods):
         """The cursor for the page after this one, with no request, as `Haau3.next_cursor` reads it.
 
         ```python
-        first = await client.search_slot_with_includes(**search)
+        first = await client.search_slot_with_includes(status="free", start=start)
         cursor = client.next_cursor(first)  # None on the last page
         if cursor:
-            second = await client.search_slot_with_includes(**search, page=cursor)
+            second = await client.search_slot_with_includes(status="free", start=start, page=cursor)
         ```
         """
         return _next_cursor(page)
