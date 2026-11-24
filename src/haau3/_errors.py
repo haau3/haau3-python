@@ -9,7 +9,6 @@ from typing_extensions import Required, TypedDict
 from ._body import Hidden
 
 if TYPE_CHECKING:
-    from ._components import Problem
     from .fhir import OperationOutcome
 
 ClientErrorCode = Literal[
@@ -93,8 +92,8 @@ _LOGGED = (
     "correlation_id",
     "detail",
 )
-# The bodies an error holds, which are never pickled or copied.
-_BODIES = ("_outcome", "_problem")
+# The body an error holds, which is never pickled or copied.
+_BODIES = ("_outcome",)
 
 
 def _rebuild(cls: type[Haau3Error], message: str, state: dict[str, Any]) -> Haau3Error:
@@ -143,7 +142,7 @@ class Haau3Error(Exception):
     def to_dict(self) -> ErrorDict:
         """The error as a dict that is safe to log: its name, its message and every field that is set.
 
-        Never the body the API answered with (`outcome`, `problem`) and never the error's cause.
+        Never the body the API answered with (`outcome`) and never the error's cause.
 
         ```python
         logger.warning("the plan read failed", extra={"error": error.to_dict()})
@@ -163,14 +162,13 @@ class Haau3Error(Exception):
 
 
 class _Answered(Haau3Error):
-    """An error the API answered with, which may carry the body it answered."""
+    """An error the API answered with, which may carry the OperationOutcome it answered."""
 
     attempts: int
     """How many attempts were made."""
     duration_ms: int | None
     """Milliseconds from the first attempt to the answer, waits between attempts included."""
     _outcome: Hidden[OperationOutcome] | None
-    _problem: Hidden[Problem] | None
 
     def __init__(
         self,
@@ -181,23 +179,16 @@ class _Answered(Haau3Error):
         request_id: str | None,
         correlation_id: str | None,
         outcome: Hidden[OperationOutcome] | None,
-        problem: Hidden[Problem] | None,
     ) -> None:
         super().__init__(message, request_id=request_id, correlation_id=correlation_id)
         self.attempts = attempts
         self.duration_ms = duration_ms
         self._outcome = outcome
-        self._problem = problem
 
     @property
     def outcome(self) -> OperationOutcome | None:
-        """The OperationOutcome the FHIR base answered with. Never printed when the error is."""
+        """The OperationOutcome the API answered with, when it sent one. Never printed when the error is."""
         return self._outcome.reveal() if self._outcome is not None else None
-
-    @property
-    def problem(self) -> Problem | None:
-        """The problem (RFC 9457) the other services answered with. Never printed when the error is."""
-        return self._problem.reveal() if self._problem is not None else None
 
 
 class AuthError(_Answered):
@@ -222,7 +213,6 @@ class AuthError(_Answered):
         request_id: str | None = None,
         correlation_id: str | None = None,
         outcome: Hidden[OperationOutcome] | None = None,
-        problem: Hidden[Problem] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -231,7 +221,6 @@ class AuthError(_Answered):
             request_id=request_id,
             correlation_id=correlation_id,
             outcome=outcome,
-            problem=problem,
         )
         self.status = status
         self.reason_phrase = reason_phrase
@@ -256,9 +245,8 @@ class ForbiddenError(_Answered):
     - `not-open-to-customers`: the operation is not yet open to customers, so it did not run. An
       expected answer, not a fault in the request.
 
-    Without a code, the key's organization may not make the request; `outcome` (or `problem`) says
-    why, in the API's words. Not an `AuthError`, which is
-    a key the API did not accept (401).
+    Without a code, the key's organization may not make the request; `outcome` says why, in the
+    API's words. Not an `AuthError`, which is a key the API did not accept (401).
     """
 
     status: int
@@ -278,7 +266,6 @@ class ForbiddenError(_Answered):
         request_id: str | None = None,
         correlation_id: str | None = None,
         outcome: Hidden[OperationOutcome] | None = None,
-        problem: Hidden[Problem] | None = None,
         code: str | None = None,
     ) -> None:
         super().__init__(
@@ -288,7 +275,6 @@ class ForbiddenError(_Answered):
             request_id=request_id,
             correlation_id=correlation_id,
             outcome=outcome,
-            problem=problem,
         )
         self.status = status
         self.reason_phrase = reason_phrase
@@ -321,7 +307,6 @@ class RefusedError(_Answered):
         request_id: str | None = None,
         correlation_id: str | None = None,
         outcome: Hidden[OperationOutcome] | None = None,
-        problem: Hidden[Problem] | None = None,
         code: str | None = None,
     ) -> None:
         super().__init__(
@@ -331,7 +316,6 @@ class RefusedError(_Answered):
             request_id=request_id,
             correlation_id=correlation_id,
             outcome=outcome,
-            problem=problem,
         )
         self.status = status
         self.reason_phrase = reason_phrase
@@ -369,7 +353,6 @@ class NoAnswerError(_Answered):
         correlation_id: str | None = None,
         detail: str | None = None,
         outcome: Hidden[OperationOutcome] | None = None,
-        problem: Hidden[Problem] | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -378,7 +361,6 @@ class NoAnswerError(_Answered):
             request_id=request_id,
             correlation_id=correlation_id,
             outcome=outcome,
-            problem=problem,
         )
         self.status = status
         self.reason_phrase = reason_phrase if status is not None else None

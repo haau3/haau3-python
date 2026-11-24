@@ -31,7 +31,6 @@ from ._errors import (
 from ._json import as_dict, as_list
 
 if TYPE_CHECKING:
-    from ._components import Problem
     from .fhir import OperationOutcome
 
 LONGEST_WAIT_SECONDS = 60
@@ -66,18 +65,13 @@ def standard_phrase(status: int) -> str:
 
 def api_error_code(
     outcome: Hidden[OperationOutcome] | None,
-    problem: Hidden[Problem] | None,
     systems: tuple[str, ...] = (API_ERROR_SYSTEM,),
 ) -> str | None:
     """The API's own code for why it refused a request, when it names one.
 
     A coding from one of `systems` (`api-error` by default) on an OperationOutcome's first issue that
-    has one, or a problem's `code`. A code, never words, so it is safe to log.
+    has one. A code, never words, so it is safe to log.
     """
-    if problem is not None:
-        value = as_dict(problem.reveal())
-        code = value.get("code") if value is not None else None
-        return code if isinstance(code, str) else None
     if outcome is None:
         return None
     value = as_dict(outcome.reveal())
@@ -121,19 +115,16 @@ def describe_answer(body: Hidden[object]) -> str:
     return "something that is not a FHIR resource"
 
 
-def read_error_body(body: Hidden[object] | None) -> tuple[Hidden[OperationOutcome] | None, Hidden[Problem] | None]:
-    """An error body as the SDK reads it: an OperationOutcome under the FHIR base, a problem elsewhere."""
-    if body is None:
-        return None, None
-    value = as_dict(body.reveal())
-    if value is None:
-        return None, None
-    if value.get("resourceType") == "OperationOutcome":
-        return cast("Hidden[OperationOutcome]", body), None
-    status = value.get("status")
-    if isinstance(value.get("type"), str) and isinstance(status, int) and not isinstance(status, bool):
-        return None, cast("Hidden[Problem]", body)
-    return None, None
+def read_error_body(body: Hidden[object] | None) -> Hidden[OperationOutcome] | None:
+    """The OperationOutcome an error answer carries, which every service on the FHIR base sends.
+
+    Any other body, such as the problem (RFC 9457) the API answers for an address no service serves,
+    is not attached: the error still has its status, its message and the request id.
+    """
+    value = as_dict(body.reveal()) if body is not None else None
+    if value is not None and value.get("resourceType") == "OperationOutcome":
+        return cast("Hidden[OperationOutcome]", body)
+    return None
 
 
 def retry_after_seconds(value: str | None) -> int | None:
@@ -249,7 +240,7 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
     phrase = c.reason_phrase or standard_phrase(status)
 
     def no_answer(message: str, reason: NoAnswerReason, retry_after: int | None = None) -> NoAnswerError:
-        outcome, problem = read_error_body(body) if status >= 400 else (None, None)
+        outcome = read_error_body(body) if status >= 400 else None
         return NoAnswerError(
             message,
             reason=reason,
@@ -261,7 +252,6 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
             request_id=c.request_id,
             correlation_id=c.correlation_id,
             outcome=outcome,
-            problem=problem,
         )
 
     if 200 <= status < 300:
@@ -277,9 +267,9 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
         return no_answer(f"{name} got no answer ({reason}, {status}) after {tries}.", reason, c.retry_after)
     if status < 400:
         return no_answer(f"{name} answered {status}, which is not an answer.", "unreadable")
-    outcome, problem = read_error_body(body)
+    outcome = read_error_body(body)
     if status == 403 and not c.entry:
-        code = api_error_code(outcome, problem)
+        code = api_error_code(outcome)
         why = _FORBIDDEN_REASONS.get(code, _FORBIDDEN_GENERAL) if code is not None else _FORBIDDEN_GENERAL
         return ForbiddenError(
             f"{name} was refused: {why} ({status}).",
@@ -290,7 +280,6 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
             request_id=c.request_id,
             correlation_id=c.correlation_id,
             outcome=outcome,
-            problem=problem,
             code=code,
         )
     if status == 401 and not c.entry:
@@ -304,7 +293,6 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
             request_id=c.request_id,
             correlation_id=c.correlation_id,
             outcome=outcome,
-            problem=problem,
         )
     return RefusedError(
         f"{name} was refused ({status}).",
@@ -315,6 +303,5 @@ def judge(name: str, status: int, body: Hidden[object] | None, context: Context)
         request_id=c.request_id,
         correlation_id=c.correlation_id,
         outcome=outcome,
-        problem=problem,
-        code=api_error_code(outcome, problem, (API_ERROR_SYSTEM, SANDBOX_ERROR_SYSTEM)),
+        code=api_error_code(outcome, (API_ERROR_SYSTEM, SANDBOX_ERROR_SYSTEM)),
     )
