@@ -464,6 +464,22 @@ reference with no `from_`, and for a `from_` that is not an entry of the page. `
 resource type's name and types the result, as `matches()`'s does: `client.matches(page, "Slot")` is a
 `list[fhir.Slot]`. Both are plain functions too, `haau3.resolve()` and `haau3.matches()`.
 
+## A value a person typed
+
+`escape_search_value()` escapes FHIR's special characters in a search value (`\`, `,`, `$` and `|`
+each take a `\` before them), so the API reads what a person typed as the one value it is:
+
+```python
+import haau3
+
+typed_city = "Austin, TX"  # what a person typed
+page = client.search_slot_with_includes(location_address_city=haau3.escape_search_value(typed_city))
+```
+
+Unescaped, a comma separates values the API reads as "or", so `Austin, TX` asks for two cities, and a
+trailing comma is refused with a `400`. Never escape a value you built with `,` or `|` on purpose,
+such as a list of codes or a `system|code` token.
+
 ## Slots and schedules
 
 A Slot search answers a FHIR Bundle whose matches are `Slot`s; each Slot's `Schedule`, and the

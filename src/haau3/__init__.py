@@ -50,6 +50,7 @@ from ._parameters import review_flags as review_flags
 from ._parameters import structure_dosage_request as structure_dosage_request
 from ._response import RawResponse as RawResponse
 from ._response import Response as Response
+from ._search import escape_search_value as escape_search_value
 from ._terminology import PREFERRED_FOR_LANGUAGE_USE as PREFERRED_FOR_LANGUAGE_USE
 from ._terminology import SYNONYM_USE as SYNONYM_USE
 from ._terminology import BooleanProperty as BooleanProperty
@@ -119,6 +120,7 @@ __all__ = [
     "__version__",
     "calls",
     "designations",
+    "escape_search_value",
     "fhir",
     "lookup_result",
     "mark_as_test_data",
