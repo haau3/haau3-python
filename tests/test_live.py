@@ -77,8 +77,9 @@ def test_the_same_records_unlabelled_are_refused_naming_the_agreement() -> None:
 @not_on_a_test_key
 def test_every_kind_of_call_against_production() -> None:
     with Haau3() as client:
-        found = client.search_slots(state="MA", limit=3)
-        assert isinstance(found["total"], int)
+        found = client.search_slot(location_address_state="MA", count=3)
+        assert found["resourceType"] == "Bundle"
+        assert isinstance(found.get("total"), int)
         plan = client.read_insurance_plan("H2406-013-000")
         assert plan["resourceType"] == "InsurancePlan"
         glucose = client.code_system_lookup(system="http://loinc.org", code="2345-7")
@@ -128,5 +129,5 @@ async def test_the_async_client_against_production(anyio_backend: str) -> None:
     async with AsyncHaau3() as client:
         plan = await client.read_insurance_plan("H2406-013-000")
         assert plan["resourceType"] == "InsurancePlan"
-        publishers = await client.list_publishers()
-        assert isinstance(publishers["publishers"], list)
+        schedules = await client.search_schedule(location_address_state="MA", count=1)
+        assert schedules["resourceType"] == "Bundle"

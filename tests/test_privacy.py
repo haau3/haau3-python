@@ -105,7 +105,8 @@ def sync_cases() -> dict[str, Any]:
         sync_client(Recorder(answer(404, outcome()))).read_insurance_plan("H1")
 
     def problem_400() -> None:
-        sync_client(Recorder(answer(400, problem(), fhir=False))).search_slots(state="ZZ")
+        # Off the FHIR base, where the API answers a problem, which no error carries.
+        sync_client(Recorder(answer(400, problem(), fhir=False))).get("/v1/fhri/r4/Slot")
 
     def no_answer_503() -> None:
         sync_client(Recorder(answer(503, outcome())), max_retries=0).read_insurance_plan("H1")
