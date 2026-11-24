@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 import pytest
@@ -121,6 +122,27 @@ def test_every_kind_of_call_against_production() -> None:
             client.read_insurance_plan("no-such-plan")
         assert raised.value.status == 404
         assert raised.value.request_id
+
+
+@not_on_a_test_key
+def test_a_slot_search_continued_in_a_later_request_with_next_cursor() -> None:
+    """Page two by its cursor answers another Slot; the cursor with a filter changed is refused.
+
+    Measured 2026-11-24: the page size may change with a cursor, and a filter may not.
+    """
+    moment = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    search: dict[str, Any] = {"status": "free", "start": [f"ge{moment}"], "count": 1}
+    with Haau3() as client:
+        first = client.search_slot_with_includes(**search)
+        cursor = client.next_cursor(first)
+        assert cursor
+        second = client.search_slot_with_includes(**search, page=cursor)
+        one = client.matches(first, "Slot")
+        two = client.matches(second, "Slot")
+        assert two and two[0].get("id") != one[0].get("id")
+        with pytest.raises(RefusedError) as raised:
+            client.search_slot_with_includes(**{**search, "status": "free,busy"}, page=cursor)
+        assert raised.value.status == 400
 
 
 @not_on_a_test_key
