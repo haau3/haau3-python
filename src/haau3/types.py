@@ -14,18 +14,6 @@ from typing import Literal, Union
 from typing_extensions import Required, TypeAlias, TypedDict
 
 from . import fhir
-from ._components import ListPublishersResponse as ListPublishersResponse
-from ._components import ListServiceTypesResponse as ListServiceTypesResponse
-from ._components import ListSpecialtiesResponse as ListSpecialtiesResponse
-from ._components import Problem as Problem
-from ._components import ProblemIssue as ProblemIssue
-from ._components import SchedulingProviderLocation as SchedulingProviderLocation
-from ._components import SchedulingPublisher as SchedulingPublisher
-from ._components import SchedulingServiceType as SchedulingServiceType
-from ._components import SchedulingSlot as SchedulingSlot
-from ._components import SchedulingSpecialty as SchedulingSpecialty
-from ._components import SearchProviderLocationsResponse as SearchProviderLocationsResponse
-from ._components import SearchSlotsResponse as SearchSlotsResponse
 
 
 class CheckInsurancePlanNetworkQuery(TypedDict, total=False):
@@ -101,19 +89,6 @@ class ListInsurancePlanCountiesQuery(TypedDict, total=False):
 
 ListInsurancePlanCountiesResponse: TypeAlias = fhir.Parameters
 """What `list_insurance_plan_counties` answers with."""
-
-
-class ListServiceTypesQuery(TypedDict, total=False):
-    """The query parameters of `list_service_types`, by their Python names, to pass as `**query`."""
-
-    include_past: bool
-
-
-class ListSpecialtiesQuery(TypedDict, total=False):
-    """The query parameters of `list_specialties`, by their Python names, to pass as `**query`."""
-
-    include_past: bool
-
 
 ProcessMessageBody: TypeAlias = fhir.Bundle
 """The request body of `process_message`."""
@@ -358,26 +333,6 @@ SearchPractitionerRoleResponse: TypeAlias = fhir.Bundle
 """What `search_practitioner_role` answers with."""
 
 
-class SearchProviderLocationsQuery(TypedDict, total=False):
-    """The query parameters of `search_provider_locations`, by their Python names, to pass as `**query`."""
-
-    status: Literal["free", "busy", "busy-unavailable", "busy-tentative"]
-    publisher: str
-    service_type_code: str
-    npi: str
-    specialty: str
-    appointment_type: str
-    accepting_patients: Literal["newpt", "existptonly", "existptfam"]
-    is_virtual: bool
-    city: str
-    state: str
-    start_after: str
-    start_before: str
-    include_past: bool
-    limit: int
-    offset: int
-
-
 class SearchQuestionnaireQuery(TypedDict, total=False):
     """The query parameters of `search_questionnaire`, by their Python names, to pass as `**query`."""
 
@@ -439,28 +394,6 @@ class SearchSlotQuery(TypedDict, total=False):
 
 SearchSlotResponse: TypeAlias = fhir.Bundle
 """What `search_slot` answers with."""
-
-
-class SearchSlotsQuery(TypedDict, total=False):
-    """The query parameters of `search_slots`, by their Python names, to pass as `**query`."""
-
-    status: Literal["free", "busy", "busy-unavailable", "busy-tentative"]
-    publisher: str
-    service_type_code: str
-    npi: str
-    specialty: str
-    appointment_type: str
-    accepting_patients: Literal["newpt", "existptonly", "existptfam"]
-    is_virtual: bool
-    city: str
-    state: str
-    start_after: str
-    start_before: str
-    include_past: bool
-    provider_location_key: str
-    limit: int
-    offset: int
-
 
 StructureDosageBody: TypeAlias = fhir.Parameters
 """The request body of `structure_dosage`."""

@@ -17,13 +17,6 @@ from typing_extensions import deprecated
 from . import fhir
 from ._batch import BatchResult, Call
 from ._body import HeldHeaders, Hidden
-from ._components import (
-    ListPublishersResponse,
-    ListServiceTypesResponse,
-    ListSpecialtiesResponse,
-    SearchProviderLocationsResponse,
-    SearchSlotsResponse,
-)
 from ._operations import (
     CHECK_INSURANCE_PLAN_NETWORK,
     CODE_SYSTEM_LOOKUP,
@@ -33,9 +26,6 @@ from ._operations import (
     FHIR_BATCH,
     FHIR_METADATA,
     LIST_INSURANCE_PLAN_COUNTIES,
-    LIST_PUBLISHERS,
-    LIST_SERVICE_TYPES,
-    LIST_SPECIALTIES,
     PROCESS_MESSAGE,
     READ_ENDPOINT,
     READ_HEALTHCARE_SERVICE,
@@ -59,11 +49,9 @@ from ._operations import (
     SEARCH_ORGANIZATION_AFFILIATION,
     SEARCH_PRACTITIONER,
     SEARCH_PRACTITIONER_ROLE,
-    SEARCH_PROVIDER_LOCATIONS,
     SEARCH_QUESTIONNAIRE,
     SEARCH_SCHEDULE,
     SEARCH_SLOT,
-    SEARCH_SLOTS,
     STRUCTURE_DOSAGE,
     VALUE_SET_EXPAND,
     VALUE_SET_EXPAND_POST,
@@ -318,78 +306,6 @@ class SyncMethods:
             LIST_INSURANCE_PLAN_COUNTIES,
             (),
             (("state", state),),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        ).data
-
-    def list_publishers(
-        self,
-        *,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> ListPublishersResponse:
-        """List scheduling publishers
-
-        Returns the SMART Scheduling Links publishers (sources) the platform ingests. Requires a valid API key.
-
-        `GET /v1/scheduling/publishers`, https://docs.haau3.com/api-reference/scheduling/list-scheduling-publishers
-        """
-        return self._engine.call(
-            LIST_PUBLISHERS, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
-        ).data
-
-    def list_service_types(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> ListServiceTypesResponse:
-        """List service types
-
-        Returns the distinct service types observed across served slots, each with its `system` and a `count` of the slots carrying it. It is a discovery aid for the `serviceTypeCode` filter on `GET /v1/scheduling/slots`. Requires a valid API key.
-
-        `GET /v1/scheduling/service-types`, https://docs.haau3.com/api-reference/scheduling/list-service-types
-
-        Query parameters, each with its name in the API:
-
-        - `include_past` (`includePast`): Also count slots that started before now. Defaults to `false`, so the counts cover the slots a search with no `startAfter` returns.
-        """
-        return self._engine.call(
-            LIST_SERVICE_TYPES,
-            (),
-            (("includePast", include_past),),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        ).data
-
-    def list_specialties(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> ListSpecialtiesResponse:
-        """List specialties
-
-        Returns the distinct specialties observed across served slots, from the provider's `specialties` and the schedule's, each with its `system` and a `count` of the slots carrying it. It is a discovery aid for the `specialty` filter on `GET /v1/scheduling/slots`. Codes are each publisher's own. Requires a valid API key.
-
-        `GET /v1/scheduling/specialties`, https://docs.haau3.com/api-reference/scheduling/list-specialties
-
-        Query parameters, each with its name in the API:
-
-        - `include_past` (`includePast`): Also count slots that started before now. Defaults to `false`, so the counts cover the slots a search with no `startAfter` returns.
-        """
-        return self._engine.call(
-            LIST_SPECIALTIES,
-            (),
-            (("includePast", include_past),),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
         ).data
@@ -1290,77 +1206,6 @@ class SyncMethods:
             Options(timeout, max_retries, correlation_id, extra_headers),
         ).data
 
-    def search_provider_locations(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> SearchProviderLocationsResponse:
-        """Search provider locations
-
-        Returns the matching slots grouped by provider location: each item in `providerLocations` is one provider at one location, or a location with no provider, with its total slot count and soonest availability, paginated by provider location. Its opaque `key` drills down to its individual slots via `GET /v1/scheduling/slots?providerLocationKey=<key>`. Same filters as `/slots`. Requires a valid API key.
-
-        `GET /v1/scheduling/provider-locations`, https://docs.haau3.com/api-reference/scheduling/search-provider-locations
-
-        Query parameters, each with its name in the API:
-
-        - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
-        - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
-        - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
-        - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
-        - `appointment_type` (`appointmentType`): Filter by appointment type.
-        - `accepting_patients` (`acceptingPatients`): Filter to slots accepting patients of this kind (HL7 `accepting-patients` CodeSystem: `newpt` | `existptonly` | `existptfam`). Slots marked `nopt` (not accepting patients) are never served, so `nopt` is not a valid filter value. Lenient: a slot that does not declare an accepting-patients code matches any value (absence never hides a slot); a slot that declares one must equal the requested value.
-        - `is_virtual` (`isVirtual`): Filter to virtual (`true`) or in-person (`false`) slots.
-        - `city`: Filter by the location's city.
-        - `state`: Filter by the location's state.
-        - `start_after` (`startAfter`): Only slots starting at or after this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused. When absent, slots start from now unless `includePast=true`.
-        - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
-        - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
-        - `limit`: Page size: the number of provider locations, from 1 to 100. Defaults to 25.
-        - `offset`: Number of provider locations to skip for pagination. Defaults to 0.
-        """
-        return self._engine.call(
-            SEARCH_PROVIDER_LOCATIONS,
-            (),
-            (
-                ("status", status),
-                ("publisher", publisher),
-                ("serviceTypeCode", service_type_code),
-                ("npi", npi),
-                ("specialty", specialty),
-                ("appointmentType", appointment_type),
-                ("acceptingPatients", accepting_patients),
-                ("isVirtual", is_virtual),
-                ("city", city),
-                ("state", state),
-                ("startAfter", start_after),
-                ("startBefore", start_before),
-                ("includePast", include_past),
-                ("limit", limit),
-                ("offset", offset),
-            ),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        ).data
-
     def search_questionnaire(
         self,
         *,
@@ -1558,80 +1403,6 @@ class SyncMethods:
                 ("_include:iterate", include_iterate),
                 ("_count", count),
                 ("page", page),
-            ),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        ).data
-
-    def search_slots(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        provider_location_key: str | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> SearchSlotsResponse:
-        """Search appointment slots
-
-        Returns provider availability slots matching the filters, with pagination. Requires a valid API key.
-
-        `GET /v1/scheduling/slots`, https://docs.haau3.com/api-reference/scheduling/search-appointment-slots
-
-        Query parameters, each with its name in the API:
-
-        - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
-        - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
-        - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
-        - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
-        - `appointment_type` (`appointmentType`): Filter by appointment type.
-        - `accepting_patients` (`acceptingPatients`): Filter to slots accepting patients of this kind (HL7 `accepting-patients` CodeSystem: `newpt` | `existptonly` | `existptfam`). Slots marked `nopt` (not accepting patients) are never served, so `nopt` is not a valid filter value. Lenient: a slot that does not declare an accepting-patients code matches any value (absence never hides a slot); a slot that declares one must equal the requested value.
-        - `is_virtual` (`isVirtual`): Filter to virtual (`true`) or in-person (`false`) slots.
-        - `city`: Filter by the location's city.
-        - `state`: Filter by the location's state.
-        - `start_after` (`startAfter`): Only slots starting at or after this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused. When absent, slots start from now unless `includePast=true`.
-        - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
-        - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
-        - `provider_location_key` (`providerLocationKey`): Opaque key of one provider location from `GET /v1/scheduling/provider-locations`. When set, returns exactly that provider location's slots. Treat the value as opaque; do not parse it.
-        - `limit`: Page size, from 1 to 100. Defaults to 25.
-        - `offset`: Number of slots to skip for pagination. Defaults to 0.
-        """
-        return self._engine.call(
-            SEARCH_SLOTS,
-            (),
-            (
-                ("status", status),
-                ("publisher", publisher),
-                ("serviceTypeCode", service_type_code),
-                ("npi", npi),
-                ("specialty", specialty),
-                ("appointmentType", appointment_type),
-                ("acceptingPatients", accepting_patients),
-                ("isVirtual", is_virtual),
-                ("city", city),
-                ("state", state),
-                ("startAfter", start_after),
-                ("startBefore", start_before),
-                ("includePast", include_past),
-                ("providerLocationKey", provider_location_key),
-                ("limit", limit),
-                ("offset", offset),
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
@@ -2181,84 +1952,6 @@ class AsyncMethods:
                 LIST_INSURANCE_PLAN_COUNTIES,
                 (),
                 (("state", state),),
-                None,
-                Options(timeout, max_retries, correlation_id, extra_headers),
-            )
-        ).data
-
-    async def list_publishers(
-        self,
-        *,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> ListPublishersResponse:
-        """List scheduling publishers
-
-        Returns the SMART Scheduling Links publishers (sources) the platform ingests. Requires a valid API key.
-
-        `GET /v1/scheduling/publishers`, https://docs.haau3.com/api-reference/scheduling/list-scheduling-publishers
-        """
-        return (
-            await self._engine.call(
-                LIST_PUBLISHERS, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
-            )
-        ).data
-
-    async def list_service_types(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> ListServiceTypesResponse:
-        """List service types
-
-        Returns the distinct service types observed across served slots, each with its `system` and a `count` of the slots carrying it. It is a discovery aid for the `serviceTypeCode` filter on `GET /v1/scheduling/slots`. Requires a valid API key.
-
-        `GET /v1/scheduling/service-types`, https://docs.haau3.com/api-reference/scheduling/list-service-types
-
-        Query parameters, each with its name in the API:
-
-        - `include_past` (`includePast`): Also count slots that started before now. Defaults to `false`, so the counts cover the slots a search with no `startAfter` returns.
-        """
-        return (
-            await self._engine.call(
-                LIST_SERVICE_TYPES,
-                (),
-                (("includePast", include_past),),
-                None,
-                Options(timeout, max_retries, correlation_id, extra_headers),
-            )
-        ).data
-
-    async def list_specialties(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> ListSpecialtiesResponse:
-        """List specialties
-
-        Returns the distinct specialties observed across served slots, from the provider's `specialties` and the schedule's, each with its `system` and a `count` of the slots carrying it. It is a discovery aid for the `specialty` filter on `GET /v1/scheduling/slots`. Codes are each publisher's own. Requires a valid API key.
-
-        `GET /v1/scheduling/specialties`, https://docs.haau3.com/api-reference/scheduling/list-specialties
-
-        Query parameters, each with its name in the API:
-
-        - `include_past` (`includePast`): Also count slots that started before now. Defaults to `false`, so the counts cover the slots a search with no `startAfter` returns.
-        """
-        return (
-            await self._engine.call(
-                LIST_SPECIALTIES,
-                (),
-                (("includePast", include_past),),
                 None,
                 Options(timeout, max_retries, correlation_id, extra_headers),
             )
@@ -3210,79 +2903,6 @@ class AsyncMethods:
             )
         ).data
 
-    async def search_provider_locations(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> SearchProviderLocationsResponse:
-        """Search provider locations
-
-        Returns the matching slots grouped by provider location: each item in `providerLocations` is one provider at one location, or a location with no provider, with its total slot count and soonest availability, paginated by provider location. Its opaque `key` drills down to its individual slots via `GET /v1/scheduling/slots?providerLocationKey=<key>`. Same filters as `/slots`. Requires a valid API key.
-
-        `GET /v1/scheduling/provider-locations`, https://docs.haau3.com/api-reference/scheduling/search-provider-locations
-
-        Query parameters, each with its name in the API:
-
-        - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
-        - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
-        - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
-        - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
-        - `appointment_type` (`appointmentType`): Filter by appointment type.
-        - `accepting_patients` (`acceptingPatients`): Filter to slots accepting patients of this kind (HL7 `accepting-patients` CodeSystem: `newpt` | `existptonly` | `existptfam`). Slots marked `nopt` (not accepting patients) are never served, so `nopt` is not a valid filter value. Lenient: a slot that does not declare an accepting-patients code matches any value (absence never hides a slot); a slot that declares one must equal the requested value.
-        - `is_virtual` (`isVirtual`): Filter to virtual (`true`) or in-person (`false`) slots.
-        - `city`: Filter by the location's city.
-        - `state`: Filter by the location's state.
-        - `start_after` (`startAfter`): Only slots starting at or after this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused. When absent, slots start from now unless `includePast=true`.
-        - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
-        - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
-        - `limit`: Page size: the number of provider locations, from 1 to 100. Defaults to 25.
-        - `offset`: Number of provider locations to skip for pagination. Defaults to 0.
-        """
-        return (
-            await self._engine.call(
-                SEARCH_PROVIDER_LOCATIONS,
-                (),
-                (
-                    ("status", status),
-                    ("publisher", publisher),
-                    ("serviceTypeCode", service_type_code),
-                    ("npi", npi),
-                    ("specialty", specialty),
-                    ("appointmentType", appointment_type),
-                    ("acceptingPatients", accepting_patients),
-                    ("isVirtual", is_virtual),
-                    ("city", city),
-                    ("state", state),
-                    ("startAfter", start_after),
-                    ("startBefore", start_before),
-                    ("includePast", include_past),
-                    ("limit", limit),
-                    ("offset", offset),
-                ),
-                None,
-                Options(timeout, max_retries, correlation_id, extra_headers),
-            )
-        ).data
-
     async def search_questionnaire(
         self,
         *,
@@ -3485,82 +3105,6 @@ class AsyncMethods:
                     ("_include:iterate", include_iterate),
                     ("_count", count),
                     ("page", page),
-                ),
-                None,
-                Options(timeout, max_retries, correlation_id, extra_headers),
-            )
-        ).data
-
-    async def search_slots(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        provider_location_key: str | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> SearchSlotsResponse:
-        """Search appointment slots
-
-        Returns provider availability slots matching the filters, with pagination. Requires a valid API key.
-
-        `GET /v1/scheduling/slots`, https://docs.haau3.com/api-reference/scheduling/search-appointment-slots
-
-        Query parameters, each with its name in the API:
-
-        - `status`: Slot availability state to return. Defaults to `free`.
-        - `publisher`: Filter to a single publisher (source) by slug, such as `zocdoc` or `defacto`. See `GET /v1/scheduling/publishers` for the available slugs.
-        - `service_type_code` (`serviceTypeCode`): Filter by service type code (as published by the source). A slot matches when any of its `serviceTypes` carries the code. A comma-separated list (up to 100) matches a slot carrying any of them.
-        - `npi`: Filter by the provider's National Provider Identifier: a clinician's, or an organization's when a healthcare service is the provider. Ten digits; a comma-separated list (up to 100) matches a slot whose provider carries any of them. Matched as the publisher sent it, in either NPI identifier system, across every publisher.
-        - `specialty`: Filter by specialty: a slot matches when its provider's `specialties` or its schedule's `specialties` carry the code. Send `code` to match it in any code system, or `system|code` to match it in that system only. Codes are each publisher's own and are not translated between code systems, so one code finds the publishers that use it; `GET /v1/scheduling/specialties` lists them. A specialty sent as text only cannot be matched. A comma-separated list (up to 100) matches any of them.
-        - `appointment_type` (`appointmentType`): Filter by appointment type.
-        - `accepting_patients` (`acceptingPatients`): Filter to slots accepting patients of this kind (HL7 `accepting-patients` CodeSystem: `newpt` | `existptonly` | `existptfam`). Slots marked `nopt` (not accepting patients) are never served, so `nopt` is not a valid filter value. Lenient: a slot that does not declare an accepting-patients code matches any value (absence never hides a slot); a slot that declares one must equal the requested value.
-        - `is_virtual` (`isVirtual`): Filter to virtual (`true`) or in-person (`false`) slots.
-        - `city`: Filter by the location's city.
-        - `state`: Filter by the location's state.
-        - `start_after` (`startAfter`): Only slots starting at or after this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused. When absent, slots start from now unless `includePast=true`.
-        - `start_before` (`startBefore`): Only slots starting at or before this instant: ISO 8601 with seconds and an offset, such as `2026-07-06T13:00:00-04:00` or `2026-07-06T17:00:00Z`. A value without seconds is refused.
-        - `include_past` (`includePast`): Include slots that started before now. Defaults to `false`: with no `startAfter`, results start from now. An explicit `startAfter` applies as given either way.
-        - `provider_location_key` (`providerLocationKey`): Opaque key of one provider location from `GET /v1/scheduling/provider-locations`. When set, returns exactly that provider location's slots. Treat the value as opaque; do not parse it.
-        - `limit`: Page size, from 1 to 100. Defaults to 25.
-        - `offset`: Number of slots to skip for pagination. Defaults to 0.
-        """
-        return (
-            await self._engine.call(
-                SEARCH_SLOTS,
-                (),
-                (
-                    ("status", status),
-                    ("publisher", publisher),
-                    ("serviceTypeCode", service_type_code),
-                    ("npi", npi),
-                    ("specialty", specialty),
-                    ("appointmentType", appointment_type),
-                    ("acceptingPatients", accepting_patients),
-                    ("isVirtual", is_virtual),
-                    ("city", city),
-                    ("state", state),
-                    ("startAfter", start_after),
-                    ("startBefore", start_before),
-                    ("includePast", include_past),
-                    ("providerLocationKey", provider_location_key),
-                    ("limit", limit),
-                    ("offset", offset),
                 ),
                 None,
                 Options(timeout, max_retries, correlation_id, extra_headers),
@@ -4042,55 +3586,6 @@ class SyncWithResponse:
             LIST_INSURANCE_PLAN_COUNTIES,
             (),
             (("state", state),),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
-    def list_publishers(
-        self,
-        *,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[ListPublishersResponse]:
-        """`Haau3.list_publishers`, returning a `Response` with the request id and timing as well as the answer."""
-        return self._engine.call(
-            LIST_PUBLISHERS, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
-        )
-
-    def list_service_types(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[ListServiceTypesResponse]:
-        """`Haau3.list_service_types`, returning a `Response` with the request id and timing as well as the answer."""
-        return self._engine.call(
-            LIST_SERVICE_TYPES,
-            (),
-            (("includePast", include_past),),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
-    def list_specialties(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[ListSpecialtiesResponse]:
-        """`Haau3.list_specialties`, returning a `Response` with the request id and timing as well as the answer."""
-        return self._engine.call(
-            LIST_SPECIALTIES,
-            (),
-            (("includePast", include_past),),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
@@ -4714,54 +4209,6 @@ class SyncWithResponse:
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
 
-    def search_provider_locations(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[SearchProviderLocationsResponse]:
-        """`Haau3.search_provider_locations`, returning a `Response` with the request id and timing as well as the answer."""
-        return self._engine.call(
-            SEARCH_PROVIDER_LOCATIONS,
-            (),
-            (
-                ("status", status),
-                ("publisher", publisher),
-                ("serviceTypeCode", service_type_code),
-                ("npi", npi),
-                ("specialty", specialty),
-                ("appointmentType", appointment_type),
-                ("acceptingPatients", accepting_patients),
-                ("isVirtual", is_virtual),
-                ("city", city),
-                ("state", state),
-                ("startAfter", start_after),
-                ("startBefore", start_before),
-                ("includePast", include_past),
-                ("limit", limit),
-                ("offset", offset),
-            ),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
     def search_questionnaire(
         self,
         *,
@@ -4885,56 +4332,6 @@ class SyncWithResponse:
                 ("_include:iterate", include_iterate),
                 ("_count", count),
                 ("page", page),
-            ),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
-    def search_slots(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        provider_location_key: str | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[SearchSlotsResponse]:
-        """`Haau3.search_slots`, returning a `Response` with the request id and timing as well as the answer."""
-        return self._engine.call(
-            SEARCH_SLOTS,
-            (),
-            (
-                ("status", status),
-                ("publisher", publisher),
-                ("serviceTypeCode", service_type_code),
-                ("npi", npi),
-                ("specialty", specialty),
-                ("appointmentType", appointment_type),
-                ("acceptingPatients", accepting_patients),
-                ("isVirtual", is_virtual),
-                ("city", city),
-                ("state", state),
-                ("startAfter", start_after),
-                ("startBefore", start_before),
-                ("includePast", include_past),
-                ("providerLocationKey", provider_location_key),
-                ("limit", limit),
-                ("offset", offset),
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
@@ -5337,55 +4734,6 @@ class AsyncWithResponse:
             LIST_INSURANCE_PLAN_COUNTIES,
             (),
             (("state", state),),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
-    async def list_publishers(
-        self,
-        *,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[ListPublishersResponse]:
-        """`AsyncHaau3.list_publishers`, returning a `Response` with the request id and timing as well as the answer."""
-        return await self._engine.call(
-            LIST_PUBLISHERS, (), (), None, Options(timeout, max_retries, correlation_id, extra_headers)
-        )
-
-    async def list_service_types(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[ListServiceTypesResponse]:
-        """`AsyncHaau3.list_service_types`, returning a `Response` with the request id and timing as well as the answer."""
-        return await self._engine.call(
-            LIST_SERVICE_TYPES,
-            (),
-            (("includePast", include_past),),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
-    async def list_specialties(
-        self,
-        *,
-        include_past: bool | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[ListSpecialtiesResponse]:
-        """`AsyncHaau3.list_specialties`, returning a `Response` with the request id and timing as well as the answer."""
-        return await self._engine.call(
-            LIST_SPECIALTIES,
-            (),
-            (("includePast", include_past),),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
@@ -6009,54 +5357,6 @@ class AsyncWithResponse:
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
 
-    async def search_provider_locations(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[SearchProviderLocationsResponse]:
-        """`AsyncHaau3.search_provider_locations`, returning a `Response` with the request id and timing as well as the answer."""
-        return await self._engine.call(
-            SEARCH_PROVIDER_LOCATIONS,
-            (),
-            (
-                ("status", status),
-                ("publisher", publisher),
-                ("serviceTypeCode", service_type_code),
-                ("npi", npi),
-                ("specialty", specialty),
-                ("appointmentType", appointment_type),
-                ("acceptingPatients", accepting_patients),
-                ("isVirtual", is_virtual),
-                ("city", city),
-                ("state", state),
-                ("startAfter", start_after),
-                ("startBefore", start_before),
-                ("includePast", include_past),
-                ("limit", limit),
-                ("offset", offset),
-            ),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
     async def search_questionnaire(
         self,
         *,
@@ -6180,56 +5480,6 @@ class AsyncWithResponse:
                 ("_include:iterate", include_iterate),
                 ("_count", count),
                 ("page", page),
-            ),
-            None,
-            Options(timeout, max_retries, correlation_id, extra_headers),
-        )
-
-    async def search_slots(
-        self,
-        *,
-        status: Literal["free", "busy", "busy-unavailable", "busy-tentative"] | None = None,
-        publisher: str | None = None,
-        service_type_code: str | None = None,
-        npi: str | None = None,
-        specialty: str | None = None,
-        appointment_type: str | None = None,
-        accepting_patients: Literal["newpt", "existptonly", "existptfam"] | None = None,
-        is_virtual: bool | None = None,
-        city: str | None = None,
-        state: str | None = None,
-        start_after: str | None = None,
-        start_before: str | None = None,
-        include_past: bool | None = None,
-        provider_location_key: str | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        correlation_id: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-    ) -> Response[SearchSlotsResponse]:
-        """`AsyncHaau3.search_slots`, returning a `Response` with the request id and timing as well as the answer."""
-        return await self._engine.call(
-            SEARCH_SLOTS,
-            (),
-            (
-                ("status", status),
-                ("publisher", publisher),
-                ("serviceTypeCode", service_type_code),
-                ("npi", npi),
-                ("specialty", specialty),
-                ("appointmentType", appointment_type),
-                ("acceptingPatients", accepting_patients),
-                ("isVirtual", is_virtual),
-                ("city", city),
-                ("state", state),
-                ("startAfter", start_after),
-                ("startBefore", start_before),
-                ("includePast", include_past),
-                ("providerLocationKey", provider_location_key),
-                ("limit", limit),
-                ("offset", offset),
             ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),

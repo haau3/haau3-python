@@ -2,70 +2,10 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.38"
+    "version": "1.0.0-preview.40"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
-    {
-      "target": "$.paths['/v1/scheduling/provider-locations'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.search_provider_locations(publisher=\"haau3\", limit=1)\nprint(found[\"total\"])\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/slots'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "import json\n\nfrom haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# Open appointment slots, here in Cambridge.\nslots = client.search_slots(city=\"Cambridge\", state=\"MA\", limit=1)[\"slots\"]\nprint(json.dumps(slots[0], indent=2) if slots else \"No open slots matched.\")\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/publishers'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_publishers()\nprint(len(found[\"publishers\"]))\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/service-types'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_service_types()\nprint(len(found[\"serviceTypes\"]))\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/specialties'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_specialties()\nprint(len(found[\"specialties\"]))\n"
-          }
-        ]
-      }
-    },
     {
       "target": "$.paths['/v1/fhir/r4/metadata'].get",
       "update": {
@@ -97,7 +37,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_slot(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Slot:schedule\",\n    include_iterate=[\"Schedule:actor\", \"PractitionerRole:practitioner\"],\n    count=1,\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_slot(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Slot:schedule\",\n    include_iterate=[\"Schedule:actor\", \"PractitionerRole:practitioner\", \"HealthcareService:location\"],\n    count=1,\n)\nprint(len(bundle.get(\"entry\", [])))\n"
           }
         ]
       }
@@ -121,7 +61,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_schedule(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Schedule:actor\",\n    include_iterate=\"PractitionerRole:practitioner\",\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_schedule(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Schedule:actor\",\n    include_iterate=[\"PractitionerRole:practitioner\", \"HealthcareService:location\"],\n)\nprint(len(bundle.get(\"entry\", [])))\n"
           }
         ]
       }
