@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/haau3/haau3-python/compare/v0.5.0...v0.5.1) (2026-11-24)
+
+
+### Features
+
+* next_cursor() reads a search page's next cursor ([#86](https://github.com/haau3/haau3-python/issues/86)) ([99142d0](https://github.com/haau3/haau3-python/commit/99142d0d4f07b0ce8c61750d86841c122bb59fe6))
+
 ## [0.5.0](https://github.com/haau3/haau3-python/compare/v0.4.5...v0.5.0) (2026-11-24)
 
 
