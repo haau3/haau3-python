@@ -38,10 +38,13 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
     assert_type(plan.get("name"), "str | None")
     assert_type(plan["resourceType"], "Literal['InsurancePlan']")
 
-    found = client.search_slots(state="MA", is_virtual=True, limit=10)
-    assert_type(found, types.SearchSlotsResponse)
-    assert_type(found["total"], int)
-    assert_type(found["slots"][0]["start"], str)
+    found = client.search_slot(location_address_state="MA", include="Slot:schedule", count=10)
+    assert_type(found, fhir.Bundle)
+    assert_type(found.get("total"), "int | None")
+    # A parameter the spec takes as a list takes one value, as above, or a list.
+    client.search_slot(include=["Slot:schedule"], include_iterate="Schedule:actor")
+    slot_query: types.SearchSlotQuery = {"include": "Slot:schedule", "start": "ge2026-12-01"}
+    client.search_slot(**slot_query)
 
     response = client.with_response.read_insurance_plan(
         "H2406-013-000", correlation_id="0b6f2d4e-8c1a-4e3b-9f5d-2a7c6e1b4d90"
@@ -154,7 +157,7 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
         if each["resourceType"] == "InsurancePlan":
             assert_type(each, fhir.InsurancePlan)
 
-    raw = client.request("GET", "/v1/scheduling/publishers", query={"includePast": True})
+    raw = client.request("GET", "/v1/fhir/r4/Slot", query={"_count": 1, "_include": ["Slot:schedule"]})
     assert_type(raw, RawResponse)
     assert_type(raw.body, object)
 
@@ -172,10 +175,10 @@ def sync_tour(client: Haau3, records: types.ReconcileMedicationsBody) -> None:
 
     # Mistakes a type checker must catch.
     _ = calls.reconcile_medications  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]
-    _ = calls.search_slots  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]
+    client.search_slot(include="Slot:subject")  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
     client.check_insurance_plan_network("H3359-038-000")  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
-    client.search_slots("MA")  # type: ignore[call-arg, arg-type]  # pyright: ignore[reportCallIssue]
-    client.search_slots(status="maybe")  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+    client.search_slot("MA")  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+    client.search_slot(include_iterate=["Slot:subject"])  # type: ignore[list-item]  # pyright: ignore[reportArgumentType]
     client.read_insurance_plan(123)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
     # pyright alone refuses a key FHIR leaves optional; mypy lets it through, so read it with .get().
     _ = plan["name"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
@@ -195,7 +198,7 @@ async def async_tour(client: AsyncHaau3) -> None:
     async for each in client.resources(response.data):
         assert_type(each, fhir.Resource)
     async with AsyncHaau3() as scoped:
-        assert_type(await scoped.list_publishers(), types.ListPublishersResponse)
+        assert_type(await scoped.search_schedule(include="Schedule:actor"), fhir.Bundle)
     _ = client.read_insurance_plan("x").get("name")  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]
 
 

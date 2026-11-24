@@ -34,7 +34,7 @@ class Operation(Generic[T]):
     path: str
     """The path in the spec, such as `/v1/fhir/r4/InsurancePlan/{id}`."""
     expects: tuple[str, ...] = ()
-    """The FHIR resource types a success may be. Empty checks no type (Scheduling's answers)."""
+    """The FHIR resource types a success may be. Empty checks no type."""
     headers: tuple[DeclaredHeader, ...] = ()
     """The header parameters it declares, each sent from a keyword of the call's own."""
 

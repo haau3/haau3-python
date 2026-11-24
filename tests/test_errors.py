@@ -64,17 +64,34 @@ async def test_403_is_a_forbidden_error_that_says_the_key_was_accepted(kind: str
 async def test_other_4xx_are_refusals_carrying_the_outcome(kind: str, status: int) -> None:
     error = await Client(kind, Recorder(answer(status, OUTCOME))).raises("read_insurance_plan", "secret-id")
     assert isinstance(error, RefusedError)
-    assert (error.status, error.attempts, error.outcome, error.problem) == (status, 1, OUTCOME, None)
+    assert (error.status, error.attempts, error.outcome) == (status, 1, OUTCOME)
     assert error.message == f"GET /v1/fhir/r4/InsurancePlan/{{id}} was refused ({status})."
     assert "secret-id" not in error.message
 
 
+# Off the FHIR base, such as at a mistyped base URL, the API answers a problem (RFC 9457), which no
+# error reads: the error is the one for its status, with its message and request id, and no body.
+OFF_THE_BASE = "/v1/fhri/r4/Slot"
+
+
 @pytest.mark.anyio
-async def test_scheduling_errors_carry_a_problem(kind: str) -> None:
-    error = await Client(kind, Recorder(answer(400, PROBLEM, fhir=False))).raises("search_slots", state="ZZ")
+async def test_a_problem_off_the_fhir_base_is_the_error_for_its_status_with_no_body(kind: str) -> None:
+    problem = {**PROBLEM, "status": 404, "type": "https://docs.haau3.com/errors#not-found"}
+    error = await Client(kind, Recorder(answer(404, problem, fhir=False))).raises("get", OFF_THE_BASE)
     assert isinstance(error, RefusedError)
-    assert (error.problem, error.outcome) == (PROBLEM, None)
-    assert error.message == "GET /v1/scheduling/slots was refused (400)."
+    assert (error.status, error.reason_phrase, error.request_id) == (404, "Not Found", REQUEST_ID)
+    assert error.outcome is None
+    assert not hasattr(error, "problem")
+    assert error.message == f"GET {OFF_THE_BASE} was refused (404)."
+    assert "problem" not in error.to_dict()
+
+
+@pytest.mark.anyio
+async def test_an_outcome_off_the_fhir_base_is_still_attached(kind: str) -> None:
+    """The control: what is attached is decided by the body, an OperationOutcome, not by the path."""
+    error = await Client(kind, Recorder(answer(404, OUTCOME))).raises("get", OFF_THE_BASE)
+    assert isinstance(error, RefusedError)
+    assert error.outcome == OUTCOME
 
 
 @pytest.mark.anyio
@@ -114,10 +131,7 @@ async def test_a_2xx_that_is_not_json_is_unreadable(kind: str) -> None:
 async def test_an_empty_search_is_an_answer_not_an_error(kind: str) -> None:
     empty = {"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []}
     assert await Client(kind, Recorder(answer(200, empty)))("search_insurance_plan", coverage_area_state="NC") == empty
-    assert await Client(kind, Recorder(answer(200, {"slots": [], "total": 0}, fhir=False)))("search_slots") == {
-        "slots": [],
-        "total": 0,
-    }
+    assert await Client(kind, Recorder(answer(200, empty)))("search_slot") == empty
 
 
 def test_to_dict_gives_the_fields_that_are_set_in_order_and_never_a_body() -> None:
@@ -170,9 +184,8 @@ def test_every_error_is_a_haau3_error_and_an_exception() -> None:
     assert issubclass(Haau3Error, Exception)
 
 
-# A 403 names its reason when the API names it by a code of its own: in an OperationOutcome's
-# `api-error` coding on a FHIR base, or in a problem's `code` elsewhere. The message says it in words
-# chosen by the code, never the body's.
+# A 403 names its reason when the API names it by a code of its own, in an OperationOutcome's
+# `api-error` coding. The message says it in words chosen by the code, never the body's.
 
 API_ERROR = "https://haau3.com/fhir/CodeSystem/api-error"
 
@@ -222,18 +235,19 @@ async def test_a_403_names_a_live_key_in_the_sandbox(kind: str) -> None:
 
 
 @pytest.mark.anyio
-async def test_a_403_reads_its_code_from_a_problem_off_the_fhir_bases(kind: str) -> None:
+async def test_a_403_reads_no_code_from_a_problem(kind: str) -> None:
     problem = {
         **PROBLEM,
         "status": 403,
         "type": "https://docs.haau3.com/errors#forbidden",
         "code": "test-key-outside-sandbox",
     }
-    error = await Client(kind, Recorder(answer(403, problem, fhir=False))).raises("search_slots", state="MA")
+    error = await Client(kind, Recorder(answer(403, problem, fhir=False))).raises("get", OFF_THE_BASE)
     assert isinstance(error, ForbiddenError)
-    assert error.code == "test-key-outside-sandbox"
+    assert (error.code, error.outcome) == (None, None)
     assert error.message == (
-        "GET /v1/scheduling/slots was refused: this is a test key, which works only in the Sandbox (403)."
+        f"GET {OFF_THE_BASE} was refused: "
+        "the API key was accepted, and its organization may not make this request (403)."
     )
 
 
@@ -361,11 +375,11 @@ async def test_a_refusal_carries_the_sandboxs_not_the_example(kind: str) -> None
 
 
 @pytest.mark.anyio
-async def test_a_refusal_carries_a_problems_code(kind: str) -> None:
+async def test_a_refusal_reads_no_code_from_a_problem(kind: str) -> None:
     problem = {**PROBLEM, "code": "not-the-example"}
-    error = await Client(kind, Recorder(answer(400, problem, fhir=False))).raises("list_publishers")
+    error = await Client(kind, Recorder(answer(400, problem, fhir=False))).raises("get", OFF_THE_BASE)
     assert isinstance(error, RefusedError)
-    assert error.code == "not-the-example"
+    assert error.code is None
 
 
 # Negative control: no code named, or one in a system that is not haau3's, is no code.

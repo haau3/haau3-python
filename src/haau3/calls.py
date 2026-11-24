@@ -36,6 +36,8 @@ from ._operations import (
     READ_PRACTITIONER,
     READ_PRACTITIONER_ROLE,
     READ_QUESTIONNAIRE,
+    READ_SCHEDULE,
+    READ_SLOT,
     SEARCH_ENDPOINT,
     SEARCH_HEALTHCARE_SERVICE,
     SEARCH_INSURANCE_PLAN,
@@ -45,6 +47,8 @@ from ._operations import (
     SEARCH_PRACTITIONER,
     SEARCH_PRACTITIONER_ROLE,
     SEARCH_QUESTIONNAIRE,
+    SEARCH_SCHEDULE,
+    SEARCH_SLOT,
     STRUCTURE_DOSAGE,
     VALUE_SET_EXPAND,
     VALUE_SET_EXPAND_POST,
@@ -72,6 +76,8 @@ __all__ = [
     "read_practitioner",
     "read_practitioner_role",
     "read_questionnaire",
+    "read_schedule",
+    "read_slot",
     "search_endpoint",
     "search_healthcare_service",
     "search_insurance_plan",
@@ -81,6 +87,8 @@ __all__ = [
     "search_practitioner",
     "search_practitioner_role",
     "search_questionnaire",
+    "search_schedule",
+    "search_slot",
     "structure_dosage",
     "value_set_expand",
     "value_set_expand_post",
@@ -89,7 +97,7 @@ __all__ = [
 ]
 
 
-def check_insurance_plan_network(id: str, /, *, npi: Sequence[str]) -> Call[fhir.Parameters]:
+def check_insurance_plan_network(id: str, /, *, npi: str | Sequence[str]) -> Call[fhir.Parameters]:
     """Check providers against a plan's network, as one entry of a batch. Called as `Haau3.check_insurance_plan_network` is.
 
     `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`
@@ -102,7 +110,7 @@ def code_system_lookup(
     code: str,
     system: str | None = None,
     version: str | None = None,
-    property: str | Sequence[str] | None = None,
+    property: str | str | Sequence[str] | None = None,
     display_language: str | None = None,
     date: str | None = None,
 ) -> Call[fhir.Parameters]:
@@ -263,13 +271,29 @@ def read_questionnaire(id: str, /) -> Call[fhir.Questionnaire]:
     return make_call(READ_QUESTIONNAIRE, (id,), (), None)
 
 
+def read_schedule(id: str, /) -> Call[fhir.Schedule]:
+    """Read a schedule, as one entry of a batch. Called as `Haau3.read_schedule` is.
+
+    `GET /v1/fhir/r4/Schedule/{id}`
+    """
+    return make_call(READ_SCHEDULE, (id,), (), None)
+
+
+def read_slot(id: str, /) -> Call[fhir.Slot]:
+    """Read a slot, as one entry of a batch. Called as `Haau3.read_slot` is.
+
+    `GET /v1/fhir/r4/Slot/{id}`
+    """
+    return make_call(READ_SLOT, (id,), (), None)
+
+
 def search_endpoint(
     *,
     organization: str | None = None,
     connection_type: str | None = None,
     status: str | None = None,
     name: str | None = None,
-    include: Sequence[Literal["Endpoint:organization"]] | None = None,
+    include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]] | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -310,7 +334,9 @@ def search_healthcare_service(
     organization: str | None = None,
     organization_identifier: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]] | None = None,
+    include: Literal["HealthcareService:organization", "HealthcareService:location"]
+    | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+    | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -389,8 +415,8 @@ def search_location(
     address_state: str | None = None,
     address_postalcode: str | None = None,
     status: str | None = None,
-    include: Sequence[Literal["Location:organization"]] | None = None,
-    revinclude: Sequence[Literal["PractitionerRole:location"]] | None = None,
+    include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]] | None = None,
+    revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]] | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -431,8 +457,16 @@ def search_organization(
     address_city: str | None = None,
     address_state: str | None = None,
     address_postalcode: str | None = None,
-    include: Sequence[Literal["Organization:partof"]] | None = None,
-    revinclude: Sequence[
+    include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]] | None = None,
+    revinclude: Literal[
+        "PractitionerRole:organization",
+        "OrganizationAffiliation:primary-organization",
+        "OrganizationAffiliation:participating-organization",
+        "Location:organization",
+        "Endpoint:organization",
+        "Organization:partof",
+    ]
+    | Sequence[
         Literal[
             "PractitionerRole:organization",
             "OrganizationAffiliation:primary-organization",
@@ -481,7 +515,12 @@ def search_organization_affiliation(
     primary_organization: str | None = None,
     participating_organization: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    include: Sequence[
+    include: Literal[
+        "OrganizationAffiliation:participating-organization",
+        "OrganizationAffiliation:primary-organization",
+        "OrganizationAffiliation:network",
+    ]
+    | Sequence[
         Literal[
             "OrganizationAffiliation:participating-organization",
             "OrganizationAffiliation:primary-organization",
@@ -525,7 +564,9 @@ def search_practitioner(
     address_city: str | None = None,
     address_state: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    revinclude: Sequence[Literal["PractitionerRole:practitioner"]] | None = None,
+    revinclude: Literal["PractitionerRole:practitioner"]
+    | Sequence[Literal["PractitionerRole:practitioner"]]
+    | None = None,
     id: str | None = None,
     summary: Literal["count"] | None = None,
     count: int | None = None,
@@ -567,7 +608,14 @@ def search_practitioner_role(
     new_patient_from_network: str | None = None,
     new_patient: str | None = None,
     active: bool | Literal["true", "false"] | None = None,
-    include: Sequence[
+    include: Literal[
+        "PractitionerRole:practitioner",
+        "PractitionerRole:organization",
+        "PractitionerRole:location",
+        "PractitionerRole:network",
+        "PractitionerRole:endpoint",
+    ]
+    | Sequence[
         Literal[
             "PractitionerRole:practitioner",
             "PractitionerRole:organization",
@@ -620,6 +668,110 @@ def search_questionnaire(*, url: str | None = None, version: str | None = None) 
         (
             ("url", url),
             ("version", version),
+        ),
+        None,
+    )
+
+
+def search_schedule(
+    *,
+    service_type: str | None = None,
+    specialty: str | None = None,
+    provider_specialty: str | None = None,
+    provider_identifier: str | None = None,
+    location_address_city: str | None = None,
+    location_address_state: str | None = None,
+    location_physical_type: str | None = None,
+    source: str | None = None,
+    source_below: str | None = None,
+    include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]] | None = None,
+    include_iterate: Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+    | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
+    | None = None,
+    count: int | None = None,
+    page: str | None = None,
+) -> Call[fhir.Bundle]:
+    """Find schedules, as one entry of a batch. Called as `Haau3.search_schedule` is.
+
+    `GET /v1/fhir/r4/Schedule`
+    """
+    return make_call(
+        SEARCH_SCHEDULE,
+        (),
+        (
+            ("service-type", service_type),
+            ("specialty", specialty),
+            ("provider-specialty", provider_specialty),
+            ("provider-identifier", provider_identifier),
+            ("location-address-city", location_address_city),
+            ("location-address-state", location_address_state),
+            ("location-physical-type", location_physical_type),
+            ("_source", source),
+            ("_source:below", source_below),
+            ("_include", include),
+            ("_include:iterate", include_iterate),
+            ("_count", count),
+            ("page", page),
+        ),
+        None,
+    )
+
+
+def search_slot(
+    *,
+    status: str | None = None,
+    start: str | Sequence[str] | None = None,
+    appointment_type: str | None = None,
+    schedule: str | None = None,
+    service_type: str | None = None,
+    schedule_service_type: str | None = None,
+    specialty: str | None = None,
+    provider_specialty: str | None = None,
+    provider_identifier: str | None = None,
+    patient_type: str | None = None,
+    location_address_city: str | None = None,
+    location_address_state: str | None = None,
+    location_physical_type: str | None = None,
+    source: str | None = None,
+    source_below: str | None = None,
+    include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]] | None = None,
+    include_iterate: Literal[
+        "Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"
+    ]
+    | Sequence[
+        Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+    ]
+    | None = None,
+    count: int | None = None,
+    page: str | None = None,
+) -> Call[fhir.Bundle]:
+    """Find slots, as one entry of a batch. Called as `Haau3.search_slot` is.
+
+    `GET /v1/fhir/r4/Slot`
+    """
+    return make_call(
+        SEARCH_SLOT,
+        (),
+        (
+            ("status", status),
+            ("start", start),
+            ("appointment-type", appointment_type),
+            ("schedule", schedule),
+            ("service-type", service_type),
+            ("schedule.service-type", schedule_service_type),
+            ("specialty", specialty),
+            ("provider-specialty", provider_specialty),
+            ("provider-identifier", provider_identifier),
+            ("patient-type", patient_type),
+            ("location-address-city", location_address_city),
+            ("location-address-state", location_address_state),
+            ("location-physical-type", location_physical_type),
+            ("_source", source),
+            ("_source:below", source_below),
+            ("_include", include),
+            ("_include:iterate", include_iterate),
+            ("_count", count),
+            ("page", page),
         ),
         None,
     )

@@ -14,24 +14,12 @@ from typing import Literal, Union
 from typing_extensions import Required, TypeAlias, TypedDict
 
 from . import fhir
-from ._components import ListPublishersResponse as ListPublishersResponse
-from ._components import ListServiceTypesResponse as ListServiceTypesResponse
-from ._components import ListSpecialtiesResponse as ListSpecialtiesResponse
-from ._components import Problem as Problem
-from ._components import ProblemIssue as ProblemIssue
-from ._components import SchedulingProviderLocation as SchedulingProviderLocation
-from ._components import SchedulingPublisher as SchedulingPublisher
-from ._components import SchedulingServiceType as SchedulingServiceType
-from ._components import SchedulingSlot as SchedulingSlot
-from ._components import SchedulingSpecialty as SchedulingSpecialty
-from ._components import SearchProviderLocationsResponse as SearchProviderLocationsResponse
-from ._components import SearchSlotsResponse as SearchSlotsResponse
 
 
 class CheckInsurancePlanNetworkQuery(TypedDict, total=False):
     """The query parameters of `check_insurance_plan_network`, by their Python names, to pass as `**query`."""
 
-    npi: Required[Sequence[str]]
+    npi: Required[str | Sequence[str]]
 
 
 CheckInsurancePlanNetworkResponse: TypeAlias = fhir.Parameters
@@ -44,7 +32,7 @@ class CodeSystemLookupQuery(TypedDict, total=False):
     code: Required[str]
     system: str
     version: str
-    property: str | Sequence[str]
+    property: str | str | Sequence[str]
     display_language: str
     date: str
 
@@ -102,19 +90,6 @@ class ListInsurancePlanCountiesQuery(TypedDict, total=False):
 ListInsurancePlanCountiesResponse: TypeAlias = fhir.Parameters
 """What `list_insurance_plan_counties` answers with."""
 
-
-class ListServiceTypesQuery(TypedDict, total=False):
-    """The query parameters of `list_service_types`, by their Python names, to pass as `**query`."""
-
-    include_past: bool
-
-
-class ListSpecialtiesQuery(TypedDict, total=False):
-    """The query parameters of `list_specialties`, by their Python names, to pass as `**query`."""
-
-    include_past: bool
-
-
 ProcessMessageBody: TypeAlias = fhir.Bundle
 """The request body of `process_message`."""
 ProcessMessageResponse: TypeAlias = fhir.Bundle
@@ -147,6 +122,12 @@ ReadPractitionerRoleResponse: TypeAlias = fhir.PractitionerRole
 ReadQuestionnaireResponse: TypeAlias = fhir.Questionnaire
 """What `read_questionnaire` answers with."""
 
+ReadScheduleResponse: TypeAlias = fhir.Schedule
+"""What `read_schedule` answers with."""
+
+ReadSlotResponse: TypeAlias = fhir.Slot
+"""What `read_slot` answers with."""
+
 ReconcileMedicationsBody: TypeAlias = Union[fhir.Bundle, fhir.Parameters]
 """The request body of `reconcile_medications`."""
 ReconcileMedicationsResponse: TypeAlias = fhir.Bundle
@@ -168,7 +149,7 @@ class SearchEndpointQuery(TypedDict, total=False):
     connection_type: str
     status: str
     name: str
-    include: Sequence[Literal["Endpoint:organization"]]
+    include: Literal["Endpoint:organization"] | Sequence[Literal["Endpoint:organization"]]
     id: str
     summary: Literal["count"]
     count: int
@@ -193,7 +174,10 @@ class SearchHealthcareServiceQuery(TypedDict, total=False):
     organization: str
     organization_identifier: str
     active: bool | Literal["true", "false"]
-    include: Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+    include: (
+        Literal["HealthcareService:organization", "HealthcareService:location"]
+        | Sequence[Literal["HealthcareService:organization", "HealthcareService:location"]]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -232,8 +216,8 @@ class SearchLocationQuery(TypedDict, total=False):
     address_state: str
     address_postalcode: str
     status: str
-    include: Sequence[Literal["Location:organization"]]
-    revinclude: Sequence[Literal["PractitionerRole:location"]]
+    include: Literal["Location:organization"] | Sequence[Literal["Location:organization"]]
+    revinclude: Literal["PractitionerRole:location"] | Sequence[Literal["PractitionerRole:location"]]
     id: str
     summary: Literal["count"]
     count: int
@@ -255,8 +239,8 @@ class SearchOrganizationQuery(TypedDict, total=False):
     address_city: str
     address_state: str
     address_postalcode: str
-    include: Sequence[Literal["Organization:partof"]]
-    revinclude: Sequence[
+    include: Literal["Organization:partof"] | Sequence[Literal["Organization:partof"]]
+    revinclude: (
         Literal[
             "PractitionerRole:organization",
             "OrganizationAffiliation:primary-organization",
@@ -265,7 +249,17 @@ class SearchOrganizationQuery(TypedDict, total=False):
             "Endpoint:organization",
             "Organization:partof",
         ]
-    ]
+        | Sequence[
+            Literal[
+                "PractitionerRole:organization",
+                "OrganizationAffiliation:primary-organization",
+                "OrganizationAffiliation:participating-organization",
+                "Location:organization",
+                "Endpoint:organization",
+                "Organization:partof",
+            ]
+        ]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -283,13 +277,20 @@ class SearchOrganizationAffiliationQuery(TypedDict, total=False):
     primary_organization: str
     participating_organization: str
     active: bool | Literal["true", "false"]
-    include: Sequence[
+    include: (
         Literal[
             "OrganizationAffiliation:participating-organization",
             "OrganizationAffiliation:primary-organization",
             "OrganizationAffiliation:network",
         ]
-    ]
+        | Sequence[
+            Literal[
+                "OrganizationAffiliation:participating-organization",
+                "OrganizationAffiliation:primary-organization",
+                "OrganizationAffiliation:network",
+            ]
+        ]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -310,7 +311,7 @@ class SearchPractitionerQuery(TypedDict, total=False):
     address_city: str
     address_state: str
     active: bool | Literal["true", "false"]
-    revinclude: Sequence[Literal["PractitionerRole:practitioner"]]
+    revinclude: Literal["PractitionerRole:practitioner"] | Sequence[Literal["PractitionerRole:practitioner"]]
     id: str
     summary: Literal["count"]
     count: int
@@ -333,7 +334,7 @@ class SearchPractitionerRoleQuery(TypedDict, total=False):
     new_patient_from_network: str
     new_patient: str
     active: bool | Literal["true", "false"]
-    include: Sequence[
+    include: (
         Literal[
             "PractitionerRole:practitioner",
             "PractitionerRole:organization",
@@ -341,7 +342,16 @@ class SearchPractitionerRoleQuery(TypedDict, total=False):
             "PractitionerRole:network",
             "PractitionerRole:endpoint",
         ]
-    ]
+        | Sequence[
+            Literal[
+                "PractitionerRole:practitioner",
+                "PractitionerRole:organization",
+                "PractitionerRole:location",
+                "PractitionerRole:network",
+                "PractitionerRole:endpoint",
+            ]
+        ]
+    )
     id: str
     summary: Literal["count"]
     count: int
@@ -350,26 +360,6 @@ class SearchPractitionerRoleQuery(TypedDict, total=False):
 
 SearchPractitionerRoleResponse: TypeAlias = fhir.Bundle
 """What `search_practitioner_role` answers with."""
-
-
-class SearchProviderLocationsQuery(TypedDict, total=False):
-    """The query parameters of `search_provider_locations`, by their Python names, to pass as `**query`."""
-
-    status: Literal["free", "busy", "busy-unavailable", "busy-tentative"]
-    publisher: str
-    service_type_code: str
-    npi: str
-    specialty: str
-    appointment_type: str
-    accepting_patients: Literal["newpt", "existptonly", "existptfam"]
-    is_virtual: bool
-    city: str
-    state: str
-    start_after: str
-    start_before: str
-    include_past: bool
-    limit: int
-    offset: int
 
 
 class SearchQuestionnaireQuery(TypedDict, total=False):
@@ -383,26 +373,62 @@ SearchQuestionnaireResponse: TypeAlias = fhir.Bundle
 """What `search_questionnaire` answers with."""
 
 
-class SearchSlotsQuery(TypedDict, total=False):
-    """The query parameters of `search_slots`, by their Python names, to pass as `**query`."""
+class SearchScheduleQuery(TypedDict, total=False):
+    """The query parameters of `search_schedule`, by their Python names, to pass as `**query`."""
 
-    status: Literal["free", "busy", "busy-unavailable", "busy-tentative"]
-    publisher: str
-    service_type_code: str
-    npi: str
+    service_type: str
     specialty: str
-    appointment_type: str
-    accepting_patients: Literal["newpt", "existptonly", "existptfam"]
-    is_virtual: bool
-    city: str
-    state: str
-    start_after: str
-    start_before: str
-    include_past: bool
-    provider_location_key: str
-    limit: int
-    offset: int
+    provider_specialty: str
+    provider_identifier: str
+    location_address_city: str
+    location_address_state: str
+    location_physical_type: str
+    source: str
+    source_below: str
+    include: Literal["Schedule:actor"] | Sequence[Literal["Schedule:actor"]]
+    include_iterate: (
+        Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[Literal["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]]
+    )
+    count: int
+    page: str
 
+
+SearchScheduleResponse: TypeAlias = fhir.Bundle
+"""What `search_schedule` answers with."""
+
+
+class SearchSlotQuery(TypedDict, total=False):
+    """The query parameters of `search_slot`, by their Python names, to pass as `**query`."""
+
+    status: str
+    start: str | Sequence[str]
+    appointment_type: str
+    schedule: str
+    service_type: str
+    schedule_service_type: str
+    specialty: str
+    provider_specialty: str
+    provider_identifier: str
+    patient_type: str
+    location_address_city: str
+    location_address_state: str
+    location_physical_type: str
+    source: str
+    source_below: str
+    include: Literal["Slot:schedule"] | Sequence[Literal["Slot:schedule"]]
+    include_iterate: (
+        Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        | Sequence[
+            Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
+        ]
+    )
+    count: int
+    page: str
+
+
+SearchSlotResponse: TypeAlias = fhir.Bundle
+"""What `search_slot` answers with."""
 
 StructureDosageBody: TypeAlias = fhir.Parameters
 """The request body of `structure_dosage`."""

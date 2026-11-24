@@ -168,4 +168,4 @@ def test_a_required_query_parameter_has_no_default() -> None:
     assert signature.parameters["npi"].default is inspect.Parameter.empty
     assert signature.parameters["npi"].kind is inspect.Parameter.KEYWORD_ONLY
     assert signature.parameters["id"].kind is inspect.Parameter.POSITIONAL_ONLY
-    assert inspect.signature(Haau3.search_slots).parameters["state"].default is None
+    assert inspect.signature(Haau3.search_slot).parameters["location_address_state"].default is None

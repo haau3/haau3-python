@@ -80,10 +80,28 @@ def _keys(node: ast.ClassDef) -> dict[str, bool]:
 
 def test_the_fhir_roots_are_the_specs_fhir_components() -> None:
     spec = generate.Spec(SPEC)
-    assert len(spec.fhir) == 15
+    every = {n for n, s in SPEC["components"]["schemas"].items() if generate.Spec.fhir_type(s)}
+    assert set(spec.fhir) == every
     classes = _classes("src/haau3/fhir.py")
     for name in spec.fhir:
         assert _keys(classes[name])["resourceType"] is True
+
+
+def test_a_component_is_a_fhir_root_when_its_resource_type_is_a_const() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    schemas = spec["components"]["schemas"]
+    schemas["Device"] = {"type": "object", "properties": {"resourceType": {"const": "Device"}}}
+    schemas["Tally"] = {"type": "object", "properties": {"total": {"type": "integer"}}}
+    built = generate.Spec(spec)
+    assert "Device" in built.fhir
+    assert "Device" not in built.own
+    # Control: a component with no resourceType is one of the spec's own.
+    assert "Tally" in built.own
+    assert "Tally" not in built.fhir
+    # And one named for another resource type stops the generator.
+    schemas["Gadget"] = {"type": "object", "properties": {"resourceType": {"const": "Device"}}}
+    with pytest.raises(ValueError, match="named for another resource type"):
+        generate.Spec(spec)
 
 
 def test_every_fhir_key_is_hl7s_own_and_required_as_hl7_says() -> None:
@@ -133,10 +151,26 @@ def test_other_resource_is_every_other_resource_type() -> None:
     assert named == every - set(spec.fhir) - set(spec.carried)
 
 
+def _components_of(spec: dict[str, Any]) -> str:
+    pytest.importorskip("datamodel_code_generator")
+    return generate.components_module(generate.Spec(spec))
+
+
 def test_the_components_are_the_specs_own() -> None:
-    classes = _classes("src/haau3/_components.py")
-    for name in generate.Spec(SPEC).own:
-        schema = SPEC["components"]["schemas"][name]
+    """Each of the spec's own components as a TypedDict with its keys, Required as the spec says.
+
+    Held on a copy of the spec given one, since whether the pinned spec has any is up to the API."""
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    spec["components"]["schemas"]["Tally"] = {
+        "type": "object",
+        "properties": {"total": {"type": "integer"}, "note": {"type": "string"}},
+        "required": ["total"],
+    }
+    tree = ast.parse(_components_of(spec))
+    classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+    assert "Tally" in classes
+    for name in generate.Spec(spec).own:
+        schema = spec["components"]["schemas"][name]
         declared = {
             s.target.id: not ast.unparse(s.annotation).startswith("NotRequired[")
             for s in classes[name].body
@@ -144,6 +178,44 @@ def test_the_components_are_the_specs_own() -> None:
         }
         assert set(declared) == set(schema["properties"]), name
         assert {k for k, required in declared.items() if required} == set(schema.get("required", [])), name
+
+
+def _without_own_components(spec: dict[str, Any]) -> dict[str, Any]:
+    """A copy of the spec with none of its own components, and no operation answering with one."""
+    copy: dict[str, Any] = json.loads(json.dumps(spec))
+    own = set(generate.Spec(copy).own)
+    copy["components"]["schemas"] = {k: v for k, v in copy["components"]["schemas"].items() if k not in own}
+    for path in list(copy["paths"]):
+        if any(f'/schemas/{name}"' in json.dumps(copy["paths"][path]) for name in own):
+            del copy["paths"][path]
+    return copy
+
+
+def test_a_spec_with_no_components_of_its_own_generates_modules_that_import_none() -> None:
+    spec = generate.Spec(_without_own_components(SPEC))
+    assert spec.own == []
+    components = _components_of(_without_own_components(SPEC))
+    assert not [node for node in ast.parse(components).body if isinstance(node, ast.ClassDef)]
+    for module in (generate.methods_module(spec), generate.operations_module(spec), generate.types_module(spec)):
+        assert "_components" not in module
+        compile(module, "generated.py", "exec")
+
+
+def test_a_spec_with_a_component_of_its_own_imports_it_where_an_answer_is_one() -> None:
+    """The control: an operation answering with one of the spec's own components imports it."""
+    spec: dict[str, Any] = _without_own_components(SPEC)
+    spec["components"]["schemas"]["Tally"] = {"type": "object", "properties": {"total": {"type": "integer"}}}
+    spec["paths"]["/v1/tally"] = {
+        "get": {
+            "operationId": "getTally",
+            "responses": {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Tally"}}}}},
+        }
+    }
+    built = generate.Spec(spec)
+    assert built.own == ["Tally"]
+    assert "from ._components import Tally\n" in generate.methods_module(built)
+    assert "from ._components import Tally\n" in generate.operations_module(built)
+    assert "from ._components import Tally as Tally\n" in generate.types_module(built)
 
 
 def test_the_operations_a_batch_refuses_come_from_the_spec() -> None:
@@ -165,7 +237,8 @@ def test_a_batchable_mark_other_than_false_stops_the_generator() -> None:
 
 def test_a_batchable_mark_outside_the_fhir_base_stops_the_generator() -> None:
     spec: dict[str, Any] = json.loads(json.dumps(SPEC))
-    spec["paths"]["/v1/scheduling/publishers"]["get"][generate.BATCHABLE] = False
+    spec["paths"]["/v1/example"] = {"get": _example_operation([])}
+    spec["paths"]["/v1/example"]["get"][generate.BATCHABLE] = False
     with pytest.raises(ValueError, match="not on the FHIR base"):
         generate.Spec(spec)
 
@@ -215,9 +288,20 @@ def test_every_committed_sample_says_the_key_its_operations_security_names() -> 
         assert generate._client(spec, op, SPEC["paths"][op.path][method]) + "\n" in source, op.id
 
 
+def _example_operation(parameters: list[dict[str, object]]) -> dict[str, Any]:
+    """An operation of the test's own, off the FHIR base, so none of the spec's has to stand in."""
+    return {
+        "operationId": "getExample",
+        "parameters": parameters,
+        "responses": {
+            "200": {"content": {"application/fhir+json": {"schema": {"$ref": "#/components/schemas/Bundle"}}}}
+        },
+    }
+
+
 def _mini(parameters: list[dict[str, object]]) -> dict[str, Any]:
     spec: dict[str, Any] = json.loads(json.dumps(SPEC))
-    spec["paths"]["/v1/scheduling/publishers"]["get"]["parameters"] = parameters
+    spec["paths"]["/v1/example"] = {"get": _example_operation(parameters)}
     return spec
 
 
@@ -246,7 +330,7 @@ def test_an_optional_header_is_a_keyword_of_the_operations_own() -> None:
     op = next(
         o
         for o in generate.Spec(_mini([_header(schema={"type": "string", "maxLength": 9})])).ops
-        if o.id == "listPublishers"
+        if o.id == "getExample"
     )
     assert [(h.wire, h.python, h.max_length) for h in op.headers] == [("X-Example-Option", "x_example_option", 9)]
 
@@ -273,6 +357,37 @@ def test_a_header_on_an_operation_a_batch_can_carry_stops_the_generator() -> Non
     spec["paths"]["/v1/fhir/r4/metadata"]["get"].setdefault("parameters", []).append(_header())
     with pytest.raises(ValueError, match="whose entries carry no headers"):
         generate.Spec(spec)
+
+
+def test_the_generator_refuses_a_first_call_the_spec_no_longer_has() -> None:
+    spec: dict[str, Any] = json.loads(json.dumps(SPEC))
+    path = next(p for p, item in spec["paths"].items() if item.get("get", {}).get("operationId") == generate.FIRST_CALL)
+    del spec["paths"][path]
+    with pytest.raises(ValueError, match=f"The first call is {generate.FIRST_CALL}, which the spec no longer has"):
+        generate.code_samples_json(generate.Spec(spec))
+
+
+def test_a_list_parameter_takes_one_value_or_a_list() -> None:
+    spec = generate.Spec(
+        _mini(
+            [
+                {
+                    "name": "_include",
+                    "in": "query",
+                    "schema": {"type": "array", "items": {"type": "string", "enum": ["A:b"]}},
+                },
+                {"name": "tag", "in": "query", "schema": {"type": "array", "items": {"type": "string"}}},
+                {"name": "one", "in": "query", "schema": {"type": "string"}},
+            ]
+        )
+    )
+    op = next(o for o in spec.ops if o.id == "getExample")
+    assert [p.type for p in op.query] == [
+        "Literal['A:b'] | Sequence[Literal['A:b']]",
+        "str | Sequence[str]",
+        # Control: a parameter that is not a list takes one value only.
+        "str",
+    ]
 
 
 def test_the_generator_refuses_a_spec_without_the_batch() -> None:

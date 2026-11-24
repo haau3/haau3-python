@@ -72,20 +72,20 @@ async def test_metadata_answers_either_of_its_two_types(kind: str) -> None:
 
 
 @pytest.mark.anyio
-async def test_scheduling_answers_are_not_checked_for_a_type(kind: str) -> None:
-    assert await Client(kind, Recorder(answer(200, {"anything": 1}, fhir=False)))("list_publishers") == {"anything": 1}
+async def test_an_answer_with_no_type_expected_is_not_checked_for_one(kind: str) -> None:
+    assert await Client(kind, Recorder(answer(200, {"anything": 1}, fhir=False)))("get", "/v1/elsewhere") == {
+        "anything": 1
+    }
     import httpx2
 
     json_null = httpx2.Response(200, content=b"null", headers={"content-type": "application/json"})
-    assert await Client(kind, Recorder(json_null))("list_publishers") is None
+    assert await Client(kind, Recorder(json_null))("get", "/v1/elsewhere") is None
 
 
 @pytest.mark.anyio
 async def test_request_returns_any_status_with_its_text(kind: str) -> None:
     recorder = Recorder(answer(404, {"type": "x", "status": 404}, fhir=False))
-    raw = await Client(kind, recorder)(
-        "request", "GET", "/v1/scheduling/publishers", query={"a": "1 2", "b": [True, 3]}
-    )
+    raw = await Client(kind, recorder)("request", "GET", "/v1/elsewhere", query={"a": "1 2", "b": [True, 3]})
     assert (raw.status, raw.reason_phrase, raw.body, raw.request_id, raw.attempts) == (
         404,
         "Not Found",
@@ -93,7 +93,7 @@ async def test_request_returns_any_status_with_its_text(kind: str) -> None:
         REQUEST_ID,
         1,
     )
-    assert recorder.last.url.raw_path == b"/v1/scheduling/publishers?a=1+2&b=true&b=3"
+    assert recorder.last.url.raw_path == b"/v1/elsewhere?a=1+2&b=true&b=3"
     assert "body" not in repr(raw)
     import httpx2
 
@@ -127,7 +127,7 @@ async def test_a_call_to_either_fhir_base_asks_for_and_sends_fhir_json(kind: str
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", ["/v1/sandbox", "/v1/sandbox/fhirish", "/v1/scheduling/slots"])
+@pytest.mark.parametrize("path", ["/v1/sandbox", "/v1/sandbox/fhirish", "/v1/elsewhere"])
 async def test_any_other_path_asks_for_and_sends_plain_json(kind: str, path: str) -> None:
     recorder = Recorder(answer(200, {}, fhir=False))
     await Client(kind, recorder)("request", "POST", path, body={})

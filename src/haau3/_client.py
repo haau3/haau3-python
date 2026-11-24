@@ -703,7 +703,7 @@ class Haau3(SyncMethods):
     ) -> RawResponse:
         """Sends any request and returns what the API answered, whatever its status.
 
-        `path` is a path such as `/v1/scheduling/publishers`, or a whole URL on the client's own
+        `path` is a path such as `/v1/fhir/r4/metadata`, or a whole URL on the client's own
         `base_url`; `query` uses the API's own parameter names; a str `body` is sent as it is, anything
         else as JSON. Raises only when no answer arrived (`NoAnswerError`), or for a URL on another host.
         """

@@ -11,16 +11,9 @@ from __future__ import annotations
 from typing import Final, Union
 
 from . import fhir
-from ._components import (
-    ListPublishersResponse,
-    ListServiceTypesResponse,
-    ListSpecialtiesResponse,
-    SearchProviderLocationsResponse,
-    SearchSlotsResponse,
-)
 from ._operation import DeclaredHeader, Operation
 
-SPEC_VERSION: Final[str] = "1.0.0-preview.36"
+SPEC_VERSION: Final[str] = "1.0.0-preview.40"
 """The version of the API's spec this SDK was generated from."""
 
 CHECK_INSURANCE_PLAN_NETWORK: Final[Operation[fhir.Parameters]] = Operation(
@@ -50,9 +43,6 @@ FHIR_METADATA: Final[Operation[Union[fhir.CapabilityStatement, fhir.TerminologyC
 LIST_INSURANCE_PLAN_COUNTIES: Final[Operation[fhir.Parameters]] = Operation(
     "GET", "/v1/fhir/r4/InsurancePlan/$counties", ("Parameters",)
 )
-LIST_PUBLISHERS: Final[Operation[ListPublishersResponse]] = Operation("GET", "/v1/scheduling/publishers", ())
-LIST_SERVICE_TYPES: Final[Operation[ListServiceTypesResponse]] = Operation("GET", "/v1/scheduling/service-types", ())
-LIST_SPECIALTIES: Final[Operation[ListSpecialtiesResponse]] = Operation("GET", "/v1/scheduling/specialties", ())
 PROCESS_MESSAGE: Final[Operation[fhir.Bundle]] = Operation(
     "POST",
     "/v1/fhir/r4/$process-message",
@@ -86,6 +76,8 @@ READ_PRACTITIONER_ROLE: Final[Operation[fhir.PractitionerRole]] = Operation(
 READ_QUESTIONNAIRE: Final[Operation[fhir.Questionnaire]] = Operation(
     "GET", "/v1/fhir/r4/Questionnaire/{id}", ("Questionnaire",)
 )
+READ_SCHEDULE: Final[Operation[fhir.Schedule]] = Operation("GET", "/v1/fhir/r4/Schedule/{id}", ("Schedule",))
+READ_SLOT: Final[Operation[fhir.Slot]] = Operation("GET", "/v1/fhir/r4/Slot/{id}", ("Slot",))
 RECONCILE_MEDICATIONS: Final[Operation[fhir.Bundle]] = Operation(
     "POST", "/v1/fhir/r4/$reconcile-medications", ("Bundle",)
 )
@@ -114,11 +106,9 @@ SEARCH_ORGANIZATION_AFFILIATION: Final[Operation[fhir.Bundle]] = Operation(
 )
 SEARCH_PRACTITIONER: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/Practitioner", ("Bundle",))
 SEARCH_PRACTITIONER_ROLE: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/PractitionerRole", ("Bundle",))
-SEARCH_PROVIDER_LOCATIONS: Final[Operation[SearchProviderLocationsResponse]] = Operation(
-    "GET", "/v1/scheduling/provider-locations", ()
-)
 SEARCH_QUESTIONNAIRE: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/Questionnaire", ("Bundle",))
-SEARCH_SLOTS: Final[Operation[SearchSlotsResponse]] = Operation("GET", "/v1/scheduling/slots", ())
+SEARCH_SCHEDULE: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/Schedule", ("Bundle",))
+SEARCH_SLOT: Final[Operation[fhir.Bundle]] = Operation("GET", "/v1/fhir/r4/Slot", ("Bundle",))
 STRUCTURE_DOSAGE: Final[Operation[fhir.Parameters]] = Operation(
     "POST", "/v1/fhir/r4/$structure-dosage", ("Parameters",)
 )

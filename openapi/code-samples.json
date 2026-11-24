@@ -2,70 +2,10 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.36"
+    "version": "1.0.0-preview.40"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
-    {
-      "target": "$.paths['/v1/scheduling/provider-locations'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.search_provider_locations(publisher=\"haau3\", limit=1)\nprint(found[\"total\"])\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/slots'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "import json\n\nfrom haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# Open appointment slots, here in Cambridge.\nslots = client.search_slots(city=\"Cambridge\", state=\"MA\", limit=1)[\"slots\"]\nprint(json.dumps(slots[0], indent=2) if slots else \"No open slots matched.\")\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/publishers'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_publishers()\nprint(len(found[\"publishers\"]))\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/service-types'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_service_types()\nprint(len(found[\"serviceTypes\"]))\n"
-          }
-        ]
-      }
-    },
-    {
-      "target": "$.paths['/v1/scheduling/specialties'].get",
-      "update": {
-        "x-codeSamples": [
-          {
-            "lang": "python",
-            "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nfound = client.list_specialties()\nprint(len(found[\"specialties\"]))\n"
-          }
-        ]
-      }
-    },
     {
       "target": "$.paths['/v1/fhir/r4/metadata'].get",
       "update": {
@@ -86,6 +26,54 @@
             "lang": "python",
             "label": "Python",
             "source": "from haau3 import BatchOk, Haau3, calls\n\nclient = Haau3()  # reads HAAU3_API_KEY\nresults = client.batch(\n    calls.code_system_lookup(system=\"http://loinc.org\", code=\"2345-7\", property=\"SHORTNAME\"),\n    calls.code_system_lookup(system=\"http://loinc.org\", code=\"8867-4\", property=\"SHORTNAME\"),\n    calls.list_insurance_plan_counties(state=\"DE\"),\n)\nfor result in results:\n    print(result.status if isinstance(result, BatchOk) else result.error)\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Slot'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import json\n\nfrom haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\n# Open appointment slots of one provider, found by NPI.\npage = client.search_slot(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Slot:schedule\",\n    include_iterate=[\"Schedule:actor\", \"PractitionerRole:practitioner\", \"HealthcareService:location\"],\n    count=1,\n)\nslot = next(client.resources(page), None)\nprint(json.dumps(slot, indent=2) if slot else \"No open slots matched.\")\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Slot/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nslot = client.read_slot(\"b12a0a00667b5e27ac040aa56d5d7c69\")\nprint(slot.get(\"id\"))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Schedule'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_schedule(\n    provider_identifier=\"http://hl7.org/fhir/sid/us-npi|2900000227\",\n    include=\"Schedule:actor\",\n    include_iterate=[\"PractitionerRole:practitioner\", \"HealthcareService:location\"],\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+          }
+        ]
+      }
+    },
+    {
+      "target": "$.paths['/v1/fhir/r4/Schedule/{id}'].get",
+      "update": {
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nschedule = client.read_schedule(\"e859c18cc8cc1a6ab1c9b7b63c5c60a1\")\nprint(schedule.get(\"id\"))\n"
           }
         ]
       }

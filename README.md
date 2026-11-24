@@ -2,7 +2,8 @@
 
 The Python SDK for the [haau3 platform API](https://docs.haau3.com), as typed calls:
 
-- **Scheduling:** open appointment slots from many SMART Scheduling Links publishers, in one search.
+- **Scheduling:** open appointment slots from many SMART Scheduling Links publishers, in one FHIR
+  search, each `Slot` with its `Schedule`, `Location` and provider.
 - **Medical Benefits:** Medicare Advantage and ACA Marketplace plans as FHIR `InsurancePlan`,
   searchable by state or county, and which providers are in a plan's network.
 - **MedList:** one reconciled medication list from one patient's FHIR medication records.
@@ -50,15 +51,21 @@ Make one client and reuse it: it holds a pool of connections, and is safe to sha
 ```python
 import json
 
-# Open appointment slots, here in Cambridge.
-slots = client.search_slots(city="Cambridge", state="MA", limit=1)["slots"]
-print(json.dumps(slots[0], indent=2) if slots else "No open slots matched.")
+# Open appointment slots of one provider, found by NPI.
+page = client.search_slot(
+    provider_identifier="http://hl7.org/fhir/sid/us-npi|2900000227",
+    include="Slot:schedule",
+    include_iterate=["Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"],
+    count=1,
+)
+slot = next(client.resources(page), None)
+print(json.dumps(slot, indent=2) if slot else "No open slots matched.")
 ```
 
 An answer is the JSON the API sent, as plain dicts and lists, so it goes into `json.dumps`, a
-DataFrame or a database as it is. Each is typed with a `TypedDict`, so a type checker and your
-editor know every key: FHIR answers with HL7's R4 types (`haau3.fhir`), the other services' answers
-with the API's own (`haau3.types`). FHIR elements are optional, so read them with `.get()`.
+DataFrame or a database as it is. Each is typed with HL7's R4 types (`haau3.fhir`), as a
+`TypedDict`, so a type checker and your editor know every key, and `haau3.types` names each
+operation's query, body and answer. FHIR elements are optional, so read them with `.get()`.
 
 ## From async code
 
@@ -77,9 +84,8 @@ Django and Flask"); it must not outlive its event loop.
 ## One call per service
 
 ```python
-# Scheduling: open appointment slots, here in Boston.
-found = client.search_slots(city="Boston", state="MA", limit=10)
-print(found["total"], len(found["slots"]))
+# Scheduling: open appointment slots in a state, as a FHIR Bundle of Slots.
+slots = client.search_slot(location_address_state="MA", count=10)
 
 # Provider directory: a practitioner by NPI, from CMS's National Provider Directory.
 practitioners = client.search_practitioner(identifier="1093209884")
@@ -197,7 +203,7 @@ Each call takes `timeout`, `max_retries`, `correlation_id` and `extra_headers` a
 that call only:
 
 ```python
-client.search_slots(state="MA", timeout=10, max_retries=0)
+client.search_slot(location_address_state="MA", timeout=10, max_retries=0)
 ```
 
 An operation that declares a header of its own takes it as one more keyword, named from the header
@@ -261,7 +267,7 @@ try:
 except RefusedError as error:
     print(error.status)  # 400, 404, 410 and so on
     print(error.code)  # why, when the API names it: "not-the-example" from the Sandbox
-    print(error.outcome)  # the OperationOutcome; Scheduling's errors carry `problem`
+    print(error.outcome)  # the OperationOutcome the API answered with
 except NoAnswerError as error:
     print(error.reason)  # "timeout", "network", "rate-limited", "unavailable", "server-error" or "unreadable"
     print(error.retry_after)  # seconds, when the API said
@@ -314,9 +320,9 @@ key from `HAAU3_API_KEY`, opens only a regular file, and never keeps or shows th
 No answer is never reported as an empty result, and an empty result is never an error. Every error
 the API answered carries `attempts`, `duration_ms` and `reason_phrase` too.
 
-An error's message never includes the body the API answered with, and the body (`outcome` or
-`problem`) is never printed when the error is: not by `str()`, `repr()` or a traceback, and not
-among a traceback's local variables, which some error reporters record. A request body you sent is
+An error's message never includes the body the API answered with, and the body (`outcome`) is
+never printed when the error is: not by `str()`, `repr()` or a traceback, and not among a
+traceback's local variables, which some error reporters record. A request body you sent is
 held the same way. An error pickles, for Celery or multiprocessing, with every field but its body.
 
 A FHIR answer is checked against the resource types its operation answers with. Anything else, a
@@ -388,8 +394,7 @@ for resource in client.resources(first):
 It yields each entry whose search mode is `match`, or says none. A resource an `_include` or
 `_revinclude` brought, and a search's own `OperationOutcome`, are not among them; `pages()` gives
 every entry. From async code, `async for page in async_client.pages(first)` and `async for resource
-in async_client.resources(first)`. Scheduling's searches page with `limit` and `offset`, and answer
-with a `total`.
+in async_client.resources(first)`.
 
 ## Reading a Parameters answer
 
@@ -545,7 +550,7 @@ value. A `{name}` with no value, or a value with no `{name}`, is refused before 
 with its headers, request id, attempts and duration:
 
 ```python
-raw = client.request("GET", "/v1/scheduling/publishers")
+raw = client.request("GET", "/v1/fhir/r4/metadata")
 print(raw.status, raw.reason_phrase, raw.request_id)
 ```
 
