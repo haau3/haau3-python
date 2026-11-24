@@ -12,7 +12,7 @@ Plain functions, with no client, as the readers in `_parameters` are. The typed 
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
@@ -21,11 +21,12 @@ from ._errors import Haau3Error
 if TYPE_CHECKING:
     from .fhir import Bundle, BundleEntry, Reference, Resource
 
-# FHIR's RESTful address: a base, a resource type, an id, and a version after _history.
+# FHIR's RESTful address: a base, a resource type, an id, and a version after _history. Each is matched
+# against the whole string (fullmatch), since `$` in Python also matches before a final newline.
 _RESTFUL = re.compile(
-    r"^(https?://.+)/([A-Z][A-Za-z]+)/([A-Za-z0-9\-.]{1,64})(?:/_history/([A-Za-z0-9\-.]{1,64}))?$", re.ASCII
+    r"(https?://.+)/([A-Z][A-Za-z]+)/([A-Za-z0-9\-.]{1,64})(?:/_history/([A-Za-z0-9\-.]{1,64}))?", re.ASCII
 )
-_RELATIVE = re.compile(r"^([A-Z][A-Za-z]+)/([A-Za-z0-9\-.]{1,64})(?:/_history/([A-Za-z0-9\-.]{1,64}))?$", re.ASCII)
+_RELATIVE = re.compile(r"([A-Z][A-Za-z]+)/([A-Za-z0-9\-.]{1,64})(?:/_history/([A-Za-z0-9\-.]{1,64}))?", re.ASCII)
 _ABSOLUTE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:", re.ASCII)
 
 
@@ -38,18 +39,33 @@ class _Address:
 
 
 def _restful(url: object) -> _Address | None:
-    match = _RESTFUL.match(url) if isinstance(url, str) else None
+    match = _RESTFUL.fullmatch(url) if isinstance(url, str) else None
     return _Address(match[1], match[2], match[3], match[4]) if match else None
 
 
 def _held(bundle: Bundle) -> list[tuple[BundleEntry, Resource]]:
-    """Each entry that holds a resource, with it; a deleted entry in a history holds none, and names nothing."""
+    """Each entry that holds a resource, with it; a deleted entry in a history holds none, and names nothing.
+
+    An entry or a resource that is not a JSON object is passed over, as a reader of FHIR's JSON skips
+    what it cannot read, so one malformed entry never fails a page.
+    """
     held: list[tuple[BundleEntry, Resource]] = []
-    for entry in bundle.get("entry", []):
+    for entry in _entries(bundle):
         resource = entry.get("resource")
-        if resource is not None:
+        if isinstance(resource, dict):
             held.append((entry, resource))
     return held
+
+
+def _entries(bundle: Bundle) -> list[BundleEntry]:
+    entries: object = bundle.get("entry")
+    if not isinstance(entries, list):
+        return []
+    return [cast("BundleEntry", e) for e in cast("list[object]", entries) if isinstance(e, dict)]
+
+
+def _type_of(resource: Resource) -> object:
+    return cast("Mapping[str, object]", resource).get("resourceType")
 
 
 def _version(resource: Resource) -> object:
@@ -97,9 +113,16 @@ def resolve_in(
     the one meant, when the resource found is not of `type`, for a `#` reference without `from_`,
     and for a `from_` that is not an entry of the Bundle.
     """
-    target = reference if isinstance(reference, str) else reference.get("reference") if reference is not None else None
+    given: object = reference
+    target = (
+        given
+        if isinstance(given, str)
+        else cast("Mapping[str, object]", given).get("reference")
+        if isinstance(given, dict)
+        else None
+    )
     # A reference by identifier alone names no entry; FHIR leaves finding one to the reader.
-    if not target:
+    if not isinstance(target, str) or not target:
         return None
 
     found: Resource | None
@@ -107,12 +130,17 @@ def resolve_in(
         if from_ is None:
             raise Haau3Error("A reference to a contained resource is found in the resource that holds it: pass from_.")
         # `#` alone is the resource itself; `#id` is one it contains.
-        contained: Sequence[Resource] = cast("Mapping[str, Sequence[Resource]]", from_).get("contained", [])
+        held: object = cast("Mapping[str, object]", from_).get("contained")
+        contained = (
+            [cast("Resource", r) for r in cast("list[object]", held) if isinstance(r, dict)]
+            if isinstance(held, list)
+            else []
+        )
         found = from_ if target == "#" else next((r for r in contained if r.get("id") == target[1:]), None)
     elif _ABSOLUTE.match(target):
         found = _at_address(bundle, target)
     else:
-        relative = _RELATIVE.match(target)
+        relative = _RELATIVE.fullmatch(target)
         # Anything else has no meaning FHIR defines.
         if relative is None:
             return None
@@ -136,22 +164,23 @@ def resolve_in(
                     candidates.append(resource)
             found = _one(candidates)
 
-    if found is not None and type is not None and found["resourceType"] != type:
-        raise Haau3Error(f"The reference names a resource of type {found['resourceType']}, not {type}.")
+    if found is not None and type is not None and _type_of(found) != type:
+        raise Haau3Error(f"The reference names a resource of type {_type_of(found)}, not {type}.")
     return found
 
 
 def is_match(entry: BundleEntry) -> bool:
     """Whether an entry is one a search matched: it holds a resource, and its search mode is `match` or says none."""
-    mode = entry.get("search", {}).get("mode")
-    return entry.get("resource") is not None and mode in (None, "match")
+    search: object = entry.get("search")
+    mode = cast("Mapping[str, object]", search).get("mode") if isinstance(search, dict) else None
+    return isinstance(entry.get("resource"), dict) and mode in (None, "match")
 
 
 def matches_in(page: Bundle, type: str | None = None) -> list[Resource]:
     """One page's matches, in page order, of `type` when one is given."""
     found: list[Resource] = []
-    for entry in page.get("entry", []):
+    for entry in _entries(page):
         resource = entry.get("resource")
-        if resource is not None and is_match(entry) and (type is None or resource["resourceType"] == type):
+        if resource is not None and is_match(entry) and (type is None or _type_of(resource) == type):
             found.append(resource)
     return found

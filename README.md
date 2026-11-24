@@ -428,7 +428,8 @@ for pharmacy in client.matches(page, "HealthcareService"):
 that `fullUrl`; a relative one is resolved against the address of the entry holding it when you pass
 that resource as `from_`, and otherwise is the one entry whose address ends in that type and id; `#id`
 is found in `from_`'s `contained`. It is `None` when the page does not hold the resource, and raises a
-`Haau3Error` when two entries could be the one meant or the resource is not of `type`. `type` is a
+`Haau3Error` when two entries could be the one meant, when the resource is not of `type`, for a `#`
+reference with no `from_`, and for a `from_` that is not an entry of the page. `type` is a
 resource type's name and types the result, as `matches()`'s does: `client.matches(page, "Slot")` is a
 `list[fhir.Slot]`. Both are plain functions too, `haau3.resolve()` and `haau3.matches()`.
 
@@ -462,7 +463,8 @@ for view in client.slot_views(page):
 | `patient_type` | Whom it accepts, from its `patient-type` extension, as one of HL7's four codes: `newpt`, `existptonly`, `existptfam` or `nopt` (the API never serves a `nopt` Slot). |
 | `virtual` | `True` when a Location's physical type is `vi`, and `False` otherwise: a Location is physical unless it says it is virtual, and a place that is both is two Locations. |
 
-A view is a frozen dataclass, `haau3.SlotView`, and each list is a tuple that keeps the order the
+A view is a frozen dataclass, `haau3.SlotView`, that compares by value and cannot be hashed (it
+holds dicts), and each list is a tuple that keeps the order the
 Schedule names them in, holds each resource once, and is empty when there is none: a Schedule may
 name a Location and no provider. The three extensions are read under SMART Scheduling Links 1.0.0's
 own URLs; the Slot itself keeps whatever its publisher sent. Nothing is fetched and nothing is

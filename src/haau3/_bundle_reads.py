@@ -358,8 +358,8 @@ def resolve(
     against the address of the entry holding it when you pass that resource as `from_`, and otherwise is the
     one entry whose address ends in that type and id. `#id` is found in `from_`'s `contained`. `type` is the
     resource type the reference must name, and types the result. None when the Bundle does not hold the
-    resource. Raises a `Haau3Error` when two entries could be the one meant, or the resource is not of
-    `type`.
+    resource. Raises a `Haau3Error` when two entries could be the one meant, when the resource is not of
+    `type`, for a `#` reference with no `from_`, and for a `from_` that is not an entry of the Bundle.
     """
     return resolve_in(bundle, reference, type=type, from_=from_)
 

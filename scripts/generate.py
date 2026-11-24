@@ -616,8 +616,8 @@ RESOLVE_DOC = (
     "against the address of the entry holding it when you pass that resource as `from_`, and otherwise is the\n"
     "one entry whose address ends in that type and id. `#id` is found in `from_`'s `contained`. `type` is the\n"
     "resource type the reference must name, and types the result. None when the Bundle does not hold the\n"
-    "resource. Raises a `Haau3Error` when two entries could be the one meant, or the resource is not of\n"
-    "`type`.{example}"
+    "resource. Raises a `Haau3Error` when two entries could be the one meant, when the resource is not of\n"
+    "`type`, for a `#` reference with no `from_`, and for a `from_` that is not an entry of the Bundle.{example}"
 )
 MATCHES_DOC = (
     "One page's matches, in page order, with no request: each entry whose search mode is `match` or says none.\n\n"
