@@ -392,7 +392,11 @@ def test_every_dataclass_haau3_exports_has_annotations_that_resolve_at_runtime()
 def test_a_fastapi_route_returning_a_lookup_and_a_validation_serializes_them() -> None:
     pytest.importorskip("fastapi")
     from fastapi import FastAPI
-    from fastapi.testclient import TestClient
+
+    try:
+        from fastapi.testclient import TestClient
+    except RuntimeError:  # An older Starlette's test client needs httpx, which the lowest dependencies lack.
+        pytest.skip("this FastAPI's test client needs httpx")
 
     looked_up = lookup_result(ICD10CM_LOOKUP)
     checked = validation_result(_example("/v1/fhir/r4/CodeSystem/$validate-code"))

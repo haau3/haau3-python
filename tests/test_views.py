@@ -691,7 +691,11 @@ def test_a_fastapi_route_returning_slot_views_serializes_them() -> None:
     """pydantic reads the views' annotations at runtime, so FastAPI can serve them as a response model."""
     pytest.importorskip("fastapi")
     from fastapi import FastAPI
-    from fastapi.testclient import TestClient
+
+    try:
+        from fastapi.testclient import TestClient
+    except RuntimeError:  # An older Starlette's test client needs httpx, which the lowest dependencies lack.
+        pytest.skip("this FastAPI's test client needs httpx")
 
     views = slot_views(spec_answer("/v1/fhir/r4/Slot"))
     app = FastAPI()
