@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/haau3/haau3-python/compare/v0.4.5...v0.5.0) (2026-11-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* Scheduling is searched as FHIR Slot and Schedule, the five Scheduling methods are gone, and errors carry the OperationOutcome alone ([#81](https://github.com/haau3/haau3-python/issues/81))
+
+### Features
+
+* Scheduling is searched as FHIR Slot and Schedule, the five Scheduling methods are gone, and errors carry the OperationOutcome alone ([#81](https://github.com/haau3/haau3-python/issues/81)) ([1cc1fa9](https://github.com/haau3/haau3-python/commit/1cc1fa93b2e41d0d2772e9341f0f8f6f199899f1))
+* slot and schedule views, search helpers that send every include, and resolve() and matches() ([#84](https://github.com/haau3/haau3-python/issues/84)) ([a77d48e](https://github.com/haau3/haau3-python/commit/a77d48e9e69a0ff315a42d9b4facbdae96ea24b0))
+
 ## [0.4.5](https://github.com/haau3/haau3-python/compare/v0.4.4...v0.4.5) (2026-11-16)
 
 
