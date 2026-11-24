@@ -8,15 +8,19 @@
 - src/haau3/_operations.py: one Operation per operation: its method, path and the FHIR resource types
   it answers with.
 - src/haau3/_methods.py: one method per operation, named by its operationId in snake_case, on the
-  sync and async clients and on each client's `with_response`, with the batch's overloads.
+  sync and async clients and on each client's `with_response`, with the batch's overloads; a search
+  helper beside each search of WITH_INCLUDES, sending every include it serves; and on each client,
+  `resolve()` and `matches()`, typed by a resource type's name.
+- src/haau3/_bundle_reads.py: the same `resolve()` and `matches()` as plain functions.
 - src/haau3/calls.py: one function per operation a batch can carry, each making an entry.
 - src/haau3/types.py: the public type names: the components, and each operation's Query, Body and
-  Response.
+  Response, and each search helper's Query.
 - api.md: every method by service, each linking its page on docs.haau3.com.
 - openapi/code-samples.json: a Python sample for every operation, as an OpenAPI Overlay that adds
   `x-codeSamples` to the spec, for a documentation site to show beside each operation. Each sample is
   a whole program that sends the operation's example request from the spec and prints one field of
-  the answer, except the slot search, a quickstart's first call, which prints the first slot it found.
+  the answer, except the slot search, a quickstart's first call, which sends it through its helper and
+  prints the first slot it found through its slot view.
   Its client line says which key HAAU3_API_KEY must hold, from the operation's security.
   tests/test_samples.py runs every one as it is written against a stand-in API, and CI type-checks
   them with the README's blocks.
@@ -41,7 +45,8 @@ import sys
 import tempfile
 import zipfile
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -130,6 +135,32 @@ class Op:
         self.const = naming.constant_name(self.id)
 
 
+INCLUDE_PARAMS = ("_include", "_include:iterate")
+
+WITH_INCLUDES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "searchSlot": (
+        ("Slot:schedule",),
+        ("Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"),
+    ),
+    "searchSchedule": (("Schedule:actor",), ("PractitionerRole:practitioner", "HealthcareService:location")),
+}
+"""The searches that get a helper, `<method>_with_includes`, sending every include they serve: its
+`_include`, then its `_include:iterate`, and nothing else of its own. tests/test_views.py holds each
+equal to every include the spec says the search serves, so an include served later fails it until the
+helper sends it."""
+
+
+@dataclass
+class Helper:
+    """A search helper: the search, its name, the includes it sends, and the search's query less them."""
+
+    op: Op
+    name: str
+    include: tuple[str, ...]
+    iterate: tuple[str, ...]
+    query: list[Param]
+
+
 class Spec:
     def __init__(self, spec: Json) -> None:
         self.spec = spec
@@ -141,6 +172,38 @@ class Spec:
         self.own = sorted(n for n in self.schemas if n not in self.fhir)
         self.ops = self._operations()
         self.carried = self._carried()
+        self.helpers = self._helpers()
+
+    def _helpers(self) -> dict[str, Helper]:
+        """Each search helper of WITH_INCLUDES, by the operationId of its search. The generator stops when a
+        search is gone, takes no `_include` or `_include:iterate`, or does not serve an include its
+        helper sends, rather than writing a helper that sends what the API refuses."""
+        helpers: dict[str, Helper] = {}
+        for op_id, (include, iterate) in WITH_INCLUDES.items():
+            op = next((o for o in self.ops if o.id == op_id), None)
+            if op is None:
+                raise ValueError(f"The search helper of {op_id}: the spec no longer has {op_id}")
+            if op.method != "GET" or op.body or op.headers or op.deprecated is not None:
+                raise ValueError(f"The search helper of {op_id}: it is not a plain GET search")
+            raw = self.spec["paths"][op.path]["get"]
+            served: dict[str, list[str]] = {}
+            for p in raw.get("parameters", []):
+                if "$ref" not in p and p["in"] == "query" and p["name"] in INCLUDE_PARAMS:
+                    schema = p.get("schema") or {}
+                    served[p["name"]] = list((schema.get("items") or {}).get("enum") or schema.get("enum") or [])
+            for wire, sent in zip(INCLUDE_PARAMS, (include, iterate), strict=True):
+                if wire not in served:
+                    raise ValueError(f"The search helper of {op_id}: {op_id} takes no {wire}")
+                refused = [value for value in sent if value not in served[wire]]
+                if refused:
+                    raise ValueError(
+                        f"The search helper of {op_id} sends {wire}={refused[0]}, which {op_id} does not serve"
+                    )
+            query = [p for p in op.query if p.wire not in INCLUDE_PARAMS]
+            helpers[op_id] = Helper(
+                op=op, name=f"{op.name}_with_includes", include=include, iterate=iterate, query=query
+            )
+        return helpers
 
     def _carried(self) -> list[str]:
         """The resource types the spec's request examples carry, the request's own type included.
@@ -433,12 +496,7 @@ def _method_doc(op: Op) -> str:
         parts.append(op.description)
     parts.append(f"`{op.method} {op.path}`, {op.docs}")
     if op.query:
-        lines = ["Query parameters, each with its name in the API:", ""]
-        for p in op.query:
-            wire = f" (`{p.wire}`)" if p.wire != p.python else ""
-            required = " Required." if p.required else ""
-            lines.append(f"- `{p.python}`{wire}:{required} {p.description}".rstrip())
-        parts.append("\n".join(lines))
+        parts.append(_query_doc(op.query))
     if op.headers:
         lines = ["Headers it declares, each a keyword of its own:", ""]
         for h in op.headers:
@@ -470,7 +528,204 @@ def _options(op: Op) -> str:
     return f"Options(timeout, max_retries, correlation_id, extra_headers{held})"
 
 
-def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_response: bool) -> str:
+HELPER_WORDS: dict[str, tuple[str, str | None, str, str]] = {
+    "searchSlot": (
+        "each Slot's Schedule, the Locations and provider the Schedule names, the Practitioner behind a role "
+        "and the Location behind a HealthcareService come in the same Bundle",
+        "free Slots, from now",
+        "slot_views",
+        'page = {await}client.search_slot_with_includes(location_address_state="MA")\n'
+        "for view in client.slot_views(page):\n"
+        '    print(view.slot.get("start"), view.booking_link)',
+    ),
+    "searchSchedule": (
+        "each Schedule's Locations and provider, the Practitioner behind a role and the Location behind a "
+        "HealthcareService come in the same Bundle",
+        None,
+        "schedule_views",
+        'page = {await}client.search_schedule_with_includes(location_address_city="Boston")\n'
+        "for view in client.schedule_views(page):\n"
+        '    print([location.get("name") for location in view.locations])',
+    ),
+}
+"""What each helper's docstring says beside its parameters: what comes in the page, the API's defaults
+it keeps, the view that reads the page, and an example."""
+
+
+def _query_doc(query: list[Param]) -> str:
+    lines = ["Query parameters, each with its name in the API:", ""]
+    for p in query:
+        wire = f" (`{p.wire}`)" if p.wire != p.python else ""
+        required = " Required." if p.required else ""
+        lines.append(f"- `{p.python}`{wire}:{required} {p.description}".rstrip())
+    return "\n".join(lines)
+
+
+def _helper_doc(helper: Helper, asynchronous: bool) -> str:
+    comes, defaults, views, example = HELPER_WORDS[helper.op.id]
+    resource = helper.op.id.removeprefix("search")
+    kept = f", so the API's own defaults hold: {defaults}" if defaults else ""
+    parts = [
+        f"The {resource} search, with every include it serves sent for you.",
+        f"{comes[:1].upper()}{comes[1:]}: `_include` of {_named(list(helper.include))}, then `_include:iterate` of "
+        f"{_named(list(helper.iterate))}. It takes every other parameter of `{helper.op.name}` and sends nothing "
+        f"else{kept}. `{views}()` reads the page with no request; `pages()` follows its `next` link.",
+        "```python\n" + example.replace("{await}", "await " if asynchronous else "") + "\n```",
+        f"It takes no `include` or `include_iterate`, and Python refuses either before anything is sent: to send "
+        f"your own, call `{helper.op.name}`.",
+        f"`{helper.op.method} {helper.op.path}`, {helper.op.docs}",
+    ]
+    if helper.query:
+        parts.append(_query_doc(helper.query))
+    return "\n\n".join(parts)
+
+
+def _helper_method(helper: Helper, *, client: str, asynchronous: bool, with_response: bool) -> list[str]:
+    """A search helper on a client or its `with_response`: the search's keywords less its includes, which
+    it sends in their places, so its request is the search's with those includes."""
+    op = replace(helper.op, query=helper.query)
+    returns = f"Response[{op.response}]" if with_response else op.response
+    prefix = "async def" if asynchronous else "def"
+    if with_response:
+        doc = f"`{client}.{helper.name}`, returning a `Response` with the request id and timing as well as the answer."
+    else:
+        doc = _helper_doc(helper, asynchronous)
+    sent = {"_include": helper.include, "_include:iterate": helper.iterate}
+    query = (
+        "("
+        + "".join(
+            f"({p.wire!r}, {sent[p.wire]!r}), " if p.wire in sent else f"({p.wire!r}, {p.python}), "
+            for p in helper.op.query
+        )
+        + ")"
+    )
+    call = f"self._engine.call({op.const}, (), {query}, None, {_options(op)})"
+    if asynchronous:
+        call = f"(await {call})"
+    return [
+        f"    {prefix} {helper.name}({_signature(op)}) -> {returns}:",
+        docstring(doc, "        "),
+        f"        return {call}{'' if with_response else '.data'}",
+        "",
+    ]
+
+
+RESOLVE_DOC = (
+    "The resource a reference names, found in a Bundle as FHIR R4 resolves one, with no request, or None.\n\n"
+    "An absolute reference is the entry with that `fullUrl`. A relative one (`Organization/123`) is resolved\n"
+    "against the address of the entry holding it when you pass that resource as `from_`, and otherwise is the\n"
+    "one entry whose address ends in that type and id. `#id` is found in `from_`'s `contained`. `type` is the\n"
+    "resource type the reference must name, and types the result. None when the Bundle does not hold the\n"
+    "resource. Raises a `Haau3Error` when two entries could be the one meant, or the resource is not of\n"
+    "`type`.{example}"
+)
+MATCHES_DOC = (
+    "One page's matches, in page order, with no request: each entry whose search mode is `match` or says none.\n\n"
+    "With a resource type, only matches of that type, typed as it. A resource an `_include` brought is not\n"
+    "among them; `resolve()` finds one a reference names.{example}"
+)
+
+
+@lru_cache(maxsize=1)
+def _fhir_schema() -> Json:
+    data = FHIR_ZIP.read_bytes()
+    if hashlib.sha256(data).hexdigest() != FHIR_ZIP_SHA256:
+        raise ValueError(f"{FHIR_ZIP} is not the HL7 schema this generator was pinned to")
+    with zipfile.ZipFile(FHIR_ZIP) as archive:
+        raw = archive.read("fhir.schema.json")
+    if hashlib.sha256(raw).hexdigest() != FHIR_SCHEMA_SHA256:
+        raise ValueError("fhir.schema.json in the zip is not the HL7 schema this generator was pinned to")
+    loaded: Json = json.loads(raw)
+    return loaded
+
+
+def typed_roots(spec: Spec) -> list[str]:
+    """The resource types fhir.py writes a TypedDict of: those the spec names and those its examples carry."""
+    return sorted(set(spec.fhir) | set(spec.carried))
+
+
+def other_resource_types(spec: Spec) -> list[str]:
+    """Every other R4 resource type, in HL7's order: what `OtherResource` stands for."""
+    roots = set(typed_roots(spec))
+    every = [ref["$ref"].rsplit("/", 1)[-1] for ref in _fhir_schema()["definitions"]["ResourceList"]["oneOf"]]
+    return [name for name in every if name not in roots]
+
+
+def _bundle_reads(spec: Spec, *, indent: str, method: bool) -> list[str]:
+    """`resolve()` and `matches()`, typed by a resource type's name: one overload per type fhir.py writes,
+    `OtherResource` for the rest, and `Resource` for no type. As in TypeScript, the type is a resource
+    type's name, never any string. Plain functions, or a client's methods when `method`, each calling
+    the readers in `_bundles`."""
+    self_ = "self, " if method else ""
+    resolve_args = "bundle: fhir.Bundle, reference: fhir.Reference | str | None"
+    other = "Literal[" + ", ".join(repr(n) for n in other_resource_types(spec)) + "]"
+    typed = [(f"Literal[{name!r}]", f"fhir.{name}") for name in typed_roots(spec)] + [(other, "fhir.OtherResource")]
+    resolve_example = (
+        "\n\n```python\n"
+        'page = client.search_practitioner_role(identifier="1093209884", include="PractitionerRole:practitioner")\n'
+        'for role in client.matches(page, "PractitionerRole"):\n'
+        '    practitioner = client.resolve(page, role.get("practitioner"), type="Practitioner", from_=role)\n'
+        "```"
+        if method
+        else ""
+    )
+    matches_example = (
+        '\n\n```python\nfor role in client.matches(page, "PractitionerRole"):\n    print(role.get("id"))\n```'
+        if method
+        else ""
+    )
+    plain = " The plain function `haau3.{name}()` does the same with no client." if method else ""
+    lines: list[str] = []
+    for literal, returns in typed:
+        lines += [
+            f"{indent}@overload",
+            f"{indent}def resolve({self_}{resolve_args}, *, type: {literal}, from_: fhir.Resource | None = None)"
+            f" -> {returns} | None: ...",
+        ]
+    lines += [
+        f"{indent}@overload",
+        f"{indent}def resolve({self_}{resolve_args}, *, type: None = None, from_: fhir.Resource | None = None)"
+        " -> fhir.Resource | None: ...",
+        f"{indent}def resolve({self_}{resolve_args}, *, type: str | None = None, from_: fhir.Resource | None = None)"
+        " -> fhir.Resource | None:",
+        docstring(RESOLVE_DOC.format(example=resolve_example) + plain.format(name="resolve"), indent + "    "),
+        f"{indent}    return resolve_in(bundle, reference, type=type, from_=from_)",
+        "",
+    ]
+    for literal, returns in typed:
+        lines += [
+            f"{indent}@overload",
+            f"{indent}def matches({self_}page: fhir.Bundle, type: {literal}) -> list[{returns}]: ...",
+        ]
+    lines += [
+        f"{indent}@overload",
+        f"{indent}def matches({self_}page: fhir.Bundle, type: None = None) -> list[fhir.Resource]: ...",
+        # The implementation, behind the overloads: a list is invariant, so it returns list[Any].
+        f"{indent}def matches({self_}page: fhir.Bundle, type: str | None = None) -> list[Any]:",
+        docstring(MATCHES_DOC.format(example=matches_example) + plain.format(name="matches"), indent + "    "),
+        f"{indent}    return matches_in(page, type)",
+        "",
+    ]
+    return lines
+
+
+def bundle_reads_module(spec: Spec) -> str:
+    """The plain `resolve()` and `matches()`, typed by resource type, which `haau3` exports."""
+    parts = [
+        header("The plain `resolve()` and `matches()`, typed by a resource type's name, as the clients' methods are."),
+        "# ruff: noqa\n",
+        "from __future__ import annotations\n",
+        "from typing import Any, Literal, overload\n",
+        "from . import fhir",
+        "from ._bundles import matches_in, resolve_in\n\n",
+        *_bundle_reads(spec, indent="", method=False),
+    ]
+    return "\n".join(parts).rstrip() + "\n"
+
+
+def _methods_class(
+    ops: list[Op], *, name: str, asynchronous: bool, with_response: bool, spec: Spec | None = None
+) -> str:
     client = "AsyncHaau3" if asynchronous else "Haau3"
     engine = "AsyncEngine" if asynchronous else "SyncEngine"
     lines: list[str] = [f"class {name}:"]
@@ -524,6 +779,11 @@ def _methods_class(ops: list[Op], *, name: str, asynchronous: bool, with_respons
             call = f"(await {call})"
         lines.append(f"        return {call}{'' if with_response else '.data'}")
         lines.append("")
+        helper = spec.helpers.get(op.id) if spec is not None else None
+        if helper is not None:
+            lines += _helper_method(helper, client=client, asynchronous=asynchronous, with_response=with_response)
+    if spec is not None and not with_response:
+        lines += _bundle_reads(spec, indent="    ", method=True)
     # The operations under the base a batch refuses, which the spec marks x-haau3-batchable: false.
     refused = sorted(o.name for o in ops if o.path.startswith("/v1/fhir/r4/") and not o.batchable)
     lines += _batch_overloads(client, refused, asynchronous=asynchronous, with_response=with_response)
@@ -605,6 +865,7 @@ def methods_module(spec: Spec) -> str:
         "from . import fhir",
         "from ._batch import BatchResult, Call",
         "from ._body import HeldHeaders, Hidden",
+        "from ._bundles import matches_in, resolve_in",
         *_components_import(own),
         f"from ._operations import {', '.join(o.const for o in ops)}",
         "from ._response import Options, Response\n",
@@ -613,13 +874,13 @@ def methods_module(spec: Spec) -> str:
         'T = TypeVar("T")',
         typevars,
         "\n",
-        _methods_class(ops, name="SyncMethods", asynchronous=False, with_response=False),
+        _methods_class(ops, name="SyncMethods", asynchronous=False, with_response=False, spec=spec),
         "\n",
-        _methods_class(ops, name="AsyncMethods", asynchronous=True, with_response=False),
+        _methods_class(ops, name="AsyncMethods", asynchronous=True, with_response=False, spec=spec),
         "\n",
-        _methods_class(ops, name="SyncWithResponse", asynchronous=False, with_response=True),
+        _methods_class(ops, name="SyncWithResponse", asynchronous=False, with_response=True, spec=spec),
         "\n",
-        _methods_class(ops, name="AsyncWithResponse", asynchronous=True, with_response=True),
+        _methods_class(ops, name="AsyncWithResponse", asynchronous=True, with_response=True, spec=spec),
     ]
     return "\n".join(parts)
 
@@ -709,6 +970,19 @@ def types_module(spec: Spec) -> str:
                 docstring(f"The query parameters of `{op.name}`, by their Python names, to pass as `**query`.", "    ")
             )
             for p in op.query:
+                lines.append(f"    {p.python}: {f'Required[{p.type}]' if p.required else p.type}")
+            lines.append("")
+        helper = spec.helpers.get(op.id)
+        if helper is not None:
+            lines.append(f"class {naming.class_name(op.id)}WithIncludesQuery(TypedDict, total=False):")
+            lines.append(
+                docstring(
+                    f"The query parameters of `{helper.name}`, by their Python names, to pass as `**query`: those of "
+                    f"`{op.name}` less its includes, which it sends itself.",
+                    "    ",
+                )
+            )
+            for p in helper.query:
                 lines.append(f"    {p.python}: {f'Required[{p.type}]' if p.required else p.type}")
             lines.append("")
         if op.body:
@@ -949,20 +1223,69 @@ FIRST_CALL = "searchSlot"
 """The operation a quickstart makes its first call with."""
 
 
+def _values(value: object) -> list[str]:
+    """A parameter's values as a sorted list, so one value and a list of one compare equal."""
+    if value is None:
+        return []
+    return sorted(str(v) for v in (value if isinstance(value, list) else [value]))
+
+
+def first_call_params(op_id: str, example: Json) -> Json:
+    """The first call's query, by wire name: the search's example, less its includes, which its helper
+    sends itself.
+
+    The example must send exactly the helper's includes, or the call the sample makes would not be the
+    example, which is the request the Sandbox answers with no key, so any other set is refused here
+    rather than written into a sample that fails there. So is an example that sends no query at all.
+    """
+    if not example:
+        raise ValueError(f"{op_id}: the first call's example sends no query parameters")
+    helper = f"{naming.method_name(op_id)}_with_includes"
+    for wire, wanted in zip(INCLUDE_PARAMS, WITH_INCLUDES[op_id], strict=True):
+        if _values(example.get(wire)) != sorted(wanted):
+            raise ValueError(
+                f"{op_id}: the example's {wire} is not what {helper} sends, so the first call would not be the example"
+            )
+    return {name: value for name, value in example.items() if name not in INCLUDE_PARAMS}
+
+
 def _first_call_sample(spec: Spec, op: Op, raw: Json) -> str:
-    """The first call: the slot search's example, which finds a provider's open slots by NPI, with the
-    first slot it found printed whole as JSON, since one field says nothing of what a slot is. A
-    search that finds nothing says so."""
+    """The first call: the slot search's example, which finds a provider's open slots by NPI, sent through
+    its helper, with the first slot it found printed through its slot view as JSON: when it starts, who,
+    where and how to book. A search that finds nothing says so. The example must send exactly the
+    helper's includes (`first_call_params`)."""
+    helper = spec.helpers.get(op.id)
+    if helper is None:
+        raise ValueError(f"The first call is {op.id}, which has no search helper")
+    example = {p["name"]: p["example"] for p in raw.get("parameters", []) if p.get("in") == "query" and "example" in p}
+    query = first_call_params(op.id, example)
+    args = ", ".join(f"{naming.python_name(name)}={_py(value)}" for name, value in query.items())
     lines = [
         "import json",
         "",
         "from haau3 import Haau3",
         "",
         _client(spec, op, raw),
-        "# Open appointment slots of one provider, found by NPI.",
-        f"page = client.{op.name}({', '.join(_example_args(spec, op, raw))})",
-        "slot = next(client.resources(page), None)",
-        'print(json.dumps(slot, indent=2) if slot else "No open slots matched.")',
+        "# Open appointment slots of one provider, found by NPI, each with its schedule, location and provider.",
+        f"page = client.{helper.name}({args})",
+        "views = client.slot_views(page)",
+        "if views:",
+        "    view = views[0]",
+        '    names = [name.get("text") for practitioner in view.practitioners for name in practitioner.get("name", [])]',
+        '    places = [location.get("name") for location in view.locations]',
+        "    print(",
+        "        json.dumps(",
+        "            {",
+        '                "start": view.slot.get("start"),',
+        '                "practitioner": names[0] if names else None,',
+        '                "location": places[0] if places else None,',
+        '                "booking_link": view.booking_link,',
+        "            },",
+        "            indent=2,",
+        "        )",
+        "    )",
+        "else:",
+        '    print("No open slots matched.")',
     ]
     return "\n".join(lines) + "\n"
 
@@ -1048,14 +1371,7 @@ def code_samples_json(spec: Spec) -> str:
 
 
 def fhir_module(spec: Spec) -> str:
-    data = FHIR_ZIP.read_bytes()
-    if hashlib.sha256(data).hexdigest() != FHIR_ZIP_SHA256:
-        raise ValueError(f"{FHIR_ZIP} is not the HL7 schema this generator was pinned to")
-    with zipfile.ZipFile(FHIR_ZIP) as archive:
-        raw = archive.read("fhir.schema.json")
-    if hashlib.sha256(raw).hexdigest() != FHIR_SCHEMA_SHA256:
-        raise ValueError("fhir.schema.json in the zip is not the HL7 schema this generator was pinned to")
-    return fhir_emit.emit(json.loads(raw), sorted(set(spec.fhir) | set(spec.carried)))
+    return fhir_emit.emit(_fhir_schema(), typed_roots(spec))
 
 
 COMPONENTS_HEADER = "The spec's own components: every one that is not a FHIR resource."
@@ -1147,6 +1463,7 @@ def outputs(spec: Spec) -> dict[Path, Callable[[], str]]:
         PACKAGE / "_components.py": lambda: components_module(spec),
         PACKAGE / "_operations.py": lambda: operations_module(spec),
         PACKAGE / "_methods.py": lambda: methods_module(spec),
+        PACKAGE / "_bundle_reads.py": lambda: bundle_reads_module(spec),
         PACKAGE / "calls.py": lambda: calls_module(spec),
         PACKAGE / "types.py": lambda: types_module(spec),
         ROOT / "api.md": lambda: api_md(spec),

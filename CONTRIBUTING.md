@@ -23,7 +23,10 @@ These are written by `scripts/generate.py` from `openapi/openapi.json`, the pinn
 `https://api.haau3.com/openapi.json`, and from `fhir/fhir.schema.json.zip`, HL7's JSON Schema for
 FHIR R4 (4.0.1), pinned by its sha256. Never edit them by hand:
 
-- `src/haau3/_methods.py`: one method per operation, on both clients and on each `with_response`;
+- `src/haau3/_methods.py`: one method per operation, on both clients and on each `with_response`,
+  with the search helpers that send every include a search serves, and the clients' typed
+  `resolve()` and `matches()`;
+- `src/haau3/_bundle_reads.py`: the plain `resolve()` and `matches()`, typed the same way;
 - `src/haau3/_operations.py`: each operation's method, path and the FHIR resource types it answers with;
 - `src/haau3/calls.py`: the entries of a batch;
 - `src/haau3/types.py`: the public type names, and each operation's `Query`, `Body` and `Response`;
@@ -34,8 +37,8 @@ FHIR R4 (4.0.1), pinned by its sha256. Never edit them by hand:
 - `openapi/code-samples.json`: an [OpenAPI Overlay](https://spec.openapis.org/overlay/latest.html)
   that adds a Python sample to every operation as `x-codeSamples`, for a documentation site to show
   beside it. Each sample is a whole program that sends the operation's example request from the spec
-  and prints one field of the answer, except the slot search, a quickstart's first call, which prints
-  the first slot it found. `tests/test_samples.py` runs each one as it is written, with
+  and prints one field of the answer, except the slot search, a quickstart's first call, which sends
+  it through `search_slot_with_includes` and prints the first slot it found through its slot view. `tests/test_samples.py` runs each one as it is written, with
   `HAAU3_BASE_URL` pointing at a stand-in that answers only the example request, and CI type-checks
   them with the README's blocks (`scripts/readme_blocks.py`).
 

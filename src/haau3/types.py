@@ -394,6 +394,22 @@ class SearchScheduleQuery(TypedDict, total=False):
     page: str
 
 
+class SearchScheduleWithIncludesQuery(TypedDict, total=False):
+    """The query parameters of `search_schedule_with_includes`, by their Python names, to pass as `**query`: those of `search_schedule` less its includes, which it sends itself."""
+
+    service_type: str
+    specialty: str
+    provider_specialty: str
+    provider_identifier: str
+    location_address_city: str
+    location_address_state: str
+    location_physical_type: str
+    source: str
+    source_below: str
+    count: int
+    page: str
+
+
 SearchScheduleResponse: TypeAlias = fhir.Bundle
 """What `search_schedule` answers with."""
 
@@ -423,6 +439,28 @@ class SearchSlotQuery(TypedDict, total=False):
             Literal["Slot:schedule", "Schedule:actor", "PractitionerRole:practitioner", "HealthcareService:location"]
         ]
     )
+    count: int
+    page: str
+
+
+class SearchSlotWithIncludesQuery(TypedDict, total=False):
+    """The query parameters of `search_slot_with_includes`, by their Python names, to pass as `**query`: those of `search_slot` less its includes, which it sends itself."""
+
+    status: str
+    start: str | Sequence[str]
+    appointment_type: str
+    schedule: str
+    service_type: str
+    schedule_service_type: str
+    specialty: str
+    provider_specialty: str
+    provider_identifier: str
+    patient_type: str
+    location_address_city: str
+    location_address_state: str
+    location_physical_type: str
+    source: str
+    source_below: str
     count: int
     page: str
 
