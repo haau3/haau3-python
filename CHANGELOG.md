@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.3](https://github.com/haau3/haau3-python/compare/v0.5.2...v0.5.3) (2026-11-25)
+
+
+### Features
+
+* search_token() writes a coding as the value a token search takes ([#91](https://github.com/haau3/haau3-python/issues/91)) ([b92c71c](https://github.com/haau3/haau3-python/commit/b92c71c2824a893dc7d9c04eabdfb4d235f466f4))
+* the API's spec at 1.0.0-preview.41 ([#90](https://github.com/haau3/haau3-python/issues/90)) ([85cd1e1](https://github.com/haau3/haau3-python/commit/85cd1e197d3a9958ced222734eb3e40080cd46d3))
+
 ## [0.5.2](https://github.com/haau3/haau3-python/compare/v0.5.1...v0.5.2) (2026-11-24)
 
 
