@@ -51,6 +51,7 @@ from ._parameters import structure_dosage_request as structure_dosage_request
 from ._response import RawResponse as RawResponse
 from ._response import Response as Response
 from ._search import escape_search_value as escape_search_value
+from ._search import search_token as search_token
 from ._terminology import PREFERRED_FOR_LANGUAGE_USE as PREFERRED_FOR_LANGUAGE_USE
 from ._terminology import SYNONYM_USE as SYNONYM_USE
 from ._terminology import BooleanProperty as BooleanProperty
@@ -131,6 +132,7 @@ __all__ = [
     "resolve",
     "review_flags",
     "schedule_views",
+    "search_token",
     "slot_views",
     "structure_dosage_request",
     "types",
