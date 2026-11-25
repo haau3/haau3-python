@@ -1630,13 +1630,13 @@ class SyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches. The scheduling value sets list the service types and specialties a Slot or Schedule search can be sent, alphabetically by display, every one when `count` is not sent; their version changes only when the list does, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `GET /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set
 
         Query parameters, each with its name in the API:
 
-        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs). The ICD-10-CM value sets are `https://haau3.com/fhir/ValueSet/icd-10-cm` (every code of the release it serves, headers included) and `https://haau3.com/fhir/ValueSet/icd-10-cm-valid-for-submission` (the codes valid for submission for HIPAA-covered transactions, so no header).
+        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs). The ICD-10-CM value sets are `https://haau3.com/fhir/ValueSet/icd-10-cm` (every code of the release it serves, headers included) and `https://haau3.com/fhir/ValueSet/icd-10-cm-valid-for-submission` (the codes valid for submission for HIPAA-covered transactions, so no header). The scheduling value sets are `https://fhir.haau3.com/platform/ValueSet/scheduling-service-types` (every service type on the Slots and Schedules the scheduling service serves now) and `https://fhir.haau3.com/platform/ValueSet/scheduling-specialties` (every specialty on them and on the practitioner roles and services that provide them), each code in its publisher's own code system, as sent.
         - `filter`: Text to narrow the expansion: each word must be the start of a word in a concept's name, and every word must match, with case and accents ignored. On the RxNorm and ICD-10-CM value sets it is required, with at least 3 letters or digits, and the matches come ranked, best first; on ICD-10-CM a code is a name too, so `E11` finds `E11` and the codes below it. Without it, or with fewer, the answer is `422` coded `too-costly`. At most 500 characters. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
         - `count`: Maximum number of concepts to return (`0` returns the total only). On the RxNorm and ICD-10-CM value sets the first 20 come back when it is not sent. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
         - `offset`: Number of concepts to skip, for paging; `expansion.total` is the number of matching concepts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
@@ -1672,7 +1672,7 @@ class SyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches. The scheduling value sets list the service types and specialties a Slot or Schedule search can be sent, alphabetically by display, every one when `count` is not sent; their version changes only when the list does, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `POST /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set-1
         """
@@ -1698,15 +1698,15 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one. On the scheduling value sets `system` is required, any display a feed sent for the code is accepted, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `GET /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set
 
         Query parameters, each with its name in the API:
 
-        - `url`: Canonical URL of the value set to validate against. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code.
+        - `url`: Canonical URL of the value set to validate against. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. The scheduling value sets are `https://fhir.haau3.com/platform/ValueSet/scheduling-service-types` (every service type on the Slots and Schedules the scheduling service serves now) and `https://fhir.haau3.com/platform/ValueSet/scheduling-specialties` (every specialty on them and on the practitioner roles and services that provide them), each code in its publisher's own code system, as sent.
         - `code`: Required. The code to validate.
-        - `system`: Code system URI of the code. Defaults to LOINC (`http://loinc.org`).
+        - `system`: Code system URI of the code. Defaults to LOINC (`http://loinc.org`), except on the scheduling value sets, whose codes come from several code systems: there it is required, and a request without it is refused with a `400` naming it.
         - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code. On RxNorm and ICD-10-CM any name the code has matches: RxNorm's other names, and an ICD-10-CM code's short title.
         - `display_language` (`displayLanguage`): Language to use when checking the display. RxNorm and ICD-10-CM are held in English only: another language is checked against the English names, and the `message` says so.
         - `date`: The date for which the validation should be valid.
@@ -1738,7 +1738,7 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one. On the scheduling value sets `system` is required, any display a feed sent for the code is accepted, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `POST /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set-1
         """
@@ -4102,13 +4102,13 @@ class AsyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches. The scheduling value sets list the service types and specialties a Slot or Schedule search can be sent, alphabetically by display, every one when `count` is not sent; their version changes only when the list does, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `GET /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set
 
         Query parameters, each with its name in the API:
 
-        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs). The ICD-10-CM value sets are `https://haau3.com/fhir/ValueSet/icd-10-cm` (every code of the release it serves, headers included) and `https://haau3.com/fhir/ValueSet/icd-10-cm-valid-for-submission` (the codes valid for submission for HIPAA-covered transactions, so no header).
+        - `url`: Canonical URL of the value set to expand. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. That expansion is not served and answers `422`: expand a LOINC group or answer list instead, or ask `$validate-code` whether a code is in LOINC. The RxNorm value sets this service holds are `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-content` (every concept of the release it serves) and `https://haau3.com/fhir/ValueSet/rxnorm-current-prescribable-products` (its drug products: clinical and branded drugs and packs). The ICD-10-CM value sets are `https://haau3.com/fhir/ValueSet/icd-10-cm` (every code of the release it serves, headers included) and `https://haau3.com/fhir/ValueSet/icd-10-cm-valid-for-submission` (the codes valid for submission for HIPAA-covered transactions, so no header). The scheduling value sets are `https://fhir.haau3.com/platform/ValueSet/scheduling-service-types` (every service type on the Slots and Schedules the scheduling service serves now) and `https://fhir.haau3.com/platform/ValueSet/scheduling-specialties` (every specialty on them and on the practitioner roles and services that provide them), each code in its publisher's own code system, as sent.
         - `filter`: Text to narrow the expansion: each word must be the start of a word in a concept's name, and every word must match, with case and accents ignored. On the RxNorm and ICD-10-CM value sets it is required, with at least 3 letters or digits, and the matches come ranked, best first; on ICD-10-CM a code is a name too, so `E11` finds `E11` and the codes below it. Without it, or with fewer, the answer is `422` coded `too-costly`. At most 500 characters. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
         - `count`: Maximum number of concepts to return (`0` returns the total only). On the RxNorm and ICD-10-CM value sets the first 20 come back when it is not sent. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
         - `offset`: Number of concepts to skip, for paging; `expansion.total` is the number of matching concepts. For a value set resolved from its own source, narrowing is refused with a `400` naming this parameter, because that source answers a whole expansion or nothing: expand it whole and filter the result.
@@ -4146,7 +4146,7 @@ class AsyncMethods:
     ) -> fhir.ValueSet:
         """Expand a value set
 
-        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches.
+        FHIR `ValueSet/$expand`. Expands a value set canonical to its member codes, with a text filter and paging (`count=0` returns the total only). On the value sets of the code systems this service holds (RxNorm and ICD-10-CM), the filter searches by name, and on ICD-10-CM by code too, and is required, and the matches come ranked, best first, with `expansion.total` the number of matches. The scheduling value sets list the service types and specialties a Slot or Schedule search can be sent, alphabetically by display, every one when `count` is not sent; their version changes only when the list does, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `POST /v1/fhir/r4/ValueSet/$expand`, https://docs.haau3.com/api-reference/terminology/expand-a-value-set-1
         """
@@ -4174,15 +4174,15 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one. On the scheduling value sets `system` is required, any display a feed sent for the code is accepted, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `GET /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set
 
         Query parameters, each with its name in the API:
 
-        - `url`: Canonical URL of the value set to validate against. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code.
+        - `url`: Canonical URL of the value set to validate against. Defaults to the implicit all-LOINC value set (`http://loinc.org?fhir_vs`), which is every LOINC code. The scheduling value sets are `https://fhir.haau3.com/platform/ValueSet/scheduling-service-types` (every service type on the Slots and Schedules the scheduling service serves now) and `https://fhir.haau3.com/platform/ValueSet/scheduling-specialties` (every specialty on them and on the practitioner roles and services that provide them), each code in its publisher's own code system, as sent.
         - `code`: Required. The code to validate.
-        - `system`: Code system URI of the code. Defaults to LOINC (`http://loinc.org`).
+        - `system`: Code system URI of the code. Defaults to LOINC (`http://loinc.org`), except on the scheduling value sets, whose codes come from several code systems: there it is required, and a request without it is refused with a `400` naming it.
         - `display`: Optional display to check against the code's own display. A mismatch returns `result: false` with the expected display alongside, which means the code is valid and only the label differs. Do not read that as an invalid code. On RxNorm and ICD-10-CM any name the code has matches: RxNorm's other names, and an ICD-10-CM code's short title.
         - `display_language` (`displayLanguage`): Language to use when checking the display. RxNorm and ICD-10-CM are held in English only: another language is checked against the English names, and the `message` says so.
         - `date`: The date for which the validation should be valid.
@@ -4216,7 +4216,7 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Validate a code against a value set
 
-        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one.
+        FHIR `ValueSet/$validate-code`. A code that is not in the set is a successful `200` with `result: false`, not an error. On POST, a `coding` or `codeableConcept` parameter may stand in for `system` + `code`; a codeableConcept validates if any of its codings is in the set, which helps when an element carries a vendor-local coding alongside a standard one. On the scheduling value sets `system` is required, any display a feed sent for the code is accepted, and a GET's answer carries a weak `ETag` with `Cache-Control: private, max-age=300`.
 
         `POST /v1/fhir/r4/ValueSet/$validate-code`, https://docs.haau3.com/api-reference/terminology/validate-a-code-against-a-value-set-1
         """
