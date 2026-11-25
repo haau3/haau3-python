@@ -136,6 +136,20 @@ def test_a_city_with_a_comma_escaped_answers_and_unescaped_is_refused() -> None:
 
 
 @not_on_a_test_key
+def test_slots_found_by_a_service_type_picked_from_its_value_set_with_search_token() -> None:
+    with Haau3() as client:
+        service_types = client.value_set_expand(url="https://fhir.haau3.com/platform/ValueSet/scheduling-service-types")
+        listed = service_types.get("expansion", {}).get("contains", [])
+        assert listed
+        hl7 = next(
+            (e for e in listed if e.get("system") == "http://terminology.hl7.org/CodeSystem/service-type"), listed[0]
+        )
+        page = client.search_slot(schedule_service_type=haau3.search_token(hl7), count=1)
+        assert page.get("resourceType") == "Bundle"
+        assert page.get("total", 0) > 0
+
+
+@not_on_a_test_key
 def test_a_slot_search_continued_in_a_later_request_with_next_cursor() -> None:
     """Page two by its cursor answers another Slot; the cursor with a filter changed is refused.
 
