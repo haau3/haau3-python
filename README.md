@@ -478,7 +478,28 @@ page = client.search_slot_with_includes(location_address_city=haau3.escape_searc
 
 Unescaped, a comma separates values the API reads as "or", so `Austin, TX` asks for two cities, and a
 trailing comma is refused with a `400`. Never escape a value you built with `,` or `|` on purpose,
-such as a list of codes or a `system|code` token.
+such as a list of codes or a `system|code` token: build a token with `search_token()`.
+
+## A code to search for
+
+`search_token()` turns a coding into the value a token search parameter takes, `system|code`, each
+part escaped. It takes a `Coding`, an entry of a value set's expansion, or any mapping with a `system`
+and a `code`, so a code picked from a list goes straight into a search:
+
+```python
+import haau3
+
+service_types = client.value_set_expand(
+    url="https://fhir.haau3.com/platform/ValueSet/scheduling-service-types",
+    filter="general",
+)
+for chosen in service_types.get("expansion", {}).get("contains", [])[:1]:
+    page = client.search_slot_with_includes(schedule_service_type=haau3.search_token(chosen))
+```
+
+Given several codings, `search_token(a, b)` is any of them: their tokens joined by commas. Each needs
+both a system and a code, or it raises a `Haau3Error`, since a token without its system matches the
+code in every system. For a code in any system, send `escape_search_value(code)`.
 
 ## Slots and schedules
 
