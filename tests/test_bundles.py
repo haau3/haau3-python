@@ -22,7 +22,11 @@ SERVICE: Any = {
     "providedBy": {"reference": "Organization/Organization-pharmacy-1234567893"},
     "location": [{"reference": "Location/Location-pharmacy-1234567893"}],
 }
-ORGANIZATION: Any = {"resourceType": "Organization", "id": "Organization-pharmacy-1234567893", "name": "EXAMPLE PHARMACY"}
+ORGANIZATION: Any = {
+    "resourceType": "Organization",
+    "id": "Organization-pharmacy-1234567893",
+    "name": "EXAMPLE PHARMACY",
+}
 STORE: Any = {"resourceType": "Location", "id": "Location-pharmacy-1234567893", "address": {"city": "MIAMI"}}
 
 
