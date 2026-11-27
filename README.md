@@ -446,6 +446,7 @@ page = client.search_healthcare_service(
     service_category="pharm",
     location_address_state="FL",
     location_address_postalcode="33131",
+    active=True,
     include=["HealthcareService:organization", "HealthcareService:location"],
 )
 
