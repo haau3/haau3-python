@@ -19,10 +19,14 @@ SERVICE: Any = {
     "resourceType": "HealthcareService",
     "id": "HealthcareService-pharmacy-1234567893",
     "name": "EXAMPLE PHARMACY",
-    "providedBy": {"reference": "Organization/Organization-1234567893"},
+    "providedBy": {"reference": "Organization/Organization-pharmacy-1234567893"},
     "location": [{"reference": "Location/Location-pharmacy-1234567893"}],
 }
-ORGANIZATION: Any = {"resourceType": "Organization", "id": "Organization-1234567893", "name": "EXAMPLE PHARMACY"}
+ORGANIZATION: Any = {
+    "resourceType": "Organization",
+    "id": "Organization-pharmacy-1234567893",
+    "name": "EXAMPLE PHARMACY",
+}
 STORE: Any = {"resourceType": "Location", "id": "Location-pharmacy-1234567893", "address": {"city": "MIAMI"}}
 
 
@@ -93,7 +97,7 @@ def test_resolve_finds_what_a_relative_reference_names_at_the_address_of_the_ent
 
 
 def test_resolve_finds_it_without_from_as_the_one_entry_whose_address_ends_in_that_type_and_id(client: Haau3) -> None:
-    assert client.resolve(page(), "Organization/Organization-1234567893") is ORGANIZATION
+    assert client.resolve(page(), "Organization/Organization-pharmacy-1234567893") is ORGANIZATION
     # The control: an id the page does not hold.
     assert client.resolve(page(), "Organization/Organization-not-on-this-page") is None
 
@@ -133,7 +137,7 @@ def test_resolve_matches_an_absolute_reference_to_the_entry_with_that_full_url_a
 
 
 def test_resolve_gives_a_relative_reference_no_meaning_from_an_entry_at_a_urn_uuid_as_fhir_says(client: Haau3) -> None:
-    holder: Any = {"resourceType": "Claim", "provider": {"reference": "Organization/Organization-1234567893"}}
+    holder: Any = {"resourceType": "Claim", "provider": {"reference": "Organization/Organization-pharmacy-1234567893"}}
     bundle: Any = page()
     bundle["entry"].append({"fullUrl": "urn:uuid:1a2b3c4d-0000-4000-8000-000000000002", "resource": holder})
     assert client.resolve(bundle, holder["provider"], from_=holder) is None
@@ -221,11 +225,11 @@ def test_the_plain_functions_and_the_async_clients_methods_give_the_same(recorde
 
 def test_resolve_matches_a_reference_as_a_whole_string(client: Haau3) -> None:
     """`$` in Python also matches before a final newline; a reference with one names nothing."""
-    assert client.resolve(page(), "Organization/Organization-1234567893\n") is None
+    assert client.resolve(page(), "Organization/Organization-pharmacy-1234567893\n") is None
     assert client.resolve(page(), f"{BASE}/Location/{STORE['id']}\n") is None
     assert client.resolve(page(), f"{BASE}/Location/{STORE['id']}/_history/1\n") is None
     # The control: the same reference without the newline.
-    assert client.resolve(page(), "Organization/Organization-1234567893") is ORGANIZATION
+    assert client.resolve(page(), "Organization/Organization-pharmacy-1234567893") is ORGANIZATION
     # A versioned absolute reference, where a prefix would name a version the page holds.
     v1: Any = {"resourceType": "Organization", "id": "o", "meta": {"versionId": "1"}}
     history: Any = {
@@ -247,7 +251,7 @@ def test_matches_and_resolve_pass_over_what_is_not_a_fhir_shape(client: Haau3) -
     odd: Any = {"resourceType": "Claim", "contained": None, "provider": {"reference": "#x"}}
     bundle["entry"].append({"resource": odd})
     assert client.resolve(bundle, odd["provider"], from_=odd) is None
-    not_a_reference: Any = ["Organization/Organization-1234567893"]
+    not_a_reference: Any = ["Organization/Organization-pharmacy-1234567893"]
     assert client.resolve(bundle, not_a_reference) is None
     no_entries: Any = {"resourceType": "Bundle", "entry": None}
     assert client.matches(no_entries) == []
