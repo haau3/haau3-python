@@ -97,12 +97,22 @@ __all__ = [
 ]
 
 
-def check_insurance_plan_network(id: str, /, *, npi: str | Sequence[str]) -> Call[fhir.Parameters]:
+def check_insurance_plan_network(
+    id: str, /, *, npi: str | Sequence[str] | None = None, pharmacy: str | Sequence[str] | None = None
+) -> Call[fhir.Parameters]:
     """Check providers against a plan's network, as one entry of a batch. Called as `Haau3.check_insurance_plan_network` is.
 
     `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`
     """
-    return make_call(CHECK_INSURANCE_PLAN_NETWORK, (id,), (("npi", npi),), None)
+    return make_call(
+        CHECK_INSURANCE_PLAN_NETWORK,
+        (id,),
+        (
+            ("npi", npi),
+            ("pharmacy", pharmacy),
+        ),
+        None,
+    )
 
 
 def code_system_lookup(
