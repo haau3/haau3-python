@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "haau3 Platform API",
-    "version": "1.0.0-preview.41",
+    "version": "1.0.0-preview.44",
     "description": "The haau3 platform API is in preview: it may change as we build, usually to add features or improve performance. Endpoints require an API key, sent as `Authorization: Bearer <key>`. Requests without a valid key return 401. Create a key in the dashboard at https://platform.haau3.com; a new organization starts on the free Developer plan. From 2026-11-02 a request past one of its plan's limits (requests a minute on every plan, requests a month on Developer) returns 429 with `Retry-After`. Every service is on the FHIR R4 base at `/v1/fhir/r4`, and every error is a FHIR `OperationOutcome`; https://docs.haau3.com/errors lists every status, whether to retry it, and what a method a path does not take answers."
   },
   "servers": [
@@ -128,7 +128,7 @@
                       "rest": [
                         {
                           "mode": "server",
-                          "documentation": "All operations accept GET with query parameters and POST with a Parameters resource. Complex inputs — coding, and codeableConcept on the validate-code operations — are accepted on POST only, as the operations framework requires; on GET pass system and code as separate parameters. A codeableConcept validates if ANY of its codings is a member, which fits data whose elements carry a vendor-local coding alongside a standard one; per-coding membership deliberately ignores each coding's display (a wrong label must not veto a right code — display checking is available on the single-coding form). A coding's version is honoured where the operation defines a version parameter (the CodeSystem operations); ValueSet validation always uses the current code-system version and refuses a versioned coding rather than silently ignoring it. A coding whose system disagrees with an explicitly supplied system or url parameter is refused. Value sets and code systems are addressed by canonical url only; instance-level operation paths ([type]/[id]/$operation) are not offered. On $expand, displayLanguage, includeDesignations and activeOnly are refused by name. filter, count and offset narrow a value set this service hosts and the value sets of the code systems it holds (RxNorm and ICD-10-CM), and are refused for a value set resolved from its own source, which is returned whole. On the value sets of a held code system filter is required, the first 20 matches come back when count is not sent, and expansion.total is the exact number of matches; ICD-10-CM codes are written dotted (E11.9), and a header is a code marked notSelectable; how filter matches is in the TerminologyCapabilities (metadata?mode=terminology), expansion.textFilter. A batch Bundle POSTed to the base runs several operations in one round trip; each entry succeeds or fails independently.\n\nProvider directory resources are proxied from the CMS National Provider Directory and served as published, without modification. Pharmacies, which the directory does not serve yet, are found in NPPES, CMS's NPI Registry, and served as NDH 2.0.0 models them: a HealthcareService with category `pharm`, its organization and its store (a pharmacy search on HealthcareService). Search is GET only. Every search parameter is either declared here or refused by name: a parameter this service does not serve is never silently ignored. Where the directory requires a parameter to be sent beside another (`network` on PractitionerRole and HealthcareService), the rule is applied here, before the directory is asked.\n\nA curated set of questionnaires is served from copies vendored at a recorded release of their source, so those forms render the same way on every request. A search that names a canonical URL this service holds no copy of is answered from the source directly, and depends on that source being reachable. A search with no parameters lists the curated set. Search is GET only, and every search parameter is either declared here or refused by name. No operations are served on Questionnaire, and no QuestionnaireResponse is accepted or stored: a completed response is built by the application that collected it and references the questionnaire as `{url}|{version}`.\n\nMedical Benefits (InsurancePlan): what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Each plan conforms to the haau3 Medical Benefits profile (https://haau3.com/fhir/StructureDefinition/haau3-insurance-plan) and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.\n\nScheduling: open appointment slots from SMART Scheduling Links publishers, each served as its publisher published it, with a new id, the publisher's own id in identifier and its address in meta.source. Search and read Slot and Schedule; a search brings each match's Schedule, Location and provider by _include.\n\nMedList: POST [base]/$reconcile-medications reconciles one patient's medication records into one clean list, returned as a Bundle of reconciled MedicationRequests with a Provenance for each. The operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nPharmacy Benefits: POST [base]/$process-message answers a pharmacy benefit check of the CARIN Consumer Real-Time Pharmacy Benefit Check: what a medication would cost a member under their coverage (event rtpbc-request), or its price at pharmacies near a ZIP code, without patient details (event rtpbc-request-non-phi). A member's request carries patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nStructured Sig: POST [base]/$structure-dosage turns one prescription's free-text directions into a FHIR R4 Dosage, returned in a Parameters resource, with a review flag on anything a person should check. It takes the directions and, optionally, the medication's codings, never a patient. Nothing a request carries is stored or logged. It may also be sent inside a batch.",
+                          "documentation": "All operations accept GET with query parameters and POST with a Parameters resource. Complex inputs — coding, and codeableConcept on the validate-code operations — are accepted on POST only, as the operations framework requires; on GET pass system and code as separate parameters. A codeableConcept validates if ANY of its codings is a member, which fits data whose elements carry a vendor-local coding alongside a standard one; per-coding membership deliberately ignores each coding's display (a wrong label must not veto a right code — display checking is available on the single-coding form). A coding's version is honoured where the operation defines a version parameter (the CodeSystem operations); ValueSet validation always uses the current code-system version and refuses a versioned coding rather than silently ignoring it. A coding whose system disagrees with an explicitly supplied system or url parameter is refused. Value sets and code systems are addressed by canonical url only; instance-level operation paths ([type]/[id]/$operation) are not offered. On $expand, displayLanguage, includeDesignations and activeOnly are refused by name. filter, count and offset narrow a value set this service hosts and the value sets of the code systems it holds (RxNorm and ICD-10-CM), and are refused for a value set resolved from its own source, which is returned whole. On the value sets of a held code system filter is required, the first 20 matches come back when count is not sent, and expansion.total is the exact number of matches; ICD-10-CM codes are written dotted (E11.9), and a header is a code marked notSelectable; how filter matches is in the TerminologyCapabilities (metadata?mode=terminology), expansion.textFilter. A batch Bundle POSTed to the base runs several operations in one round trip; each entry succeeds or fails independently.\n\nProvider directory resources are proxied from the CMS National Provider Directory and served as published, without modification. Pharmacies, which the directory does not serve yet, come from NPPES, CMS's NPI Registry, through CMS's monthly and weekly files, updated weekly, and are served as NDH 2.0.0 models them: a HealthcareService with category `pharm`, its organization and its store (a pharmacy search on HealthcareService). Search is GET only. Every search parameter is either declared here or refused by name: a parameter this service does not serve is never silently ignored. Where the directory requires a parameter to be sent beside another (`network` on PractitionerRole and HealthcareService), the rule is applied here, before the directory is asked.\n\nA curated set of questionnaires is served from copies vendored at a recorded release of their source, so those forms render the same way on every request. A search that names a canonical URL this service holds no copy of is answered from the source directly, and depends on that source being reachable. A search with no parameters lists the curated set. Search is GET only, and every search parameter is either declared here or refused by name. No operations are served on Questionnaire, and no QuestionnaireResponse is accepted or stored: a completed response is built by the application that collected it and references the questionnaire as `{url}|{version}`.\n\nMedical Benefits (InsurancePlan): what a Medicare Advantage or ACA Marketplace plan covers and what a member pays, read from the files CMS publishes. Each plan conforms to the haau3 Medical Benefits profile (https://haau3.com/fhir/StructureDefinition/haau3-insurance-plan) and to the SBC InsurancePlan profile of the CARIN Digital Insurance Card guide, 2.0.0-ballot, and names the CMS release it was read from.\n\nScheduling: open appointment slots from SMART Scheduling Links publishers, each served as its publisher published it, with a new id, the publisher's own id in identifier and its address in meta.source. Search and read Slot and Schedule; a search brings each match's Schedule, Location and provider by _include.\n\nMedList: POST [base]/$reconcile-medications reconciles one patient's medication records into one clean list, returned as a Bundle of reconciled MedicationRequests with a Provenance for each. The operation receives patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nPharmacy Benefits: POST [base]/$process-message answers a pharmacy benefit check of the CARIN Consumer Real-Time Pharmacy Benefit Check: what a medication would cost a member under their coverage (event rtpbc-request), or its price at pharmacies near a ZIP code, without patient details (event rtpbc-request-non-phi). A member's request carries patient data, so send it only under an executed agreement. Nothing a request carries is stored or logged. It is invoked directly and is not offered inside a batch.\n\nStructured Sig: POST [base]/$structure-dosage turns one prescription's free-text directions into a FHIR R4 Dosage, returned in a Parameters resource, with a review flag on anything a person should check. It takes the directions and, optionally, the medication's codings, never a patient. Nothing a request carries is stored or logged. It may also be sent inside a batch.",
                           "interaction": [
                             {
                               "code": "batch"
@@ -510,25 +510,25 @@
                                   "name": "service-category",
                                   "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-service-category",
                                   "type": "token",
-                                  "documentation": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+                                  "documentation": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state."
                                 },
                                 {
                                   "name": "specialty",
                                   "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-specialty",
                                   "type": "token",
-                                  "documentation": "A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+                                  "documentation": "A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X, 332000000X, 332100000X, 332800000X) are served. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state."
                                 },
                                 {
                                   "name": "location.address-state",
                                   "definition": "http://hl7.org/fhir/SearchParameter/Location-address-state",
                                   "type": "string",
-                                  "documentation": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy."
+                                  "documentation": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Stands alone on a pharmacy search, and is required beside `location.address-city`."
                                 },
                                 {
                                   "name": "location.address-postalcode",
                                   "definition": "http://hl7.org/fhir/SearchParameter/Location-address-postalcode",
                                   "type": "string",
-                                  "documentation": "Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`."
+                                  "documentation": "Finds the pharmacies whose store's ZIP code starts with this: a ZIP code, ZIP+4, or its first two or more digits. Stands alone on a pharmacy search."
                                 },
                                 {
                                   "name": "location.address-city",
@@ -540,13 +540,13 @@
                                   "name": "name",
                                   "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-name",
                                   "type": "string",
-                                  "documentation": "Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone."
+                                  "documentation": "Finds the pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Stands alone on a pharmacy search."
                                 },
                                 {
                                   "name": "organization",
                                   "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-organization",
                                   "type": "reference",
-                                  "documentation": "One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
+                                  "documentation": "One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-pharmacy-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
                                 },
                                 {
                                   "name": "organization.identifier",
@@ -558,7 +558,7 @@
                                   "name": "active",
                                   "definition": "http://hl7.org/fhir/SearchParameter/HealthcareService-active",
                                   "type": "token",
-                                  "documentation": "`true` or `false`. Narrows a search; cannot be used on its own."
+                                  "documentation": "`true` or `false`. Narrows a search; cannot be used on its own. On a pharmacy search, `true` keeps the pharmacies NPPES lists as active and `false` the ones it lists as deactivated since its November 2026 monthly file; without it, both are returned, each marked by `active`."
                                 },
                                 {
                                   "name": "_id",
@@ -578,7 +578,7 @@
                                   "documentation": "Results are paged. `_count` sets the page size (1 to 100); a larger value is refused rather than quietly reduced. Follow `link` with relation `next` to continue. The cursor it carries is opaque and must not be constructed or modified."
                                 }
                               ],
-                              "documentation": "Two searches. The directory's services: its service records name a network and, for a few, a location; none names an organization. That search needs a location or an id, and `network` needs a location beside it. And pharmacies, modelled as NDH 2.0.0 models them: a pharmacy service (category `pharm`, its NUCC codes as `specialty`) provided by an organization at a store. A pharmacy search starts with `service-category=pharm` or a NUCC pharmacy `specialty`. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Pharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. A scheduling publisher's HealthcareService is also read here, by its id, `HealthcareService-scheduling-` and 32 hexadecimal characters, and arrives as an included resource in a Slot or Schedule search. It is not found by searching this type."
+                              "documentation": "Two searches. The directory's services: its service records name a network and, for a few, a location; none names an organization. That search needs a location or an id, and `network` needs a location beside it. And pharmacies, modelled as NDH 2.0.0 models them: a pharmacy service (category `pharm`, its NUCC codes as `specialty`) provided by an organization at a store. A pharmacy search starts with `service-category=pharm` or a NUCC pharmacy `specialty`. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state. Results come in one fixed order, the pharmacy's name ignoring case and then its NPI, the same on every page, and the searchset carries `total`. A continuation goes on in that order from the last pharmacy shown, so the weekly update does not cut a search short. Pharmacies come from NPPES, CMS's NPI Registry, through CMS's monthly and weekly files, updated weekly, until CMS's National Provider Directory serves them. Each resource's `meta.source` names the CMS file its record came from, which may no longer open once CMS removes it, and its `lastSourceSync` extension on `meta` the last day of NPPES data the answer holds. Each pharmacy is found and served at its primary practice address. A pharmacy's three ids, its service's, its organization's (`Organization-pharmacy-{NPI}`) and its store's, are read back from the same records, so a search and a read return the same record; they would change if the search moved to the directory. `Organization-{NPI}` is the directory's own record of an organization. A pharmacy NPPES lists as deactivated is served marked `active: false`, with its deactivation date, if it was deactivated since NPPES's November 2026 monthly file, and `active=true` asks for active pharmacies only. A pharmacy's ids are read by id; the directory's own searches refuse them. A scheduling publisher's HealthcareService is also read here, by its id, `HealthcareService-scheduling-` and 32 hexadecimal characters, and arrives as an included resource in a Slot or Schedule search. It is not found by searching this type."
                             },
                             {
                               "type": "Location",
@@ -5836,7 +5836,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5854,7 +5854,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -5879,7 +5879,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6255,7 +6255,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6273,7 +6273,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6298,7 +6298,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6738,7 +6738,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6756,7 +6756,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6781,7 +6781,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6953,7 +6953,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6971,7 +6971,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -6996,7 +6996,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7376,7 +7376,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7394,7 +7394,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7419,7 +7419,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7445,7 +7445,7 @@
           "Provider directory"
         ],
         "summary": "Read an Organization",
-        "description": "Read one organization, payer or network by id, as returned by a search on this service.",
+        "description": "Read one organization, payer or network by id, as returned by a search on this service. A pharmacy's organization (`Organization-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from the same records as a pharmacy search, a deactivated pharmacy marked `active: false`; `Organization-{NPI}` is the directory's own record.",
         "operationId": "readOrganization",
         "parameters": [
           {
@@ -7571,7 +7571,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7589,7 +7589,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7614,7 +7614,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7910,7 +7910,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7928,7 +7928,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -7953,7 +7953,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8096,7 +8096,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8114,7 +8114,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8139,7 +8139,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8165,7 +8165,7 @@
           "Provider directory"
         ],
         "summary": "Find healthcare services and pharmacies",
-        "description": "Search `HealthcareService` two ways.\n\n**The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.\n\n**Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.\n\nPharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. NPPES returns at most 1,200 records for one search, so a continuation past them is refused with a 422 that asks for a narrower search, rather than repeating a page or ending early. One store can bill under more than one NPI, and each is served as its own pharmacy.",
+        "description": "Search `HealthcareService` two ways.\n\n**The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.\n\n**Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.\n\nResults come in one fixed order, the pharmacy's name ignoring case and then its NPI, the same on every page, and the searchset carries `total`. A continuation goes on in that order from the last pharmacy shown, so the weekly update does not cut a search short. Pharmacies come from NPPES, CMS's NPI Registry, through CMS's monthly and weekly files, updated weekly, until CMS's National Provider Directory serves them. Each resource's `meta.source` names the CMS file its record came from, which may no longer open once CMS removes it, and its `lastSourceSync` extension on `meta` the last day of NPPES data the answer holds. Each pharmacy is found and served at its primary practice address. A pharmacy's three ids, its service's, its organization's (`Organization-pharmacy-{NPI}`) and its store's, are read back from the same records, so a search and a read return the same record; they would change if the search moved to the directory. `Organization-{NPI}` is the directory's own record of an organization. A pharmacy NPPES lists as deactivated is served marked `active: false`, with its deactivation date, if it was deactivated since NPPES's November 2026 monthly file, and `active=true` asks for active pharmacies only. A pharmacy's ids are read by id; the directory's own searches refuse them. One store can bill under more than one NPI, and each is served as its own pharmacy.",
         "operationId": "searchHealthcareService",
         "parameters": [
           {
@@ -8199,7 +8199,7 @@
               "minLength": 1,
               "maxLength": 256
             },
-            "description": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.",
+            "description": "`pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state.",
             "example": "pharm"
           },
           {
@@ -8211,7 +8211,7 @@
               "minLength": 1,
               "maxLength": 256
             },
-            "description": "A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it."
+            "description": "A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X, 332000000X, 332100000X, 332800000X) are served. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state."
           },
           {
             "name": "location.address-state",
@@ -8222,7 +8222,7 @@
               "minLength": 1,
               "maxLength": 50
             },
-            "description": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy.",
+            "description": "A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Stands alone on a pharmacy search, and is required beside `location.address-city`.",
             "example": "FL"
           },
           {
@@ -8234,7 +8234,7 @@
               "minLength": 1,
               "maxLength": 10
             },
-            "description": "Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`.",
+            "description": "Finds the pharmacies whose store's ZIP code starts with this: a ZIP code, ZIP+4, or its first two or more digits. Stands alone on a pharmacy search.",
             "example": "33131"
           },
           {
@@ -8257,7 +8257,7 @@
               "minLength": 1,
               "maxLength": 100
             },
-            "description": "Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone."
+            "description": "Finds the pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Stands alone on a pharmacy search."
           },
           {
             "name": "organization",
@@ -8268,7 +8268,7 @@
               "minLength": 1,
               "maxLength": 256
             },
-            "description": "One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
+            "description": "One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-pharmacy-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused."
           },
           {
             "name": "organization.identifier",
@@ -8292,7 +8292,8 @@
                 "false"
               ]
             },
-            "description": "`true` or `false`. Narrows a search; cannot be used on its own."
+            "description": "`true` or `false`. Narrows a search; cannot be used on its own. On a pharmacy search, `true` keeps the pharmacies NPPES lists as active and `false` the ones it lists as deactivated since its November 2026 monthly file; without it, both are returned, each marked by `active`.",
+            "example": "true"
           },
           {
             "name": "_include",
@@ -8312,7 +8313,11 @@
             },
             "style": "form",
             "explode": true,
-            "description": "On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`."
+            "description": "On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`.",
+            "example": [
+              "HealthcareService:organization",
+              "HealthcareService:location"
+            ]
           },
           {
             "name": "_id",
@@ -8345,8 +8350,7 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Results are paged. `_count` sets the page size (1 to 100); a larger value is refused rather than quietly reduced. Follow `link` with relation `next` to continue. The cursor it carries is opaque and must not be constructed or modified.",
-            "example": 2
+            "description": "Results are paged. `_count` sets the page size (1 to 100); a larger value is refused rather than quietly reduced. Follow `link` with relation `next` to continue. The cursor it carries is opaque and must not be constructed or modified."
           },
           {
             "name": "page",
@@ -8365,7 +8369,7 @@
         ],
         "responses": {
           "200": {
-            "description": "A FHIR `Bundle` with `type: searchset`. `total` is present when the directory sends one; a pharmacy search never carries one, because NPPES gives no count.",
+            "description": "A FHIR `Bundle` with `type: searchset`. `total` is present when the directory sends one, and on every pharmacy search, where `_summary=count` answers it alone.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8377,14 +8381,11 @@
                     "value": {
                       "resourceType": "Bundle",
                       "type": "searchset",
+                      "total": 10,
                       "link": [
                         {
                           "relation": "self",
-                          "url": "https://api.haau3.com/v1/fhir/r4/HealthcareService?service-category=pharm&location.address-state=FL&location.address-postalcode=33131&_count=2"
-                        },
-                        {
-                          "relation": "next",
-                          "url": "https://api.haau3.com/v1/fhir/r4/HealthcareService?service-category=pharm&location.address-state=FL&location.address-postalcode=33131&_count=2&page=np1-2"
+                          "url": "https://api.haau3.com/v1/fhir/r4/HealthcareService?service-category=pharm&location.address-state=FL&location.address-postalcode=33131&active=true&_include=HealthcareService%3Aorganization&_include=HealthcareService%3Alocation"
                         }
                       ],
                       "entry": [
@@ -8394,11 +8395,17 @@
                             "resourceType": "HealthcareService",
                             "id": "HealthcareService-pharmacy-1376440388",
                             "meta": {
-                              "source": "https://npiregistry.cms.hhs.gov"
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
                             },
                             "active": true,
                             "providedBy": {
-                              "reference": "Organization/Organization-1376440388",
+                              "reference": "Organization/Organization-pharmacy-1376440388",
                               "display": "CARE 4 SOLUTIONS LLC"
                             },
                             "category": [
@@ -8418,7 +8425,7 @@
                                   {
                                     "system": "http://nucc.org/provider-taxonomy",
                                     "code": "3336C0003X",
-                                    "display": "Pharmacy, Community/Retail Pharmacy"
+                                    "display": "Community/Retail Pharmacy"
                                   }
                                 ]
                               }
@@ -8442,17 +8449,82 @@
                           }
                         },
                         {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1164506655",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1164506655",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1164506655",
+                              "display": "CVS Pharmacy # 00402"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "333600000X",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1164506655"
+                              }
+                            ],
+                            "name": "CVS Pharmacy # 00402",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-1140",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
                           "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1780099325",
                           "resource": {
                             "resourceType": "HealthcareService",
                             "id": "HealthcareService-pharmacy-1780099325",
                             "meta": {
-                              "source": "https://npiregistry.cms.hhs.gov"
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
                             },
                             "active": true,
                             "providedBy": {
-                              "reference": "Organization/Organization-1780099325",
-                              "display": "CVS PHARMACY #10132"
+                              "reference": "Organization/Organization-pharmacy-1780099325",
+                              "display": "CVS Pharmacy #10132"
                             },
                             "category": [
                               {
@@ -8480,7 +8552,7 @@
                                   {
                                     "system": "http://nucc.org/provider-taxonomy",
                                     "code": "3336C0003X",
-                                    "display": "Pharmacy, Community/Retail Pharmacy"
+                                    "display": "Community/Retail Pharmacy"
                                   }
                                 ]
                               }
@@ -8490,7 +8562,7 @@
                                 "reference": "Location/Location-pharmacy-1780099325"
                               }
                             ],
-                            "name": "CVS PHARMACY #10132",
+                            "name": "CVS Pharmacy #10132",
                             "telecom": [
                               {
                                 "system": "phone",
@@ -8501,6 +8573,2149 @@
                           },
                           "search": {
                             "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1992085880",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1992085880",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1992085880",
+                              "display": "LAMONT GROUP INC"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1992085880"
+                              }
+                            ],
+                            "name": "LAMONT GROUP INC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-728-9958",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1700860020",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1700860020",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1700860020",
+                              "display": "MIAMI DOWNTOWN PHARMACY, INC"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "333600000X",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1700860020"
+                              }
+                            ],
+                            "name": "MIAMI DOWNTOWN PHARMACY, INC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-5076",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1821480708",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1821480708",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1821480708",
+                              "display": "MIAMI DOWNTOWN PHARMACY, INC"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1821480708"
+                              }
+                            ],
+                            "name": "MIAMI DOWNTOWN PHARMACY, INC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-5075",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1437059235",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1437059235",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_110226_110826_Weekly_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1437059235",
+                              "display": "PHARMA AVANTI LLC"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1437059235"
+                              }
+                            ],
+                            "name": "PHARMA AVANTI LLC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1275433062",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1275433062",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_110226_110826_Weekly_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1275433062",
+                              "display": "PHARMA ONE SOFT LLC"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1275433062"
+                              }
+                            ],
+                            "name": "PHARMA ONE SOFT LLC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1962417212",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1962417212",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1962417212",
+                              "display": "WALGREENS #03239"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "333600000X",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1962417212"
+                              }
+                            ],
+                            "name": "WALGREENS #03239",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-373-4320",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/HealthcareService/HealthcareService-pharmacy-1457367948",
+                          "resource": {
+                            "resourceType": "HealthcareService",
+                            "id": "HealthcareService-pharmacy-1457367948",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "active": true,
+                            "providedBy": {
+                              "reference": "Organization/Organization-pharmacy-1457367948",
+                              "display": "WALGREENS #05251"
+                            },
+                            "category": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category",
+                                    "code": "pharm",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "specialty": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "333600000X",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://nucc.org/provider-taxonomy",
+                                    "code": "3336C0003X",
+                                    "display": "Community/Retail Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "location": [
+                              {
+                                "reference": "Location/Location-pharmacy-1457367948"
+                              }
+                            ],
+                            "name": "WALGREENS #05251",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-371-5868",
+                                "use": "work"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "match"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1376440388",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1376440388",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2026-10-22"
+                                  },
+                                  {
+                                    "url": "certified",
+                                    "valueDate": "2026-10-22"
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1376440388",
+                                "period": {
+                                  "start": "2026-10-22"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "CARE 4 SOLUTIONS LLC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "2 S BISCAYNE BLVD"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-1806",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1376440388",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1376440388",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "CARE 4 SOLUTIONS LLC",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "2 S BISCAYNE BLVD"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-1806",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1376440388",
+                              "display": "CARE 4 SOLUTIONS LLC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1164506655",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1164506655",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2012-11-16"
+                                  }
+                                ]
+                              },
+                              {
+                                "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Organization.qualification",
+                                "extension": [
+                                  {
+                                    "url": "identifier",
+                                    "valueIdentifier": {
+                                      "extension": [
+                                        {
+                                          "url": "http://hl7.org/fhir/StructureDefinition/identifier-jurisdiction",
+                                          "valueCodeableConcept": {
+                                            "coding": [
+                                              {
+                                                "system": "https://www.usps.com/",
+                                                "code": "FL"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ],
+                                      "value": "PH22314"
+                                    }
+                                  },
+                                  {
+                                    "url": "code",
+                                    "valueCodeableConcept": {
+                                      "coding": [
+                                        {
+                                          "system": "http://nucc.org/provider-taxonomy",
+                                          "code": "333600000X",
+                                          "display": "Pharmacy"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1164506655",
+                                "period": {
+                                  "start": "2006-10-24"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "CVS Pharmacy # 00402",
+                            "alias": [
+                              "HOLIDAY CVS, L.L.C."
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-1140",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "170 SE 3RD AVE"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-2004",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1164506655",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1164506655",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "CVS Pharmacy # 00402",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-1140",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "170 SE 3RD AVE"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-2004",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1164506655",
+                              "display": "CVS Pharmacy # 00402"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1780099325",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1780099325",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2024-08-02"
+                                  },
+                                  {
+                                    "url": "certified",
+                                    "valueDate": "2024-08-02"
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1780099325",
+                                "period": {
+                                  "start": "2014-06-23"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "CVS Pharmacy #10132",
+                            "alias": [
+                              "HOLIDAY CVS LLC"
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-358-7577",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "1201 BRICKELL AVE"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-3207",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1780099325",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1780099325",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "CVS Pharmacy #10132",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-358-7577",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "1201 BRICKELL AVE"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-3207",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1780099325",
+                              "display": "CVS Pharmacy #10132"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1992085880",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1992085880",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2011-08-23"
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1992085880",
+                                "period": {
+                                  "start": "2011-08-23"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "LAMONT GROUP INC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-728-9958",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "223 E FLAGLER ST",
+                                  "410"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-1327",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1992085880",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1992085880",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "LAMONT GROUP INC",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-728-9958",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "223 E FLAGLER ST",
+                                "410"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-1327",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1992085880",
+                              "display": "LAMONT GROUP INC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1700860020",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1700860020",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2020-08-22"
+                                  }
+                                ]
+                              },
+                              {
+                                "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Organization.qualification",
+                                "extension": [
+                                  {
+                                    "url": "identifier",
+                                    "valueIdentifier": {
+                                      "extension": [
+                                        {
+                                          "url": "http://hl7.org/fhir/StructureDefinition/identifier-jurisdiction",
+                                          "valueCodeableConcept": {
+                                            "coding": [
+                                              {
+                                                "system": "https://www.usps.com/",
+                                                "code": "FL"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ],
+                                      "value": "PH21090"
+                                    }
+                                  },
+                                  {
+                                    "url": "code",
+                                    "valueCodeableConcept": {
+                                      "coding": [
+                                        {
+                                          "system": "http://nucc.org/provider-taxonomy",
+                                          "code": "333600000X",
+                                          "display": "Pharmacy"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1700860020",
+                                "period": {
+                                  "start": "2005-11-30"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "MIAMI DOWNTOWN PHARMACY, INC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-5076",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "305-371-9524",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "96 SE 1ST ST"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-1008",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1700860020",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1700860020",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "MIAMI DOWNTOWN PHARMACY, INC",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-5076",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "305-371-9524",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "96 SE 1ST ST"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-1008",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1700860020",
+                              "display": "MIAMI DOWNTOWN PHARMACY, INC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1821480708",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1821480708",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2015-03-02"
+                                  }
+                                ]
+                              },
+                              {
+                                "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Organization.qualification",
+                                "extension": [
+                                  {
+                                    "url": "identifier",
+                                    "valueIdentifier": {
+                                      "extension": [
+                                        {
+                                          "url": "http://hl7.org/fhir/StructureDefinition/identifier-jurisdiction",
+                                          "valueCodeableConcept": {
+                                            "coding": [
+                                              {
+                                                "system": "https://www.usps.com/",
+                                                "code": "FL"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ],
+                                      "value": "PH21090"
+                                    }
+                                  },
+                                  {
+                                    "url": "code",
+                                    "valueCodeableConcept": {
+                                      "coding": [
+                                        {
+                                          "system": "http://nucc.org/provider-taxonomy",
+                                          "code": "3336C0003X",
+                                          "display": "Community/Retail Pharmacy"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1821480708",
+                                "period": {
+                                  "start": "2015-03-02"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "MIAMI DOWNTOWN PHARMACY, INC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-5075",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "305-374-5092",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "96 SE 1ST ST"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-1008",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1821480708",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1821480708",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "MIAMI DOWNTOWN PHARMACY, INC",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-374-5075",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "305-374-5092",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "96 SE 1ST ST"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-1008",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1821480708",
+                              "display": "MIAMI DOWNTOWN PHARMACY, INC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1437059235",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1437059235",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_110226_110826_Weekly_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2026-11-06"
+                                  },
+                                  {
+                                    "url": "certified",
+                                    "valueDate": "2026-11-06"
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1437059235",
+                                "period": {
+                                  "start": "2026-11-06"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "PHARMA AVANTI LLC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "201 S BISCAYNE BLVD STE 1200"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-4316",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1437059235",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1437059235",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_110226_110826_Weekly_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "PHARMA AVANTI LLC",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "201 S BISCAYNE BLVD STE 1200"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-4316",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1437059235",
+                              "display": "PHARMA AVANTI LLC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1275433062",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1275433062",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_110226_110826_Weekly_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2026-11-06"
+                                  },
+                                  {
+                                    "url": "certified",
+                                    "valueDate": "2026-11-06"
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1275433062",
+                                "period": {
+                                  "start": "2026-11-06"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "PHARMA ONE SOFT LLC",
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "300 S BISCAYNE BLVD APT 3304"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-5356",
+                                "country": "US"
+                              }
+                            ]
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1275433062",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1275433062",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_110226_110826_Weekly_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "PHARMA ONE SOFT LLC",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              },
+                              {
+                                "system": "fax",
+                                "value": "870-888-0627",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "300 S BISCAYNE BLVD APT 3304"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-5356",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1275433062",
+                              "display": "PHARMA ONE SOFT LLC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1962417212",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1962417212",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2023-10-31"
+                                  },
+                                  {
+                                    "url": "certified",
+                                    "valueDate": "2023-10-31"
+                                  }
+                                ]
+                              },
+                              {
+                                "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Organization.qualification",
+                                "extension": [
+                                  {
+                                    "url": "identifier",
+                                    "valueIdentifier": {
+                                      "extension": [
+                                        {
+                                          "url": "http://hl7.org/fhir/StructureDefinition/identifier-jurisdiction",
+                                          "valueCodeableConcept": {
+                                            "coding": [
+                                              {
+                                                "system": "https://www.usps.com/",
+                                                "code": "FL"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ],
+                                      "value": "0000913"
+                                    }
+                                  },
+                                  {
+                                    "url": "code",
+                                    "valueCodeableConcept": {
+                                      "coding": [
+                                        {
+                                          "system": "http://nucc.org/provider-taxonomy",
+                                          "code": "333600000X",
+                                          "display": "Pharmacy"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1962417212",
+                                "period": {
+                                  "start": "2006-07-29"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "WALGREENS #03239",
+                            "alias": [
+                              "WALGREEN CO"
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-373-4320",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "1 SE 3RD AVE"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-1700",
+                                "country": "US"
+                              }
+                            ],
+                            "partOf": {
+                              "display": "WALGREENS BOOTS ALLIANCE INC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1962417212",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1962417212",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "WALGREENS #03239",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-373-4320",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "1 SE 3RD AVE"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-1700",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1962417212",
+                              "display": "WALGREENS #03239"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Organization/Organization-pharmacy-1457367948",
+                          "resource": {
+                            "resourceType": "Organization",
+                            "id": "Organization-pharmacy-1457367948",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "extension": [
+                              {
+                                "url": "https://fhir.haau3.com/platform/StructureDefinition/nppes-record-facts",
+                                "extension": [
+                                  {
+                                    "url": "lastUpdated",
+                                    "valueDate": "2018-05-07"
+                                  }
+                                ]
+                              },
+                              {
+                                "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Organization.qualification",
+                                "extension": [
+                                  {
+                                    "url": "identifier",
+                                    "valueIdentifier": {
+                                      "extension": [
+                                        {
+                                          "url": "http://hl7.org/fhir/StructureDefinition/identifier-jurisdiction",
+                                          "valueCodeableConcept": {
+                                            "coding": [
+                                              {
+                                                "system": "https://www.usps.com/",
+                                                "code": "FL"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ],
+                                      "value": "PH18433"
+                                    }
+                                  },
+                                  {
+                                    "url": "code",
+                                    "valueCodeableConcept": {
+                                      "coding": [
+                                        {
+                                          "system": "http://nucc.org/provider-taxonomy",
+                                          "code": "333600000X",
+                                          "display": "Pharmacy"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "identifier": [
+                              {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1457367948",
+                                "period": {
+                                  "start": "2006-08-01"
+                                }
+                              }
+                            ],
+                            "active": true,
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "prov",
+                                    "display": "Healthcare Provider"
+                                  }
+                                ],
+                                "text": "Healthcare Provider"
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                                    "code": "pharmacy",
+                                    "display": "Pharmacy"
+                                  }
+                                ],
+                                "text": "Pharmacy"
+                              }
+                            ],
+                            "name": "WALGREENS #05251",
+                            "alias": [
+                              "WALGREEN CO"
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-371-5868",
+                                "use": "work"
+                              }
+                            ],
+                            "address": [
+                              {
+                                "use": "work",
+                                "type": "physical",
+                                "line": [
+                                  "1 E FLAGLER ST"
+                                ],
+                                "city": "MIAMI",
+                                "state": "FL",
+                                "postalCode": "33131-1003",
+                                "country": "US"
+                              }
+                            ],
+                            "partOf": {
+                              "display": "WALGREENS BOOTS ALLIANCE INC"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
+                          }
+                        },
+                        {
+                          "fullUrl": "https://api.haau3.com/v1/fhir/r4/Location/Location-pharmacy-1457367948",
+                          "resource": {
+                            "resourceType": "Location",
+                            "id": "Location-pharmacy-1457367948",
+                            "meta": {
+                              "source": "https://download.cms.gov/nppes/NPPES_Data_Dissemination_November_2026_V2.zip",
+                              "extension": [
+                                {
+                                  "url": "http://hl7.org/fhir/StructureDefinition/lastSourceSync",
+                                  "valueDateTime": "2026-11-22"
+                                }
+                              ]
+                            },
+                            "status": "active",
+                            "name": "WALGREENS #05251",
+                            "type": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "PHARM",
+                                    "display": "Pharmacy"
+                                  }
+                                ]
+                              },
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                    "code": "OUTPHARM",
+                                    "display": "outpatient pharmacy"
+                                  }
+                                ]
+                              }
+                            ],
+                            "telecom": [
+                              {
+                                "system": "phone",
+                                "value": "305-371-5868",
+                                "use": "work"
+                              }
+                            ],
+                            "address": {
+                              "use": "work",
+                              "type": "physical",
+                              "line": [
+                                "1 E FLAGLER ST"
+                              ],
+                              "city": "MIAMI",
+                              "state": "FL",
+                              "postalCode": "33131-1003",
+                              "country": "US"
+                            },
+                            "managingOrganization": {
+                              "reference": "Organization/Organization-pharmacy-1457367948",
+                              "display": "WALGREENS #05251"
+                            }
+                          },
+                          "search": {
+                            "mode": "include"
                           }
                         }
                       ]
@@ -8563,24 +10778,6 @@
           "406": {
             "$ref": "#/components/responses/FhirNotAcceptable"
           },
-          "422": {
-            "description": "A pharmacy search's continuation went past the 1,200 records the NPI Registry returns for one search. Narrow the search with a ZIP code, a city or a name.",
-            "content": {
-              "application/fhir+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationOutcome"
-                }
-              }
-            },
-            "headers": {
-              "X-Request-Id": {
-                "$ref": "#/components/headers/XRequestId"
-              },
-              "X-Correlation-Id": {
-                "$ref": "#/components/headers/XCorrelationId"
-              }
-            }
-          },
           "429": {
             "$ref": "#/components/responses/FhirTooManyRequests"
           },
@@ -8588,7 +10785,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8606,7 +10803,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8631,7 +10828,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8657,7 +10854,7 @@
           "Provider directory"
         ],
         "summary": "Read a HealthcareService",
-        "description": "Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.\n\nA scheduling publisher's HealthcareService is read here too, by its id: `HealthcareService-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.",
+        "description": "Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from the same records as a pharmacy search, a deactivated pharmacy marked `active: false`, and an NPI they hold no pharmacy under answers 404.\n\nA scheduling publisher's HealthcareService is read here too, by its id: `HealthcareService-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.",
         "operationId": "readHealthcareService",
         "parameters": [
           {
@@ -8776,7 +10973,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8794,7 +10991,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -8819,7 +11016,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9190,7 +11387,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9208,7 +11405,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9233,7 +11430,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9259,7 +11456,7 @@
           "Provider directory"
         ],
         "summary": "Read a Location",
-        "description": "Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.\n\nA scheduling publisher's Location is read here too, by its id: `Location-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.",
+        "description": "Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from the same records as a pharmacy search, a deactivated pharmacy's store marked `status: inactive`.\n\nA scheduling publisher's Location is read here too, by its id: `Location-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.",
         "operationId": "readLocation",
         "parameters": [
           {
@@ -9392,7 +11589,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9410,7 +11607,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer, or for a scheduling publisher's id the scheduling store did not answer. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9435,7 +11632,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9717,7 +11914,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9735,7 +11932,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9760,7 +11957,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9926,7 +12123,7 @@
             "$ref": "#/components/responses/FhirServerError"
           },
           "502": {
-            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. For a pharmacy, the same of the NPI Registry (NPPES), or a record it sent that does not match the search. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
+            "description": "The directory could not be reached, answered in a shape that cannot be served, or answered with more than is served at once: a `_revinclude` past the directory's 100 records on a page, or an answer over 8 MiB. No answer is given: this is never reported as an empty result, which would read as 'no such provider'.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9944,7 +12141,7 @@
             }
           },
           "503": {
-            "description": "The directory, or for a pharmacy the NPI Registry, is rate limiting requests. Send the request again after `Retry-After`. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "The directory is rate limiting requests, or for a pharmacy the pharmacy records did not answer or are not served on this deployment. Send the request again after `Retry-After` when it is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -9969,7 +12166,7 @@
             }
           },
           "504": {
-            "description": "The directory, or for a pharmacy the NPI Registry, did not respond in time.",
+            "description": "The directory did not respond in time.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -18018,7 +20215,7 @@
           "Medical Benefits"
         ],
         "summary": "Check providers against a plan's network",
-        "description": "FHIR instance-level operation `$in-network` on InsurancePlan: for each NPI, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then a `source` when the directory was asked. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).",
+        "description": "FHIR instance-level operation `$in-network` on InsurancePlan: for each `npi`, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year; for each `pharmacy`, whether the plan's pharmacy network in CMS's Medicare Part D files for the month given lists the pharmacy. Give `npi`, `pharmacy` or both. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then, for pharmacies, the `pharmacy-data-date` (the month the Part D file covers, `2026-11`), a `pharmacy-reason` when the plan has no Part D pharmacy network data, and one `pharmacy` per pharmacy NPI, in the order sent, with its `status` (`in-network`, `not-listed` or `no-network-data`) and, when listed, `retail`, `mail-order`, `preferred-retail` and `preferred-mail-order` as CMS's file states them; then a `source` for each source read. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. `not-listed` is the Part D file's answer: it lists every retail and mail-order pharmacy in the plan's network for the month, and no other kind. A stand-alone prescription drug plan answers pharmacies only. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).",
         "operationId": "checkInsurancePlanNetwork",
         "parameters": [
           {
@@ -18035,10 +20232,10 @@
           {
             "name": "npi",
             "in": "query",
-            "required": true,
+            "required": false,
             "style": "form",
             "explode": true,
-            "description": "Up to 20 NPIs, ten digits each, as repeated `npi` parameters or separated by commas: `npi=1992700001&npi=1992700002` or `npi=1992700001,1992700002`. Duplicates count once.",
+            "description": "Up to 20 providers' NPIs, ten digits each, as repeated `npi` parameters or separated by commas: `npi=1992700001&npi=1992700002` or `npi=1992700001,1992700002`. Duplicates count once. Checked against the CMS National Provider Directory. Give `npi`, `pharmacy` or both.",
             "schema": {
               "minItems": 1,
               "maxItems": 20,
@@ -18054,20 +20251,40 @@
             ]
           },
           {
+            "name": "pharmacy",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "description": "Up to 20 pharmacies' NPIs, ten digits each, in the same two forms: `pharmacy=1922102680`. Checked against the plan's pharmacy network in CMS's Medicare Part D files for the month given. Give `npi`, `pharmacy` or both.",
+            "schema": {
+              "minItems": 1,
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{10}(,[0-9]{10})*$"
+              }
+            },
+            "example": [
+              "1922102680"
+            ]
+          },
+          {
             "$ref": "#/components/parameters/XRequestId"
           }
         ],
         "responses": {
           "200": {
-            "description": "A `Parameters` resource with each NPI's status, in the order sent.",
+            "description": "A `Parameters` resource with each NPI's status and each pharmacy's, in the order sent.",
             "content": {
               "application/fhir+json": {
                 "schema": {
                   "$ref": "#/components/schemas/Parameters"
                 },
                 "examples": {
-                  "Two providers checked against a plan's network": {
-                    "summary": "Two providers checked against a plan's network",
+                  "Two providers and a pharmacy checked against a plan's networks": {
+                    "summary": "Two providers and a pharmacy checked against a plan's networks",
                     "value": {
                       "resourceType": "Parameters",
                       "parameter": [
@@ -18144,8 +20361,52 @@
                           ]
                         },
                         {
+                          "name": "pharmacy-data-date",
+                          "valueDate": "2026-11"
+                        },
+                        {
+                          "name": "pharmacy",
+                          "part": [
+                            {
+                              "name": "npi",
+                              "valueIdentifier": {
+                                "system": "http://hl7.org/fhir/sid/us-npi",
+                                "value": "1922102680"
+                              }
+                            },
+                            {
+                              "name": "status",
+                              "valueCoding": {
+                                "system": "https://haau3.com/fhir/CodeSystem/medical-benefits-network-status",
+                                "code": "in-network",
+                                "display": "In network"
+                              }
+                            },
+                            {
+                              "name": "retail",
+                              "valueBoolean": true
+                            },
+                            {
+                              "name": "mail-order",
+                              "valueBoolean": false
+                            },
+                            {
+                              "name": "preferred-retail",
+                              "valueBoolean": false
+                            },
+                            {
+                              "name": "preferred-mail-order",
+                              "valueBoolean": false
+                            }
+                          ]
+                        },
+                        {
                           "name": "source",
                           "valueString": "CMS National Provider Directory: https://directory.cms.gov/fhir"
+                        },
+                        {
+                          "name": "source",
+                          "valueString": "CMS Monthly Prescription Drug Plan Formulary and Pharmacy Network Information: https://data.cms.gov/provider-summary-by-type-of-service/medicare-part-d-prescribers/monthly-prescription-drug-plan-formulary-and-pharmacy-network-information"
                         }
                       ]
                     }
@@ -18163,7 +20424,7 @@
             }
           },
           "400": {
-            "description": "A missing `npi`, an NPI that is not ten digits, more than 20 NPIs, or another parameter, named.",
+            "description": "Neither `npi` nor `pharmacy`, an NPI that is not ten digits, more than 20 of either, or another parameter, named.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -18187,7 +20448,7 @@
             "$ref": "#/components/responses/FhirForbiddenTestKey"
           },
           "404": {
-            "description": "No plan with that id is in the releases being served, or the plan is held but is not a medical plan. The `OperationOutcome` says which.",
+            "description": "No plan with that id is in the releases being served, or the plan is held but is not a medical plan: a stand-alone drug plan is checked for pharmacies only. The `OperationOutcome` says which.",
             "content": {
               "application/fhir+json": {
                 "schema": {
@@ -18232,7 +20493,7 @@
             }
           },
           "503": {
-            "description": "No release of the plan files is being served for the plan's program, or the directory is rate limiting requests (with `Retry-After`). No answer is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
+            "description": "No release of the plan files is being served for the plan's program, the directory is rate limiting requests (with `Retry-After`), or no Part D pharmacy network data is being served or it did not answer (with `Retry-After`). No answer is given. It is also the answer when the API key could not be checked just now, with `Retry-After`.",
             "content": {
               "application/fhir+json": {
                 "schema": {

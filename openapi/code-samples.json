@@ -2,7 +2,7 @@
   "overlay": "1.2.0",
   "info": {
     "title": "Python samples for every operation of the haau3 platform API",
-    "version": "1.0.0-preview.41"
+    "version": "1.0.0-preview.44"
   },
   "extends": "https://api.haau3.com/openapi.json",
   "actions": [
@@ -277,7 +277,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_healthcare_service(\n    service_category=\"pharm\", location_address_state=\"FL\", location_address_postalcode=\"33131\", count=2\n)\nprint(len(bundle.get(\"entry\", [])))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nbundle = client.search_healthcare_service(\n    service_category=\"pharm\",\n    location_address_state=\"FL\",\n    location_address_postalcode=\"33131\",\n    active=\"true\",\n    include=[\"HealthcareService:organization\", \"HealthcareService:location\"],\n)\nprint(len(bundle.get(\"entry\", [])))\n"
           }
         ]
       }
@@ -409,7 +409,7 @@
           {
             "lang": "python",
             "label": "Python",
-            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.check_insurance_plan_network(\"H3359-038-000\", npi=[\"1518929058\", \"1992700001\"])\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
+            "source": "from haau3 import Haau3\n\nclient = Haau3()  # reads HAAU3_API_KEY\nparameters = client.check_insurance_plan_network(\n    \"H3359-038-000\", npi=[\"1518929058\", \"1992700001\"], pharmacy=[\"1922102680\"]\n)\nfor parameter in parameters.get(\"parameter\", []):\n    print(parameter.get(\"name\"))\n"
           }
         ]
       }

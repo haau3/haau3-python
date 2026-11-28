@@ -83,7 +83,8 @@ class SyncMethods:
         id: str,
         /,
         *,
-        npi: str | Sequence[str],
+        npi: str | Sequence[str] | None = None,
+        pharmacy: str | Sequence[str] | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -91,18 +92,22 @@ class SyncMethods:
     ) -> fhir.Parameters:
         """Check providers against a plan's network
 
-        FHIR instance-level operation `$in-network` on InsurancePlan: for each NPI, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then a `source` when the directory was asked. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).
+        FHIR instance-level operation `$in-network` on InsurancePlan: for each `npi`, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year; for each `pharmacy`, whether the plan's pharmacy network in CMS's Medicare Part D files for the month given lists the pharmacy. Give `npi`, `pharmacy` or both. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then, for pharmacies, the `pharmacy-data-date` (the month the Part D file covers, `2026-11`), a `pharmacy-reason` when the plan has no Part D pharmacy network data, and one `pharmacy` per pharmacy NPI, in the order sent, with its `status` (`in-network`, `not-listed` or `no-network-data`) and, when listed, `retail`, `mail-order`, `preferred-retail` and `preferred-mail-order` as CMS's file states them; then a `source` for each source read. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. `not-listed` is the Part D file's answer: it lists every retail and mail-order pharmacy in the plan's network for the month, and no other kind. A stand-alone prescription drug plan answers pharmacies only. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).
 
         `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`, https://docs.haau3.com/api-reference/medical-benefits/check-providers-against-a-plans-network
 
         Query parameters, each with its name in the API:
 
-        - `npi`: Required. Up to 20 NPIs, ten digits each, as repeated `npi` parameters or separated by commas: `npi=1992700001&npi=1992700002` or `npi=1992700001,1992700002`. Duplicates count once.
+        - `npi`: Up to 20 providers' NPIs, ten digits each, as repeated `npi` parameters or separated by commas: `npi=1992700001&npi=1992700002` or `npi=1992700001,1992700002`. Duplicates count once. Checked against the CMS National Provider Directory. Give `npi`, `pharmacy` or both.
+        - `pharmacy`: Up to 20 pharmacies' NPIs, ten digits each, in the same two forms: `pharmacy=1922102680`. Checked against the plan's pharmacy network in CMS's Medicare Part D files for the month given. Give `npi`, `pharmacy` or both.
         """
         return self._engine.call(
             CHECK_INSURANCE_PLAN_NETWORK,
             (id,),
-            (("npi", npi),),
+            (
+                ("npi", npi),
+                ("pharmacy", pharmacy),
+            ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
         ).data
@@ -372,7 +377,7 @@ class SyncMethods:
     ) -> fhir.HealthcareService:
         """Read a HealthcareService
 
-        Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.
+        Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from the same records as a pharmacy search, a deactivated pharmacy marked `active: false`, and an NPI they hold no pharmacy under answers 404.
 
         A scheduling publisher's HealthcareService is read here too, by its id: `HealthcareService-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
@@ -414,7 +419,7 @@ class SyncMethods:
     ) -> fhir.Location:
         """Read a Location
 
-        Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.
+        Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from the same records as a pharmacy search, a deactivated pharmacy's store marked `status: inactive`.
 
         A scheduling publisher's Location is read here too, by its id: `Location-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
@@ -436,7 +441,7 @@ class SyncMethods:
     ) -> fhir.Organization:
         """Read an Organization
 
-        Read one organization, payer or network by id, as returned by a search on this service.
+        Read one organization, payer or network by id, as returned by a search on this service. A pharmacy's organization (`Organization-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from the same records as a pharmacy search, a deactivated pharmacy marked `active: false`; `Organization-{NPI}` is the directory's own record.
 
         `GET /v1/fhir/r4/Organization/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-an-organization
         """
@@ -746,9 +751,9 @@ class SyncMethods:
 
         **The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.
 
-        **Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.
+        **Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.
 
-        Pharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. NPPES returns at most 1,200 records for one search, so a continuation past them is refused with a 422 that asks for a narrower search, rather than repeating a page or ending early. One store can bill under more than one NPI, and each is served as its own pharmacy.
+        Results come in one fixed order, the pharmacy's name ignoring case and then its NPI, the same on every page, and the searchset carries `total`. A continuation goes on in that order from the last pharmacy shown, so the weekly update does not cut a search short. Pharmacies come from NPPES, CMS's NPI Registry, through CMS's monthly and weekly files, updated weekly, until CMS's National Provider Directory serves them. Each resource's `meta.source` names the CMS file its record came from, which may no longer open once CMS removes it, and its `lastSourceSync` extension on `meta` the last day of NPPES data the answer holds. Each pharmacy is found and served at its primary practice address. A pharmacy's three ids, its service's, its organization's (`Organization-pharmacy-{NPI}`) and its store's, are read back from the same records, so a search and a read return the same record; they would change if the search moved to the directory. `Organization-{NPI}` is the directory's own record of an organization. A pharmacy NPPES lists as deactivated is served marked `active: false`, with its deactivation date, if it was deactivated since NPPES's November 2026 monthly file, and `active=true` asks for active pharmacies only. A pharmacy's ids are read by id; the directory's own searches refuse them. One store can bill under more than one NPI, and each is served as its own pharmacy.
 
         `GET /v1/fhir/r4/HealthcareService`, https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services-and-pharmacies
 
@@ -756,15 +761,15 @@ class SyncMethods:
 
         - `location`: The services offered at one location. Give a Location id, `Location/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
         - `network`: The services the directory lists in one insurance network. Cannot be used on its own: send it beside `location`. A search that breaks this rule is refused before the directory is asked. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
-        - `service_category` (`service-category`): `pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
-        - `specialty`: A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
-        - `location_address_state` (`location.address-state`): A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy.
-        - `location_address_postalcode` (`location.address-postalcode`): Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`.
+        - `service_category` (`service-category`): `pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state.
+        - `specialty`: A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X, 332000000X, 332100000X, 332800000X) are served. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state.
+        - `location_address_state` (`location.address-state`): A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Stands alone on a pharmacy search, and is required beside `location.address-city`.
+        - `location_address_postalcode` (`location.address-postalcode`): Finds the pharmacies whose store's ZIP code starts with this: a ZIP code, ZIP+4, or its first two or more digits. Stands alone on a pharmacy search.
         - `location_address_city` (`location.address-city`): Narrows a pharmacy search to stores in a city whose name starts with this, so `Miami` also finds Miami Beach. Two or more letters. Send it with `location.address-state`.
-        - `name`: Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone.
-        - `organization`: One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
+        - `name`: Finds the pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Stands alone on a pharmacy search.
+        - `organization`: One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-pharmacy-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
         - `organization_identifier` (`organization.identifier`): One pharmacy by its NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Organization` accepts. Stands alone on a pharmacy search.
-        - `active`: `true` or `false`. Narrows a search; cannot be used on its own.
+        - `active`: `true` or `false`. Narrows a search; cannot be used on its own. On a pharmacy search, `true` keeps the pharmacies NPPES lists as active and `false` the ones it lists as deactivated since its November 2026 monthly file; without it, both are returned, each marked by `active`.
         - `include` (`_include`): On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`.
         - `id` (`_id`): A HealthcareService id. Searching by id rather than reading it lets one request also bring the records an `_include` or `_revinclude` names.
         - `summary` (`_summary`): `count` only: answers how many records match, as `total`, with no entries. Cannot be combined with `_include`, `_revinclude`, `_count` or `page`.
@@ -2470,7 +2475,8 @@ class AsyncMethods:
         id: str,
         /,
         *,
-        npi: str | Sequence[str],
+        npi: str | Sequence[str] | None = None,
+        pharmacy: str | Sequence[str] | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -2478,19 +2484,23 @@ class AsyncMethods:
     ) -> fhir.Parameters:
         """Check providers against a plan's network
 
-        FHIR instance-level operation `$in-network` on InsurancePlan: for each NPI, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then a `source` when the directory was asked. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).
+        FHIR instance-level operation `$in-network` on InsurancePlan: for each `npi`, whether the CMS National Provider Directory lists the provider in a network this plan names, for the plan's year; for each `pharmacy`, whether the plan's pharmacy network in CMS's Medicare Part D files for the month given lists the pharmacy. Give `npi`, `pharmacy` or both. The answer is a `Parameters` resource: the `plan`; the directory's `data-date`; one `network` per network checked, with the number of organizations it lists; a `reason` when there is no network data; a Marketplace plan's own `directory`; one `provider` per NPI, in the order sent, with its `status` (`in-network`, `not-found`, `not-in-directory` or `no-network-data`) and, when listed, `evidence` references to the directory's records on this base; then, for pharmacies, the `pharmacy-data-date` (the month the Part D file covers, `2026-11`), a `pharmacy-reason` when the plan has no Part D pharmacy network data, and one `pharmacy` per pharmacy NPI, in the order sent, with its `status` (`in-network`, `not-listed` or `no-network-data`) and, when listed, `retail`, `mail-order`, `preferred-retail` and `preferred-mail-order` as CMS's file states them; then a `source` for each source read. `not-found` never means out of network: the directory's network data is incomplete, and a listing is not a statement of a contract. `not-listed` is the Part D file's answer: it lists every retail and mail-order pharmacy in the plan's network for the month, and no other kind. A stand-alone prescription drug plan answers pharmacies only. All or nothing: a lookup that fails fails the whole answer. GET only. Defined by the haau3 implementation guide (`https://haau3.com/fhir/OperationDefinition/InsurancePlan-in-network`).
 
         `GET /v1/fhir/r4/InsurancePlan/{id}/$in-network`, https://docs.haau3.com/api-reference/medical-benefits/check-providers-against-a-plans-network
 
         Query parameters, each with its name in the API:
 
-        - `npi`: Required. Up to 20 NPIs, ten digits each, as repeated `npi` parameters or separated by commas: `npi=1992700001&npi=1992700002` or `npi=1992700001,1992700002`. Duplicates count once.
+        - `npi`: Up to 20 providers' NPIs, ten digits each, as repeated `npi` parameters or separated by commas: `npi=1992700001&npi=1992700002` or `npi=1992700001,1992700002`. Duplicates count once. Checked against the CMS National Provider Directory. Give `npi`, `pharmacy` or both.
+        - `pharmacy`: Up to 20 pharmacies' NPIs, ten digits each, in the same two forms: `pharmacy=1922102680`. Checked against the plan's pharmacy network in CMS's Medicare Part D files for the month given. Give `npi`, `pharmacy` or both.
         """
         return (
             await self._engine.call(
                 CHECK_INSURANCE_PLAN_NETWORK,
                 (id,),
-                (("npi", npi),),
+                (
+                    ("npi", npi),
+                    ("pharmacy", pharmacy),
+                ),
                 None,
                 Options(timeout, max_retries, correlation_id, extra_headers),
             )
@@ -2783,7 +2793,7 @@ class AsyncMethods:
     ) -> fhir.HealthcareService:
         """Read a HealthcareService
 
-        Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from NPPES.
+        Read one healthcare service by id, as returned by a search on this service. A pharmacy service's id (`HealthcareService-pharmacy-{NPI}`) is read back from the same records as a pharmacy search, a deactivated pharmacy marked `active: false`, and an NPI they hold no pharmacy under answers 404.
 
         A scheduling publisher's HealthcareService is read here too, by its id: `HealthcareService-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
@@ -2829,7 +2839,7 @@ class AsyncMethods:
     ) -> fhir.Location:
         """Read a Location
 
-        Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from NPPES.
+        Read one location by id, as returned by a search on this service. A pharmacy's store (`Location-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from the same records as a pharmacy search, a deactivated pharmacy's store marked `status: inactive`.
 
         A scheduling publisher's Location is read here too, by its id: `Location-scheduling-` and 32 hexadecimal characters, as a Slot or Schedule search's included resources carry it. It is answered from the scheduling publishers' feeds, served as the publisher published it with `meta.source` and `lastSourceSync`, and is not found by a search of this type.
 
@@ -2853,7 +2863,7 @@ class AsyncMethods:
     ) -> fhir.Organization:
         """Read an Organization
 
-        Read one organization, payer or network by id, as returned by a search on this service.
+        Read one organization, payer or network by id, as returned by a search on this service. A pharmacy's organization (`Organization-pharmacy-{NPI}`, from a pharmacy search on `HealthcareService`) is read back from the same records as a pharmacy search, a deactivated pharmacy marked `active: false`; `Organization-{NPI}` is the directory's own record.
 
         `GET /v1/fhir/r4/Organization/{id}`, https://docs.haau3.com/api-reference/provider-directory/read-an-organization
         """
@@ -3189,9 +3199,9 @@ class AsyncMethods:
 
         **The directory's services**, by location, or by network beside a location. The directory's service records name a network and, for a few, a location; none names an organization, so `organization` is refused on this search rather than answered with nothing.
 
-        **Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.
+        **Pharmacies**, modelled as NDH 2.0.0 models them: each match is a pharmacy service, with category `pharm` and its NUCC pharmacy codes as `specialty`, provided by an organization at a store. Start the search with `service-category=pharm` (every kind) or `specialty` (one kind or several, separated by commas). A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state. Add `_include=HealthcareService:organization` and `_include=HealthcareService:location` to get each pharmacy's organization (its NPI) and store (its address) in the same bundle.
 
-        Pharmacies are found in NPPES, CMS's NPI Registry, until CMS's National Provider Directory serves them. Each is found and served at its primary practice address. The organization keeps the directory's own id (`Organization-{NPI}`) and reads back from the directory, where a pharmacy registered in the last few weeks can answer 404 until the directory's next load. A pharmacy service's and store's ids are read back from NPPES, and change when the search moves to the directory. NPPES returns at most 1,200 records for one search, so a continuation past them is refused with a 422 that asks for a narrower search, rather than repeating a page or ending early. One store can bill under more than one NPI, and each is served as its own pharmacy.
+        Results come in one fixed order, the pharmacy's name ignoring case and then its NPI, the same on every page, and the searchset carries `total`. A continuation goes on in that order from the last pharmacy shown, so the weekly update does not cut a search short. Pharmacies come from NPPES, CMS's NPI Registry, through CMS's monthly and weekly files, updated weekly, until CMS's National Provider Directory serves them. Each resource's `meta.source` names the CMS file its record came from, which may no longer open once CMS removes it, and its `lastSourceSync` extension on `meta` the last day of NPPES data the answer holds. Each pharmacy is found and served at its primary practice address. A pharmacy's three ids, its service's, its organization's (`Organization-pharmacy-{NPI}`) and its store's, are read back from the same records, so a search and a read return the same record; they would change if the search moved to the directory. `Organization-{NPI}` is the directory's own record of an organization. A pharmacy NPPES lists as deactivated is served marked `active: false`, with its deactivation date, if it was deactivated since NPPES's November 2026 monthly file, and `active=true` asks for active pharmacies only. A pharmacy's ids are read by id; the directory's own searches refuse them. One store can bill under more than one NPI, and each is served as its own pharmacy.
 
         `GET /v1/fhir/r4/HealthcareService`, https://docs.haau3.com/api-reference/provider-directory/find-healthcare-services-and-pharmacies
 
@@ -3199,15 +3209,15 @@ class AsyncMethods:
 
         - `location`: The services offered at one location. Give a Location id, `Location/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
         - `network`: The services the directory lists in one insurance network. Cannot be used on its own: send it beside `location`. A search that breaks this rule is refused before the directory is asked. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
-        - `service_category` (`service-category`): `pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
-        - `specialty`: A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X) are served. A pharmacy search needs `location.address-state` with `location.address-postalcode` or `location.address-city`, or one pharmacy's `organization` or `organization.identifier`; `name` narrows it.
-        - `location_address_state` (`location.address-state`): A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Required, with a ZIP code or a city, unless the search names one pharmacy.
-        - `location_address_postalcode` (`location.address-postalcode`): Narrows a pharmacy search to stores whose ZIP code starts with this: a ZIP code, or its first two or more digits. Send it with `location.address-state`.
+        - `service_category` (`service-category`): `pharm`, bare or as `http://terminology.hl7.org/CodeSystem/ndh-healthcare-service-category|pharm`: every pharmacy, of any kind. Starts a pharmacy search, as `specialty` does. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state.
+        - `specialty`: A NUCC pharmacy code, bare or as `http://nucc.org/provider-taxonomy|{code}`, or several separated by commas to find pharmacies of any of those kinds: for example `3336C0003X` (community or retail) or `3336M0002X` (mail order). Starts a pharmacy search. A pharmacy may carry only the general code 333600000X or only a specific one, so send `333600000X,3336C0003X` to find either, or `service-category=pharm` for every kind. Only pharmacy codes (333600000X, 3336C0002X, 3336C0003X, 3336C0004X, 3336H0001X, 3336I0012X, 3336L0003X, 3336M0002X, 3336M0003X, 3336N0007X, 3336S0011X, 332000000X, 332100000X, 332800000X) are served. A pharmacy search needs any one of: `location.address-postalcode` (a ZIP code or its first two or more digits), `location.address-state`, `name`, or one pharmacy's `organization` or `organization.identifier`. `location.address-city` narrows a search by state.
+        - `location_address_state` (`location.address-state`): A pharmacy search's state: the two-letter code of the state the pharmacy's store is in. Stands alone on a pharmacy search, and is required beside `location.address-city`.
+        - `location_address_postalcode` (`location.address-postalcode`): Finds the pharmacies whose store's ZIP code starts with this: a ZIP code, ZIP+4, or its first two or more digits. Stands alone on a pharmacy search.
         - `location_address_city` (`location.address-city`): Narrows a pharmacy search to stores in a city whose name starts with this, so `Miami` also finds Miami Beach. Two or more letters. Send it with `location.address-state`.
-        - `name`: Narrows a pharmacy search to pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Cannot be used on its own, or with a state alone.
-        - `organization`: One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
+        - `name`: Finds the pharmacies whose name, or a name they do business as, starts with this. Two or more letters. Stands alone on a pharmacy search.
+        - `organization`: One pharmacy: the organization that provides it, as a pharmacy search returned it (`Organization-pharmacy-{NPI}`). Stands alone on a pharmacy search. Give a Organization id, `Organization/{id}`, or the `fullUrl` this service returned. An address on another server is refused.
         - `organization_identifier` (`organization.identifier`): One pharmacy by its NPI, as `{system}|{npi}` or a bare 10-digit value, under the same systems `Organization` accepts. Stands alone on a pharmacy search.
-        - `active`: `true` or `false`. Narrows a search; cannot be used on its own.
+        - `active`: `true` or `false`. Narrows a search; cannot be used on its own. On a pharmacy search, `true` keeps the pharmacies NPPES lists as active and `false` the ones it lists as deactivated since its November 2026 monthly file; without it, both are returned, each marked by `active`.
         - `include` (`_include`): On a pharmacy search, `HealthcareService:organization` brings the organization that provides each pharmacy (its NPI, names and phone), and `HealthcareService:location` its store (address and phone). Repeat the parameter to include several. Included entries do not count toward `_count`.
         - `id` (`_id`): A HealthcareService id. Searching by id rather than reading it lets one request also bring the records an `_include` or `_revinclude` names.
         - `summary` (`_summary`): `count` only: answers how many records match, as `total`, with no entries. Cannot be combined with `_include`, `_revinclude`, `_count` or `page`.
@@ -4960,7 +4970,8 @@ class SyncWithResponse:
         id: str,
         /,
         *,
-        npi: str | Sequence[str],
+        npi: str | Sequence[str] | None = None,
+        pharmacy: str | Sequence[str] | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -4970,7 +4981,10 @@ class SyncWithResponse:
         return self._engine.call(
             CHECK_INSURANCE_PLAN_NETWORK,
             (id,),
-            (("npi", npi),),
+            (
+                ("npi", npi),
+                ("pharmacy", pharmacy),
+            ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
         )
@@ -6230,7 +6244,8 @@ class AsyncWithResponse:
         id: str,
         /,
         *,
-        npi: str | Sequence[str],
+        npi: str | Sequence[str] | None = None,
+        pharmacy: str | Sequence[str] | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         correlation_id: str | None = None,
@@ -6240,7 +6255,10 @@ class AsyncWithResponse:
         return await self._engine.call(
             CHECK_INSURANCE_PLAN_NETWORK,
             (id,),
-            (("npi", npi),),
+            (
+                ("npi", npi),
+                ("pharmacy", pharmacy),
+            ),
             None,
             Options(timeout, max_retries, correlation_id, extra_headers),
         )

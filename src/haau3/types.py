@@ -19,7 +19,8 @@ from . import fhir
 class CheckInsurancePlanNetworkQuery(TypedDict, total=False):
     """The query parameters of `check_insurance_plan_network`, by their Python names, to pass as `**query`."""
 
-    npi: Required[str | Sequence[str]]
+    npi: str | Sequence[str]
+    pharmacy: str | Sequence[str]
 
 
 CheckInsurancePlanNetworkResponse: TypeAlias = fhir.Parameters
